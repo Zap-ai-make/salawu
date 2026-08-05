@@ -144,6 +144,7 @@ préalable — non requis pour un dealer mono-réseau.
 | Client (`id`) | Projet Firebase | Version déployée | Dernier déploiement | Particularités |
 |---|---|---|---|---|
 | `taofic_ajagbe` | `taofic-ajagbe` | _(à renseigner)_ | 2026-08-03 (règles durcies) | 1 réseau, sans Crédit, 2 méthodes, dealer mono-réseau, édition soldes masquée (UI), fuseau Africa/Ouagadougou |
+| `salawu` | `salawu-fa726` | _(non déployé)_ | _(non déployé)_ | 5 réseaux boutique, sans Crédit, 6 méthodes, **dealer MULTI-réseaux** (Moov/Telecel/Coris/Sank — Orange exclu, sous-dealer ravitaillé par un fournisseur externe), édition soldes masquée (UI), fuseau Africa/Ouagadougou, marque ESAHAF. Rideau « Cartes Réseau » repliable (multi). Projet protégé comme TAOFIC (tc-095). |
 
 _(Le registre est mis à jour à chaque déploiement client.)_
 
