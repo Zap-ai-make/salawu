@@ -18,7 +18,7 @@ import { initializeApp, cert, applicationDefault } from 'firebase-admin/app'
 import { getFirestore, Timestamp, GeoPoint } from 'firebase-admin/firestore'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { resolveResetProject, PRODUCTION_PROJECT_ID } from './lib/assertResetProject.mjs'
+import { resolveResetProject } from './lib/assertResetProject.mjs'
 import { readNdjson, reviveValue } from './lib/firestoreBackup.mjs'
 import { withRetry } from './lib/withRetry.mjs'
 
@@ -68,10 +68,10 @@ if (execute && isProduction) {
   const rl = createInterface({ input: process.stdin, output: process.stderr })
   const answer = await rl.question(
     `ATTENTION : restauration en PRODUCTION (écrasement des documents existants).\n` +
-    `Tapez exactement le projectId (${PRODUCTION_PROJECT_ID}) pour confirmer : `
+    `Tapez exactement le projectId (${projectId}) pour confirmer : `
   )
   rl.close()
-  if (answer.trim() !== PRODUCTION_PROJECT_ID) {
+  if (answer.trim() !== projectId) {
     console.error('Confirmation invalide. Opération annulée, aucune écriture effectuée.')
     process.exit(1)
   }

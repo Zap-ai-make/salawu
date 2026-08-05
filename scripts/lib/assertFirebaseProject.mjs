@@ -7,9 +7,15 @@
  *
  * Règles :
  *   1. projectId doit exister et être une string non vide (après trim).
- *   2. taofic-ajagbe est bloqué absolument.
+ *   2. Tout projet CLIENT réel (production) est bloqué absolument
+ *      (cf. BLOCKED_PRODUCTION_PROJECTS : taofic-ajagbe, salawu-fa726, …).
  *   3. Le projectId doit commencer par "demo-" (casse sensible).
  */
+
+// Projets CLIENT réels (production) : aucune opération Firebase autorisée via cette
+// garde émulateur. Ajouter ici chaque nouveau projet client pour le protéger comme
+// TAOFIC (le reset dispose d'un opt-in dédié à 4 verrous, cf. assertResetProject).
+export const BLOCKED_PRODUCTION_PROJECTS = Object.freeze(['taofic-ajagbe', 'salawu-fa726'])
 
 export class AssertFirebaseProjectError extends Error {
   constructor(code, message) {
@@ -39,10 +45,10 @@ export function assertFirebaseProject(rawProjectId) {
       'Le projectId est vide ou ne contient que des espaces.'
     )
   }
-  if (projectId === 'taofic-ajagbe') {
+  if (BLOCKED_PRODUCTION_PROJECTS.includes(projectId)) {
     throw new AssertFirebaseProjectError(
       'PRODUCTION_PROJECT_BLOCKED',
-      'Le projet de production taofic-ajagbe est bloqué. Utiliser --project demo-akayis-test.'
+      `Le projet de production ${projectId} est bloqué. Utiliser --project demo-akayis-test.`
     )
   }
   if (!projectId.startsWith('demo-')) {

@@ -1,6 +1,7 @@
 {
   "projects": {
     "default": "demo-akayis-test",
-    "production": "taofic-ajagbe"
+    "production": "taofic-ajagbe",
+    "salawu": "salawu-fa726"
   }
 }

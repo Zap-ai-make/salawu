@@ -29,7 +29,13 @@ import { assertFirebaseProject, AssertFirebaseProjectError } from './assertFireb
 
 export { AssertFirebaseProjectError }
 
+// Projet de production « historique » (conservé pour compatibilité d'API/tests).
 export const PRODUCTION_PROJECT_ID = 'taofic-ajagbe'
+
+// Ensemble des projets CLIENT réels traités comme PRODUCTION pour la remise à zéro :
+// écriture (--execute) verrouillée derrière les 4 verrous, dry-run toujours permis.
+// Chaque nouveau client est ajouté ici pour être protégé exactement comme TAOFIC.
+export const PRODUCTION_PROJECT_IDS = Object.freeze(['taofic-ajagbe', 'salawu-fa726'])
 
 /**
  * @param {{
@@ -93,7 +99,7 @@ export function resolveResetProject({
     projectId = String(envProjectId).trim()
   }
 
-  const isProduction = projectId === PRODUCTION_PROJECT_ID
+  const isProduction = PRODUCTION_PROJECT_IDS.includes(projectId)
 
   if (!execute) {
     // Dry-run : lecture seule, autorisé partout (diagnostic).
@@ -107,7 +113,7 @@ export function resolveResetProject({
     if (missing.length > 0) {
       throw new AssertFirebaseProjectError(
         'PRODUCTION_RESET_NOT_UNLOCKED',
-        `Remise à zéro en PRODUCTION (${PRODUCTION_PROJECT_ID}) bloquée. ` +
+        `Remise à zéro en PRODUCTION (${projectId}) bloquée. ` +
         `Manque : ${missing.join(' et ')}. ` +
         'La confirmation interactive du projectId sera également exigée.'
       )
