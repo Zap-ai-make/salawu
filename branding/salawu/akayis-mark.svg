@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">ESAHAF — Ets. SALAWU Hamidou et Frère</title>
+  <desc id="desc">Logo ESAHAF : ellipse orange, flèches bleues, trois étoiles blanches, texte arqué et E.SA.HA.F.</desc>
+
+  <defs>
+    <radialGradient id="ell" cx="42%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#F5883A"/>
+      <stop offset="60%" stop-color="#EA6A21"/>
+      <stop offset="100%" stop-color="#D8551A"/>
+    </radialGradient>
+    <path id="star" d="M0,-1 L0.2245,-0.309 L0.9511,-0.309 L0.3633,0.1181 L0.5878,0.809 L0,0.382 L-0.5878,0.809 L-0.3633,0.1181 L-0.9511,-0.309 L-0.2245,-0.309 Z"/>
+    <!-- Arc pour le texte du haut (demi-cercle supérieur) -->
+    <path id="topArc" d="M 66,258 A 190,190 0 0 1 446,258" fill="none"/>
+  </defs>
+
+  <!-- Anneau/orbite en arrière-plan -->
+  <g transform="rotate(-16 256 250)">
+    <ellipse cx="256" cy="250" rx="182" ry="120" fill="none" stroke="#15202B" stroke-width="6" opacity="0.85"/>
+  </g>
+
+  <!-- Corps ellipse orange -->
+  <ellipse cx="256" cy="250" rx="160" ry="112" fill="url(#ell)"/>
+
+  <!-- Flèches bleues (swoosh montant vers la droite) -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M120,318 C170,300 250,268 322,196" stroke="#1B62B0" stroke-width="26"/>
+    <path d="M132,336 C186,320 258,290 330,214" stroke="#2E86E0" stroke-width="16"/>
+  </g>
+  <!-- Pointes de flèches -->
+  <g fill="#1B62B0">
+    <path d="M322,196 l-30,2 l16,-26 z"/>
+  </g>
+  <g fill="#2E86E0">
+    <path d="M330,214 l-28,4 l12,-26 z"/>
+  </g>
+
+  <!-- Trois étoiles blanches -->
+  <g fill="#FFFFFF">
+    <use href="#star" transform="translate(345,205) scale(30)"/>
+    <use href="#star" transform="translate(300,258) scale(22)"/>
+    <use href="#star" transform="translate(360,262) scale(22)"/>
+  </g>
+
+  <!-- Texte arqué du haut -->
+  <text font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" fill="#1B62B0" letter-spacing="1">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">Ets. SALAWU Hamidou et Frère</textPath>
+  </text>
+
+  <!-- Texte du bas -->
+  <text x="256" y="430" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="70" fill="#EA6A21" letter-spacing="2">E.SA.HA.F</text>
+</svg>
