@@ -94,6 +94,17 @@ describe('networkBalances — flux métier légitime', () => {
     }))
   })
 
+  it('réseau Wave bien formé (6ᵉ réseau) → allow', async () => {
+    await seedAll()
+    await assertSucceeds(setDoc(balDoc('admin-a-uid', 'store-A'), {
+      balances: {
+        Orange: { stock: 1, liquidite: 2 },
+        Wave: { stock: 7000, liquidite: 0 },
+      },
+      updatedAt: serverTimestamp(),
+    }))
+  })
+
   it('stock à la limite entier sûr (2^53 - 1) → allow', async () => {
     await seedAll()
     await assertSucceeds(setDoc(balDoc('admin-a-uid', 'store-A'), {

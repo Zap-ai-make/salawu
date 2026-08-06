@@ -6,7 +6,8 @@ export const NETWORK_CODES = {
   'Moov': '000626',
   'Telecel': '000002',
   'Coris': '000003',
-  'Sank': '000004'
+  'Sank': '000004',
+  'Wave': '000005'
 }
 
 // Options réseau visibles pour CE client — dérivées du profil client actif

@@ -37,9 +37,10 @@ const BASE_BALANCES = {
   Telecel: { stock: 5000,  liquidite: 1000 },
   Coris:   { stock: 3000,  liquidite: 500 },
   Sank:    { stock: 2000,  liquidite: 200 },
+  Wave:    { stock: 4000,  liquidite: 0 },
 }
 
-const ALL_METHODS = ['Orange Money', 'Moov Money', 'Telecel Money', 'Coris Money', 'Sank Money', 'Cash']
+const ALL_METHODS = ['Orange Money', 'Moov Money', 'Telecel Money', 'Coris Money', 'Sank Money', 'Wave', 'Cash']
 const ALL_TYPES = ['Dépôt', 'Retrait', 'Crédit']
 
 // Chaque implémentation reçoit sa propre copie profonde (aucun partage d'état).
@@ -59,7 +60,7 @@ function outcome(fn) {
 // ---------------------------------------------------------------------------
 
 describe('TC-081-MAP — mapPaymentMethodToNetwork identique', () => {
-  it('[MAP-01] les 6 méthodes officielles produisent le même réseau', () => {
+  it('[MAP-01] les méthodes officielles produisent le même réseau', () => {
     for (const method of ALL_METHODS) {
       expect(frontMap(method), method).toBe(fnMap(method))
     }
@@ -85,7 +86,7 @@ describe('TC-081-NRM — normalizeNetworkBalances identique', () => {
     ['map directe', { Orange: { stock: 100 }, Moov: { liquidite: 7 } }],
     ['valeurs négatives → 0', { Orange: { stock: -5, liquidite: -1 } }],
     ['valeurs non numériques → 0', { Orange: { stock: 'abc', liquidite: null } }],
-    ['réseau hors défauts conservé', { Wave: { stock: 42, liquidite: 1 } }],
+    ['réseau hors défauts conservé', { Karta: { stock: 42, liquidite: 1 } }],
     ['entrées non-objet ignorées', { Orange: 'broken', Moov: 42, Telecel: { stock: 9 } }],
     ['jeu complet', { balances: clone(BASE_BALANCES) }],
   ]

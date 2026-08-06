@@ -23,7 +23,8 @@ const DEFAULT_NETWORK_BALANCES = {
   Moov:     { stock: 0, liquidite: 0 },
   Telecel:  { stock: 0, liquidite: 0 },
   Coris:    { stock: 0, liquidite: 0 },
-  Sank:     { stock: 0, liquidite: 0 }
+  Sank:     { stock: 0, liquidite: 0 },
+  Wave:     { stock: 0, liquidite: 0 }
 }
 
 // ---------------------------------------------------------------------------
@@ -211,6 +212,7 @@ export function mapPaymentMethodToNetwork(paymentMethod) {
     'Sank Money':   'Sank',
     'Coris Money':  'Coris',
     'Telecel Money': 'Telecel',
+    'Wave':          'Wave',
     'Cash':         'Liquidite'
   }
   return mapping[paymentMethod] || paymentMethod

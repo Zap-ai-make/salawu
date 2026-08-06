@@ -18,11 +18,11 @@
  */
 
 // Ensemble figé des réseaux supportés par le produit (ordre = ordre d'affichage).
-export const RESEAUX_SUPPORTES = ['Orange', 'Moov', 'Telecel', 'Coris', 'Sank']
+export const RESEAUX_SUPPORTES = ['Orange', 'Moov', 'Telecel', 'Coris', 'Sank', 'Wave']
 
-// Les 6 méthodes de règlement supportées (les callables serveur les acceptent déjà toutes).
+// Les méthodes de règlement supportées (les callables serveur les acceptent déjà toutes).
 export const METHODES_PAIEMENT_SUPPORTEES = [
-  'Orange Money', 'Moov Money', 'Telecel Money', 'Coris Money', 'Sank Money', 'Cash',
+  'Orange Money', 'Moov Money', 'Telecel Money', 'Coris Money', 'Sank Money', 'Wave', 'Cash',
 ]
 
 export const pilotProfile = Object.freeze({

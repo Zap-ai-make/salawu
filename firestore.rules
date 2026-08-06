@@ -208,12 +208,13 @@ service cloud.firestore {
 
     function validNetworkBalancesMap(b) {
       return b is map &&
-        b.keys().hasOnly(['Orange', 'Moov', 'Telecel', 'Coris', 'Sank']) &&
+        b.keys().hasOnly(['Orange', 'Moov', 'Telecel', 'Coris', 'Sank', 'Wave']) &&
         (!('Orange'  in b) || validNetworkEntry(b.Orange)) &&
         (!('Moov'    in b) || validNetworkEntry(b.Moov)) &&
         (!('Telecel' in b) || validNetworkEntry(b.Telecel)) &&
         (!('Coris'   in b) || validNetworkEntry(b.Coris)) &&
-        (!('Sank'    in b) || validNetworkEntry(b.Sank));
+        (!('Sank'    in b) || validNetworkEntry(b.Sank)) &&
+        (!('Wave'    in b) || validNetworkEntry(b.Wave));
     }
 
     function validNetworkBalancesDoc(data) {

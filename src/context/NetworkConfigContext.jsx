@@ -11,7 +11,8 @@ const DEFAULT_NETWORK_DATA = {
   Moov: { stock: 0, liquidite: 0 },
   Telecel: { stock: 0, liquidite: 0 },
   Coris: { stock: 0, liquidite: 0 },
-  Sank: { stock: 0, liquidite: 0 }
+  Sank: { stock: 0, liquidite: 0 },
+  Wave: { stock: 0, liquidite: 0 }
 }
 
 // Clés pour localStorage
