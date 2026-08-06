@@ -32,12 +32,12 @@ export const salawuProfile = Object.freeze({
     theme: 'orange',
   }),
 
-  // ── Réseaux boutique : les 5 (superset complet, comme le pilote) ────────────
+  // ── Réseaux boutique : les 6 (superset complet, comme le pilote) ────────────
   networks: Object.freeze({
     enabled: [...RESEAUX_SUPPORTES],
   }),
 
-  // ── Transactions : sans Crédit, les 6 méthodes de règlement ────────────────
+  // ── Transactions : sans Crédit, toutes les méthodes de règlement ───────────
   transactions: Object.freeze({
     types: ['Dépôt', 'Retrait'],
     paymentMethods: [...METHODES_PAIEMENT_SUPPORTEES],
@@ -48,12 +48,13 @@ export const salawuProfile = Object.freeze({
     canEditBalances: false,
   }),
 
-  // ── Dealer : MULTI-RÉSEAUX (Moov, Telecel, Coris, Sank) — Orange exclu ──────
+  // ── Dealer : MULTI-RÉSEAUX (Moov, Telecel, Coris, Sank, Wave) — Orange exclu ─
   // Cœur de cette mise en service : les branches IS_DEALER_MULTI_NETWORK
   // (sélecteur de réseau + inventaire multi) deviennent LIVE avec ≥ 2 réseaux.
+  // Wave est approvisionné par le dealer (cahier des charges : Dealer → Assistant boutique).
   dealer: Object.freeze({
     enabled: true,
-    networks: ['Moov', 'Telecel', 'Coris', 'Sank'],
+    networks: ['Moov', 'Telecel', 'Coris', 'Sank', 'Wave'],
   }),
 
   // regional : hérité du pilote (Africa/Ouagadougou).

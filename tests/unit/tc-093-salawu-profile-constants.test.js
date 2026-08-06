@@ -36,21 +36,21 @@ describe('TC-093 — Profil ESAHAF (« salawu ») : constantes figées', () => {
     expect(profile.branding.theme).toBe('orange')
   })
 
-  it('réseaux boutique = les 5', () => {
-    expect(profile.networks.enabled).toEqual(['Orange', 'Moov', 'Telecel', 'Coris', 'Sank'])
+  it('réseaux boutique = les 6 (Wave inclus)', () => {
+    expect(profile.networks.enabled).toEqual(['Orange', 'Moov', 'Telecel', 'Coris', 'Sank', 'Wave'])
   })
 
-  it('dealer MULTI-RÉSEAUX = 4 réseaux, Orange exclu', () => {
+  it('dealer MULTI-RÉSEAUX = 5 réseaux (Wave inclus), Orange exclu', () => {
     expect(profile.dealer.enabled).toBe(true)
-    expect(profile.dealer.networks).toEqual(['Moov', 'Telecel', 'Coris', 'Sank'])
+    expect(profile.dealer.networks).toEqual(['Moov', 'Telecel', 'Coris', 'Sank', 'Wave'])
     expect(profile.dealer.networks).not.toContain('Orange')
     expect(profile.dealer.networks.length).toBeGreaterThan(1) // branches IS_DEALER_MULTI_NETWORK LIVE
   })
 
-  it('transactions : sans Crédit, les 6 méthodes de règlement', () => {
+  it('transactions : sans Crédit, toutes les méthodes de règlement (Wave incluse)', () => {
     expect(profile.transactions.types).toEqual(['Dépôt', 'Retrait'])
     expect(profile.transactions.paymentMethods).toEqual([
-      'Orange Money', 'Moov Money', 'Telecel Money', 'Coris Money', 'Sank Money', 'Cash',
+      'Orange Money', 'Moov Money', 'Telecel Money', 'Coris Money', 'Sank Money', 'Wave', 'Cash',
     ])
   })
 
