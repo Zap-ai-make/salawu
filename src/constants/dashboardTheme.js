@@ -66,7 +66,8 @@ export const NETWORK_COLORS = {
   Moov: '#3B82F6',
   Telecel: '#8B5CF6',
   Coris: '#EAB308',
-  Sank: '#EF4444'
+  Sank: '#EF4444',
+  Wave: '#06B6D4'
 }
 
 export const CHART_TEXT_COLORS = {

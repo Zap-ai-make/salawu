@@ -49,6 +49,16 @@ export const NETWORK_CONFIG = {
     textLight: 'text-red-600',
     gradient: 'from-red-50 to-red-100'
   },
+  Wave: {
+    name: 'Wave',
+    color: '#06B6D4',
+    bgLight: 'bg-cyan-50',
+    bgDark: 'bg-cyan-100',
+    border: 'border-cyan-200',
+    text: 'text-cyan-800',
+    textLight: 'text-cyan-600',
+    gradient: 'from-cyan-50 to-cyan-100'
+  },
   Liquidite: {
     name: 'Liquidité',
     color: '#38A169',

@@ -16,12 +16,14 @@ export default {
     'bg-green-600',
     'bg-purple-600',
     'bg-orange-600',
+    'bg-cyan-600',
     // Table headers
     'bg-blue-100',
     'bg-gray-100',
     'bg-green-100',
     'bg-purple-100',
     'bg-orange-100',
+    'bg-cyan-100',
     // Borders
     'border-blue-300',
     'border-gray-300',
@@ -29,12 +31,14 @@ export default {
     'border-green-300',
     'border-purple-300',
     'border-orange-300',
+    'border-cyan-200',
     // Accents
     'bg-blue-50',
     'bg-gray-50',
     'bg-green-50',
     'bg-purple-50',
     'bg-orange-50',
+    'bg-cyan-50',
     // Text colors
     'text-gray-900',
     'text-gray-100'

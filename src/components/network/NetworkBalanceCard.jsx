@@ -28,7 +28,7 @@ function NetworkBalanceCard({ network, stockAmount, liquiditeAmount }) {
         bg-gradient-to-br ${config.gradient}
         border ${config.border}
         rounded-lg shadow-sm
-        p-3 flex-1 min-w-[140px] max-w-[180px]
+        p-3 flex-1 min-w-[112px] max-w-[150px]
         transition-all duration-200 hover:shadow-md
       `}
     >
