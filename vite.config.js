@@ -27,10 +27,19 @@ function resolveBuildBranding(clientId) {
   }
 }
 
+// Couleur de marque (barre d'adresse mobile / meta theme-color) dérivée du thème
+// déclaré par le profil (branding.theme). Conservateur comme DEFAULT_THEME : seules les
+// marques explicitement mappées changent ; tout le reste (dont TAOFIC 'green') garde le
+// bleu historique #3b82f6 — comportement PWA inchangé pour les clients non mappés.
+const BRAND_THEME_COLOR = { orange: '#ea580c' }
+function resolveThemeColor(theme) {
+  return BRAND_THEME_COLOR[theme] ?? '#3b82f6'
+}
+
 // Injecte la marque dans index.html (titre + meta) au build/dev. On utilise des
 // fonctions de remplacement : le 2e argument littéral de String.replace interprète
 // `$&`/`$1`/`$\`` → une marque contenant `$` corromprait la sortie. Les fonctions non.
-function brandingHtmlPlugin({ appFullName, description }) {
+function brandingHtmlPlugin({ appFullName, description, themeColor }) {
   return {
     name: 'branding-html',
     transformIndexHtml(html) {
@@ -38,6 +47,7 @@ function brandingHtmlPlugin({ appFullName, description }) {
         .replace(/<title>[\s\S]*?<\/title>/, () => `<title>${appFullName}</title>`)
         .replace(/(<meta name="description" content=")[\s\S]*?(">)/, (_m, p1, p2) => `${p1}${description}${p2}`)
         .replace(/(<meta name="apple-mobile-web-app-title" content=")[\s\S]*?(">)/, (_m, p1, p2) => `${p1}${appFullName}${p2}`)
+        .replace(/(<meta name="theme-color" content=")[\s\S]*?(">)/, (_m, p1, p2) => `${p1}${themeColor}${p2}`)
     },
   }
 }
@@ -47,12 +57,13 @@ export default defineConfig(({ mode }) => {
   const branding = resolveBuildBranding(env.VITE_CLIENT_ID)
   const appFullName = branding.pwaName
   const description = `Application CRM pour la gestion des clients et transactions de ${branding.appName}`
+  const themeColor = resolveThemeColor(branding.theme)
 
   return {
   plugins: [
     react(),
     tailwindcss(),
-    brandingHtmlPlugin({ appFullName, description }),
+    brandingHtmlPlugin({ appFullName, description, themeColor }),
     VitePWA({
       // Auto-update du SW quand une nouvelle version est disponible
       registerType: 'autoUpdate',
@@ -142,7 +153,7 @@ export default defineConfig(({ mode }) => {
         name: appFullName,
         short_name: appFullName,
         description,
-        theme_color: '#3b82f6', // Couleur de la barre d'adresse mobile
+        theme_color: themeColor, // Couleur de la barre d'adresse mobile (dérivée du profil)
         background_color: '#ffffff',
         display: 'standalone', // Affichage en plein écran (comme une app native)
         orientation: 'portrait-primary',
