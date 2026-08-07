@@ -518,6 +518,18 @@ export async function getStoreNetworkBalances(storeId) {
   }
 }
 
+// Config Boutique × Réseau (lecture seule). L'écriture passe par la Cloud Function
+// auditée adminSetStoreNetworkConfig (cf. storeNetworkConfigService.js).
+export async function getStoreNetworkConfig(storeId) {
+  try {
+    const snap = await getDoc(doc(db, 'storeNetworkConfig', storeId))
+    if (!snap.exists()) return null
+    return snap.data()
+  } catch {
+    return null
+  }
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Rapports — agrégation des demandes Dealer sur une période
 // ──────────────────────────────────────────────────────────────────────────────

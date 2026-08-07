@@ -6,6 +6,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import StatusBadge from '../../components/ui/StatusBadge'
 import { SkeletonTable } from '../../components/ui/SkeletonList'
+import StoreNetworkConfigEditor from './StoreNetworkConfigEditor'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Panneau de détail boutique
@@ -87,8 +88,10 @@ function StoreDetail({ store, onClose }) {
           <p className="text-sm text-gray-400">Soldes non disponibles.</p>
         )}
 
+        <StoreNetworkConfigEditor storeId={store.id} storeName={store.name} />
+
         <p className="mt-6 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-700">
-          La modification, la suspension ou la réactivation d'une boutique doit être effectuée par l'administrateur système. Cette vue est en lecture seule.
+          La suspension ou la réactivation d'une boutique doit être effectuée par l'administrateur système. Seule la configuration réseau ci-dessus est modifiable ici.
         </p>
       </div>
     </div>
