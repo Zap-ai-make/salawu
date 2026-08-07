@@ -20,6 +20,7 @@ import { withErrorHandling } from '../utils/errorHandler'
 import cacheManager, { cacheUtils } from '../utils/cacheManager'
 import { FIRESTORE_CONFIG } from '../constants/firestoreConstants'
 import { CLIENT_ID, getFirestoreCollectionPath } from '../config/clientIsolation'
+import { NETWORK_OPTIONS } from '../utils/constants'
 import { parseFcfaAmount } from '../utils/fcfaAmount.js'
 import {
   validateFcfaAmount as _validateFcfaAmountFn,
@@ -825,36 +826,46 @@ export class FirestoreService {
       throw new Error('Boutique active non disponible pour la création du client')
     }
 
-    // Anti-doublon : un même numéro/code agent (champ `orange`) ne peut être enregistré
-    // qu'une seule fois par boutique. On ignore les valeurs vides (champ facultatif).
-    // La collection `clients` est globale et isolée par `registeredStoreId` ⇒ on filtre
-    // sur les deux champs (deux égalités → aucun index composite requis).
-    const agentCode = String(clientData?.orange ?? '').trim()
-    if (agentCode) {
-      const existing = await this.getCollection(
-        FIRESTORE_CONFIG.COLLECTIONS.CLIENTS,
-        {
-          where: [
-            { field: 'orange', operator: '==', value: agentCode },
-            { field: 'registeredStoreId', operator: '==', value: activeStore.id },
-          ],
-          limitCount: 1,
-        },
-        false, // pas de cache : on veut l'état réel avant écriture
+    // Anti-doublon PAR RÉSEAU : pour chaque réseau au Code agent renseigné (clé plate
+    // client[réseau], ex. orange/moov/…), un même code ne peut être enregistré qu'une
+    // seule fois par boutique. Valeurs vides ignorées (champ facultatif). La collection
+    // `clients` est globale et isolée par `registeredStoreId` ⇒ on filtre sur les deux
+    // champs (deux égalités → aucun index composite requis). Requêtes parallèles.
+    const agentCodes = NETWORK_OPTIONS
+      .map((network) => ({ network, key: network.toLowerCase() }))
+      .map(({ network, key }) => ({ network, key, code: String(clientData?.[key] ?? '').trim() }))
+      .filter(({ code }) => code)
+
+    const dupResults = await Promise.all(
+      agentCodes.map(({ key, code }) =>
+        this.getCollection(
+          FIRESTORE_CONFIG.COLLECTIONS.CLIENTS,
+          {
+            where: [
+              { field: key, operator: '==', value: code },
+              { field: 'registeredStoreId', operator: '==', value: activeStore.id },
+            ],
+            limitCount: 1,
+          },
+          false, // pas de cache : on veut l'état réel avant écriture
+        )
       )
-      if (existing.length > 0) {
-        throw new Error('Un client avec ce numéro/code agent existe déjà dans cette boutique.')
-      }
+    )
+    const dupIndex = dupResults.findIndex((existing) => existing.length > 0)
+    if (dupIndex !== -1) {
+      const { network } = agentCodes[dupIndex]
+      throw new Error(`Un client avec ce code agent ${network} existe déjà dans cette boutique.`)
     }
+
+    // Codes réseau normalisés (trim) → cohérence avec l'anti-doublon ci-dessus dans le temps.
+    const normalizedCodes = Object.fromEntries(agentCodes.map(({ key, code }) => [key, code]))
 
     // Les champs d'appartenance à la boutique sont toujours imposés par le service
     // (jamais hérités des données du formulaire) pour aligner avec la règle Firestore :
     //   allow create: if ... request.resource.data.registeredStoreId == profile().storeId
     return this.addDocument(FIRESTORE_CONFIG.COLLECTIONS.CLIENTS, {
       ...clientData,
-      // On stocke le numéro/code agent normalisé (trim) pour que l'anti-doublon
-      // ci-dessus, qui compare la valeur trimmée, reste fiable dans le temps.
-      ...(clientData?.orange !== undefined ? { orange: agentCode } : {}),
+      ...normalizedCodes,
       registeredStoreId: activeStore.id,
       registeredStoreName: activeStore.name,
       dateAjout: new Date().toLocaleDateString('fr-FR')
