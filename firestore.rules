@@ -414,6 +414,23 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Config Boutique × Réseau — rôle de chaque boutique par réseau.
+    // Écriture EXCLUSIVEMENT via Cloud Function auditée (adminSetStoreNetworkConfig,
+    // system_manager). Lecture cloisonnée : gérant (tout), boutique (la sienne),
+    // dealer (préparation des collaborations inter-boutiques, Vague 2).
+    // ─────────────────────────────────────────────────────────────
+
+    match /storeNetworkConfig/{storeId} {
+      allow read: if isSystemManager() || isStoreAdmin(storeId) || isDealer();
+      allow create, update, delete: if false;
+    }
+
+    match /storeNetworkConfigAuditLogs/{logId} {
+      allow read: if isSystemManager();
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Données par boutique (V1)
     // ─────────────────────────────────────────────────────────────
 
