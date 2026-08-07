@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../hooks/useToast'
 import { getStorageKey } from '../config/clientIsolation'
+import { NETWORK_OPTIONS } from '../utils/constants'
 import Toast from './Toast'
 
+// Réseaux du client actif (profil) → clés minuscules. Ex. salawu : orange…wave ; TAOFIC : orange.
+const NETWORK_KEYS = NETWORK_OPTIONS.map((n) => n.toLowerCase())
+
+// Modèle vide : champs de base + un « Code agent » plat par réseau (client[réseau], pilote les
+// transactions — inchangé) + un map « numerosAgent » par réseau (Numéro agent, nouveau).
 const EMPTY_CLIENT_FORM = {
   nom: '',
   prenom: '',
   numeroIdentite: '',
   numeroPersonnel: '',
-  orange: '',
-  moov: '',
-  telecel: '',
-  coris: '',
-  sank: '',
+  ...Object.fromEntries(NETWORK_KEYS.map((k) => [k, ''])),
+  numerosAgent: Object.fromEntries(NETWORK_KEYS.map((k) => [k, ''])),
   localite: '',
   agentCommercial: ''
 }
@@ -24,13 +27,25 @@ const readClientFormDraft = () => {
 
   try {
     const draft = window.localStorage.getItem(CLIENT_FORM_DRAFT_KEY)
-    return draft ? { ...EMPTY_CLIENT_FORM, ...JSON.parse(draft) } : EMPTY_CLIENT_FORM
+    if (!draft) return EMPTY_CLIENT_FORM
+    const parsed = JSON.parse(draft)
+    return {
+      ...EMPTY_CLIENT_FORM,
+      ...parsed,
+      numerosAgent: { ...EMPTY_CLIENT_FORM.numerosAgent, ...(parsed.numerosAgent || {}) }
+    }
   } catch {
     return EMPTY_CLIENT_FORM
   }
 }
 
-const hasFormDraft = (data) => Object.values(data).some(value => String(value || '').trim())
+// Vrai si au moins une valeur (y compris dans le map numerosAgent) est non vide.
+const hasFormDraft = (data) => {
+  const values = Object.values(data).flatMap((v) =>
+    v && typeof v === 'object' ? Object.values(v) : [v]
+  )
+  return values.some((value) => String(value || '').trim())
+}
 
 function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' }) {
   const { toasts, showToast, removeToast } = useToast()
@@ -41,17 +56,20 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
   useEffect(() => {
     if (initialData) {
       setFormData({
+        ...EMPTY_CLIENT_FORM,
         nom: initialData.nom || '',
         prenom: initialData.prenom || '',
         numeroIdentite: initialData.numeroIdentite || '',
         numeroPersonnel: initialData.numeroPersonnel || '',
-        orange: initialData.orange || '',
-        moov: initialData.moov || '',
-        telecel: initialData.telecel || '',
-        coris: initialData.coris || '',
-        sank: initialData.sank || '',
         localite: initialData.localite || '',
-        agentCommercial: initialData.agentCommercial || ''
+        agentCommercial: initialData.agentCommercial || '',
+        // Code agent par réseau (clés plates existantes)
+        ...Object.fromEntries(NETWORK_KEYS.map((k) => [k, initialData[k] || ''])),
+        // Numéro agent par réseau (map)
+        numerosAgent: {
+          ...EMPTY_CLIENT_FORM.numerosAgent,
+          ...(initialData.numerosAgent || {})
+        }
       })
     }
   }, [initialData])
@@ -72,6 +90,15 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    // Champ imbriqué « numerosAgent.<reseau> » vs champ plat.
+    if (name.startsWith('numerosAgent.')) {
+      const key = name.slice('numerosAgent.'.length)
+      setFormData(prev => ({
+        ...prev,
+        numerosAgent: { ...prev.numerosAgent, [key]: value }
+      }))
+      return
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -80,7 +107,7 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     // Validation alignée sur validClient() de firestore.rules (nom/prenom : 2-50 caractères)
     if (!formData.nom || !formData.prenom) {
       showToast('Le nom et le prénom sont obligatoires', 'error')
@@ -184,17 +211,51 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Numéro agent / Code agent
-          </label>
-          <input
-            type="text"
-            name="orange"
-            value={formData.orange}
-            onChange={handleChange}
-            className={inputClasses}
-          />
+        {/* Codes agent par réseau : Numéro agent + Code agent (2 champs dédiés par réseau) */}
+        <div className="pt-1">
+          <h3 className="text-sm font-semibold text-gray-800 mb-2">
+            Comptes agent par réseau
+          </h3>
+          <div className="space-y-3">
+            {NETWORK_OPTIONS.map((network) => {
+              const key = network.toLowerCase()
+              return (
+                <fieldset key={key} className="rounded-lg border border-gray-200 p-3">
+                  <legend className="px-1 text-sm font-semibold text-gray-700">
+                    {network}
+                  </legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Numéro agent
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        name={`numerosAgent.${key}`}
+                        value={formData.numerosAgent?.[key] ?? ''}
+                        onChange={handleChange}
+                        className={inputClasses}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Code agent
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        name={key}
+                        value={formData[key] ?? ''}
+                        onChange={handleChange}
+                        className={inputClasses}
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+              )
+            })}
+          </div>
         </div>
 
         <div>
