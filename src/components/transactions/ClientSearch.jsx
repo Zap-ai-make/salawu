@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { NETWORK_OPTIONS } from '../../utils/constants'
 
 function ClientSearch({ clients, onClientSelect, selectedClient, onManualCodeChange, resetToken = 0 }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -23,13 +24,17 @@ function ClientSearch({ clients, onClientSelect, selectedClient, onManualCodeCha
 
       const nom = client.nom?.toLowerCase() || ''
       const prenom = client.prenom?.toLowerCase() || ''
-      const orange = client.orange?.toLowerCase() || ''
       const numeroPersonnel = client.numeroPersonnel?.toLowerCase() || ''
+      // Code agent + Numéro agent de chaque réseau du profil.
+      const networkValues = NETWORK_OPTIONS.flatMap((network) => {
+        const key = network.toLowerCase()
+        return [client[key], client.numerosAgent?.[key]]
+      }).map(v => String(v ?? '').toLowerCase())
 
       return nom.includes(term) ||
              prenom.includes(term) ||
-             orange.includes(term) ||
-             numeroPersonnel.includes(term)
+             numeroPersonnel.includes(term) ||
+             networkValues.some(v => v.includes(term))
     }).slice(0, 10)
   }, [clients, debouncedSearchTerm])
 
@@ -57,10 +62,12 @@ function ClientSearch({ clients, onClientSelect, selectedClient, onManualCodeCha
   }, [resetToken])
 
   const formatClientDisplay = (client) => {
-    const accounts = []
-    if (client.orange) accounts.push(`Code agent: ${client.orange}`)
-    
-    return `${client.nom} ${client.prenom} | ${accounts.join(' | ')}`
+    const accounts = NETWORK_OPTIONS
+      .map((network) => ({ network, code: client[network.toLowerCase()] }))
+      .filter(({ code }) => code)
+      .map(({ network, code }) => `${network}: ${code}`)
+    const suffix = accounts.length ? ` | ${accounts.join(' · ')}` : ''
+    return `${client.nom} ${client.prenom}${suffix}`
   }
 
   return (

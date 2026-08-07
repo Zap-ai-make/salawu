@@ -1,4 +1,14 @@
 import { parsefrenchDate } from '../../utils/helpers.js'
+import { NETWORK_OPTIONS } from '../../utils/constants'
+
+// Premier Code agent renseigné (tous réseaux), préfixé du réseau — aperçu compact du dashboard.
+const firstAgentCode = (client) => {
+  for (const network of NETWORK_OPTIONS) {
+    const code = client[network.toLowerCase()]
+    if (code) return `${network}: ${code}`
+  }
+  return '-'
+}
 
 function LastClientsTable({ clients = [] }) {
   // Prendre les 5 derniers clients
@@ -83,7 +93,7 @@ function LastClientsTable({ clients = [] }) {
                     {client.numeroPersonnel || '-'}
                   </td>
                   <td className="px-4 py-4 text-sm text-orange-600 font-medium">
-                    {client.orange || '-'}
+                    {firstAgentCode(client)}
                   </td>
                   <td className="px-4 py-4 text-sm text-gray-700">
                     {client.localite || '-'}

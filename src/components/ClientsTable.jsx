@@ -66,7 +66,7 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients }) {
       <div className="flex flex-wrap gap-4 mb-6">
         <input
           type="text"
-          placeholder="Rechercher nom, prénom, numéro/code agent, numéro personnel..."
+          placeholder="Rechercher nom, prénom, code/numéro agent (tous réseaux), numéro personnel..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1 min-w-64 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"

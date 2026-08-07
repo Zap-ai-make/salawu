@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { NETWORK_OPTIONS } from '../utils/constants'
 
 const TableRow = memo(({ client, index, onEdit }) => {
   return (
@@ -12,7 +13,20 @@ const TableRow = memo(({ client, index, onEdit }) => {
       <td className="border border-green-300 px-4 py-3 text-base">{client.prenom}</td>
       <td className="border border-green-300 px-4 py-3 text-base">{client.numeroIdentite}</td>
       <td className="border border-green-300 px-4 py-3 text-base">{client.numeroPersonnel}</td>
-      <td className="border border-green-300 px-4 py-3 text-base">{client.orange}</td>
+      {/* Un Code agent par réseau ; le Numéro agent (s'il existe) en info-bulle. */}
+      {NETWORK_OPTIONS.map((network) => {
+        const key = network.toLowerCase()
+        const numero = client.numerosAgent?.[key]
+        return (
+          <td
+            key={key}
+            title={numero ? `N° agent: ${numero}` : undefined}
+            className="border border-green-300 px-4 py-3 text-base"
+          >
+            {client[key]}
+          </td>
+        )
+      })}
       <td className="border border-green-300 px-4 py-3 text-base max-w-48 break-words">{client.localite}</td>
       <td className="border border-green-300 px-4 py-3 text-base">{client.agentCommercial}</td>
       <td className="border border-green-300 px-4 py-3 text-base">{client.dateAjout}</td>

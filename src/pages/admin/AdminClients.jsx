@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { listAllClients, listStoreOptions } from '../../services/adminService'
+import { NETWORK_OPTIONS } from '../../utils/constants'
 import PageHeader from '../../components/ui/PageHeader'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
@@ -81,7 +82,7 @@ function AdminClients() {
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Nom, prénom, téléphone ou code agent…"
+            placeholder="Nom, prénom, téléphone ou code agent (tous réseaux)…"
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
             aria-label="Rechercher dans la page courante"
             title="Recherche dans la page courante (25 résultats max)"
@@ -99,7 +100,7 @@ function AdminClients() {
         </select>
       </div>
 
-      {loading && <SkeletonTable rows={7} cols={5} />}
+      {loading && <SkeletonTable rows={7} cols={4 + NETWORK_OPTIONS.length} />}
       {error && <ErrorState message={error} onRetry={() => load(true)} />}
       {!loading && !error && clients.length === 0 && (
         <EmptyState title="Aucun agent" message="Aucun agent ne correspond aux critères sélectionnés." />
@@ -113,7 +114,9 @@ function AdminClients() {
                 <tr className="text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   <th className="px-4 py-3">Nom</th>
                   <th className="px-4 py-3">Prénom</th>
-                  <th className="px-4 py-3">Code agent</th>
+                  {NETWORK_OPTIONS.map(network => (
+                    <th key={network} className="px-4 py-3 whitespace-nowrap">Code {network}</th>
+                  ))}
                   <th className="px-4 py-3">Téléphone</th>
                   <th className="px-4 py-3">Boutique d'origine</th>
                 </tr>
@@ -123,7 +126,19 @@ function AdminClients() {
                   <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{c.nom ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{c.prenom ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap font-mono text-xs">{c.orange || '—'}</td>
+                    {NETWORK_OPTIONS.map(network => {
+                      const key = network.toLowerCase()
+                      const numero = c.numerosAgent?.[key]
+                      return (
+                        <td
+                          key={key}
+                          title={numero ? `N° agent: ${numero}` : undefined}
+                          className="px-4 py-3 text-gray-700 whitespace-nowrap font-mono text-xs"
+                        >
+                          {c[key] || '—'}
+                        </td>
+                      )
+                    })}
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap font-mono text-xs">{c.numeroPersonnel || '—'}</td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{c.registeredStoreName ?? '—'}</td>
                   </tr>

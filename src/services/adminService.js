@@ -37,6 +37,16 @@ import {
 import { db } from '../config/firebase'
 import { ADMIN_PAGE_SIZE } from '../constants/dealerConstants'
 import { shapeDealerInventory } from '../utils/dealerInventory'
+import { NETWORK_OPTIONS } from '../utils/constants'
+
+// Codes agent + numéros agent d'un client, tous réseaux confondus (pour la recherche).
+function clientAgentValues(client) {
+  if (!client) return []
+  return NETWORK_OPTIONS.flatMap((network) => {
+    const key = network.toLowerCase()
+    return [client[key], client.numerosAgent?.[key]]
+  })
+}
 
 const PAGE = ADMIN_PAGE_SIZE
 
@@ -351,7 +361,7 @@ export async function listAllClients({ lastDoc = null, search = '', storeId = ''
         c.nom?.toLowerCase().includes(q) ||
         c.prenom?.toLowerCase().includes(q) ||
         c.numeroPersonnel?.toLowerCase().includes(q) ||
-        c.orange?.toLowerCase().includes(q) ||             // code / numéro agent
+        clientAgentValues(c).some(v => String(v ?? '').toLowerCase().includes(q)) || // codes/numéros agent, tous réseaux
         c.registeredStoreName?.toLowerCase().includes(q)
       )
     }
@@ -406,12 +416,14 @@ export async function listConsolidatedHistory({ lastDoc = null, search = '', sto
       const q = search.trim().toLowerCase()
       records = records.filter(r => {
         const cn = [r.client?.prenom, r.client?.nom].filter(Boolean).join(' ').toLowerCase()
-        const code = String(r.code || r.client?.orange || '').toLowerCase()
+        const code = String(r.code || '').toLowerCase()
+        const clientCodes = clientAgentValues(r.client)
         return (
           r.clientId?.toLowerCase().includes(q) ||
           r.clientNom?.toLowerCase().includes(q) ||
           cn.includes(q) ||
           code.includes(q) ||
+          clientCodes.some(v => String(v ?? '').toLowerCase().includes(q)) ||
           r.storeName?.toLowerCase().includes(q) ||
           r.storeId?.toLowerCase().includes(q) ||
           r.nom?.toLowerCase().includes(q)
