@@ -93,6 +93,7 @@ describe('TC-036-WRA — exports callable de index.js', () => {
       'replenishDealerInventory',
       'decreaseDealerInventory',
       'createPartnerDeposit',
+      'adminSetStoreNetworkConfig',
     ])
     for (const key of Object.keys(indexModule)) {
       expect(
