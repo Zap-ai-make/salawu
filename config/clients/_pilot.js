@@ -71,6 +71,23 @@ export const pilotProfile = Object.freeze({
     networks: [...RESEAUX_SUPPORTES],
   }),
 
+  // ── Règles métier différenciées par réseau (déclaratif) ─────────────────────
+  // Défaut = le PLUS permissif / générique (opt-out) → n'altère AUCUN client
+  // existant. Aucun câblage comportemental ne lit encore ce champ (fondation posée
+  // pour la Vague 2). Un client restreint réseau par réseau dans son propre profil.
+  //   supplyMode              : 'dealer' | 'external_partner' — qui approvisionne le stock du réseau.
+  //   agentOperations         : opérations agent/boutique autorisées ⊂ ['deposit','withdrawal'].
+  //   allowStockReturn        : le stock du réseau peut-il être RETOURNÉ (agent→boutique / boutique→dealer) ?
+  //   allowUnregisteredAgents : transactions sans fiche client autorisées pour ce réseau ?
+  networkRules: Object.freeze({
+    Orange:  Object.freeze({ supplyMode: 'dealer', agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true, allowUnregisteredAgents: true }),
+    Moov:    Object.freeze({ supplyMode: 'dealer', agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true, allowUnregisteredAgents: true }),
+    Telecel: Object.freeze({ supplyMode: 'dealer', agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true, allowUnregisteredAgents: true }),
+    Coris:   Object.freeze({ supplyMode: 'dealer', agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true, allowUnregisteredAgents: true }),
+    Sank:    Object.freeze({ supplyMode: 'dealer', agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true, allowUnregisteredAgents: true }),
+    Wave:    Object.freeze({ supplyMode: 'dealer', agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true, allowUnregisteredAgents: true }),
+  }),
+
   // ── Régional ────────────────────────────────────────────────────────────────
   // Fuseau horaire de référence pour l'affichage/formatage des dates : fixe le
   // rendu quel que soit le fuseau du navigateur de l'utilisateur.
