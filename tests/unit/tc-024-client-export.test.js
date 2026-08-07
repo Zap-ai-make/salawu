@@ -30,6 +30,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { resolveClientStoreName, exportClientsToXLSM, parseWorksheetRows } from '../../src/utils/excelUtils.js'
 import { EXCEL_HEADERS } from '../../src/constants/index.js'
+import { NETWORK_OPTIONS } from '../../src/utils/constants.js'
+
+// Index d'une colonne par son libellé (robuste à la disposition dynamique par réseau).
+const col = (label) => EXCEL_HEADERS.indexOf(label)
+// En-têtes réseau attendus (Code + Numéro par réseau du profil de test).
+const NETWORK_HEADERS = NETWORK_OPTIONS.flatMap((n) => [`Code agent ${n}`, `Numéro agent ${n}`])
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -164,18 +170,18 @@ describe('EXCEL_HEADERS', () => {
     expect(EXCEL_HEADERS[0]).toBe('Boutique')
   })
 
-  it('contient 9 colonnes (Boutique + 8 champs client)', () => {
-    expect(EXCEL_HEADERS).toHaveLength(9)
+  it('contient les colonnes de base + 2 par réseau (Code + Numéro)', () => {
+    expect(EXCEL_HEADERS).toHaveLength(8 + 2 * NETWORK_OPTIONS.length)
   })
 
-  it('ordre exact des colonnes', () => {
+  it('ordre exact des colonnes (colonnes réseau après Numéro personnel)', () => {
     expect(EXCEL_HEADERS).toEqual([
       'Boutique',
       'Nom',
       'Prénom',
       "Numéro d'identité",
       'Numéro personnel',
-      'Numéro agent / Code agent',
+      ...NETWORK_HEADERS,
       'Localité',
       'Agent commercial',
       "Date d'ajout",
@@ -300,28 +306,28 @@ describe('exportClientsToXLSM — mapping des données', () => {
     expect(String(rows[1][4])).toMatch(/^0/)
   })
 
-  it('colonne Orange / Code agent (index 5) non altérée', async () => {
+  it('colonne Code agent Orange non altérée', async () => {
     await exportClientsToXLSM([validClient], 'test', storesById)
     const rows = XLSX.__getCapturedRows()
-    expect(rows[1][5]).toBe(validClient.orange)
+    expect(rows[1][col('Code agent Orange')]).toBe(validClient.orange)
   })
 
-  it('colonne Localité (index 6) non altérée', async () => {
+  it('colonne Localité non altérée', async () => {
     await exportClientsToXLSM([validClient], 'test', storesById)
     const rows = XLSX.__getCapturedRows()
-    expect(rows[1][6]).toBe(validClient.localite)
+    expect(rows[1][col('Localité')]).toBe(validClient.localite)
   })
 
-  it('colonne Agent commercial (index 7) non altérée', async () => {
+  it('colonne Agent commercial non altérée', async () => {
     await exportClientsToXLSM([validClient], 'test', storesById)
     const rows = XLSX.__getCapturedRows()
-    expect(rows[1][7]).toBe(validClient.agentCommercial)
+    expect(rows[1][col('Agent commercial')]).toBe(validClient.agentCommercial)
   })
 
-  it('colonne Date ajout (index 8) non altérée', async () => {
+  it('colonne Date ajout non altérée', async () => {
     await exportClientsToXLSM([validClient], 'test', storesById)
     const rows = XLSX.__getCapturedRows()
-    expect(rows[1][8]).toBe(validClient.dateAjout)
+    expect(rows[1][col("Date d'ajout")]).toBe(validClient.dateAjout)
   })
 
   it('nom de la feuille reste "Clients"', async () => {
@@ -360,9 +366,9 @@ describe('exportClientsToXLSM — mapping des données', () => {
     expect(rows[1][0]).toBe('AKAYIS KOUPELA')
   })
 
-  it('largeur des colonnes = 9 entrées (une par colonne)', () => {
-    // Vérification indirecte : EXCEL_HEADERS a 9 entrées, donc !cols aura 9 entrées
-    expect(EXCEL_HEADERS).toHaveLength(9)
+  it('largeur des colonnes = une par colonne (base + 2 par réseau)', () => {
+    // Vérification indirecte : !cols suit EXCEL_HEADERS (base + 2 colonnes par réseau)
+    expect(EXCEL_HEADERS).toHaveLength(8 + 2 * NETWORK_OPTIONS.length)
   })
 })
 
@@ -424,11 +430,11 @@ describe('exportClientsToXLSM — champs numériques exportés comme texte', () 
     expect(String(rows[1][4])).toMatch(/^0/)
   })
 
-  it('orange/Code agent "0012" avec zéro initial — préservé en colonne 5', async () => {
+  it('orange/Code agent "0012" avec zéro initial — préservé (Code agent Orange)', async () => {
     const client = { ...validClient, orange: '0012' }
     await exportClientsToXLSM([client], 'test', storesById)
     const rows = XLSX.__getCapturedRows()
-    expect(String(rows[1][5])).toBe('0012')
+    expect(String(rows[1][col('Code agent Orange')])).toBe('0012')
   })
 
   it('numeroIdentite "BF0123456" — préservé en colonne 3', async () => {
@@ -445,11 +451,11 @@ describe('exportClientsToXLSM — champs numériques exportés comme texte', () 
     expect(rows[1][4]).toBe('')
   })
 
-  it('orange undefined → chaîne vide en colonne 5', async () => {
+  it('orange undefined → chaîne vide (Code agent Orange)', async () => {
     const client = { ...validClient, orange: undefined }
     await exportClientsToXLSM([client], 'test', storesById)
     const rows = XLSX.__getCapturedRows()
-    expect(rows[1][5]).toBe('')
+    expect(rows[1][col('Code agent Orange')]).toBe('')
   })
 })
 
@@ -1041,6 +1047,29 @@ describe('Test circulaire export → parseWorksheetRows', () => {
     expect(result.success).toBe(true)
     expect(result.clients[0].numeroPersonnel).toBe('0070001234')
     expect(result.clients[0].orange).toBe('00123')
+  })
+
+  it('Numéro agent (numerosAgent) round-trip export → import', async () => {
+    const clients = [
+      {
+        id: 'client-num-1',
+        registeredStoreName: 'AKAYIS KOUPELA',
+        registeredStoreId: 'store-abc',
+        nom: 'BAMBARA',
+        prenom: 'Awa',
+        orange: 'AG777',
+        numerosAgent: { orange: '77012345' },
+        dateAjout: '2024-01-01',
+      }
+    ]
+    await exportClientsToXLSM(clients, 'test-num', storesById)
+    const capturedRows = XLSX.__getCapturedRows()
+    const result = parseWorksheetRows(capturedRows)
+
+    expect(result.success).toBe(true)
+    const imported = result.clients[0]
+    expect(imported.orange).toBe('AG777')                 // Code agent (clé plate)
+    expect(imported.numerosAgent).toEqual({ orange: '77012345' }) // Numéro agent réassemblé
   })
 
   it('client sans boutique dans le cycle export/import', async () => {

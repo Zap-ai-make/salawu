@@ -1,5 +1,9 @@
 import { EXCEL_HEADERS } from '../constants'
 import { CLIENT_ID } from '../config/clientIsolation'
+import { NETWORK_OPTIONS } from './constants'
+
+// Clés plates des Code agent par réseau (client.orange, client.moov, …).
+const NETWORK_KEYS = NETWORK_OPTIONS.map((n) => n.toLowerCase())
 
 // ---------------------------------------------------------------------------
 // Détection d'en-têtes — import robuste
@@ -40,12 +44,21 @@ const HEADER_ALIASES = {
   'numero personnel': 'numeroPersonnel',
   'telephone': 'numeroPersonnel',
   'tel': 'numeroPersonnel',
-  // Numéro agent / Code agent → champ 'orange' dans le modèle client
+  // Legacy mono-réseau : « Numéro agent / Code agent » → champ 'orange'
   'numero agent / code agent': 'orange',
   'numero agent': 'orange',
   'code agent': 'orange',
   'agent': 'orange',
   'orange': 'orange',
+  // Par réseau : « Code agent ‹Réseau› » → clé plate ; « Numéro agent ‹Réseau› » → numerosAgent.<clé>
+  ...Object.fromEntries(NETWORK_OPTIONS.flatMap((network) => {
+    const key = network.toLowerCase()
+    const nn = normalizeHeader(network)
+    return [
+      [`code agent ${nn}`, key],
+      [`numero agent ${nn}`, `numerosAgent.${key}`],
+    ]
+  })),
   // Localité
   'localite': 'localite',
   'locality': 'localite',
@@ -76,6 +89,13 @@ const FIELD_LABELS = {
   'agentCommercial': 'Agent commercial',
   'dateAjout': "Date d'ajout",
   '_boutique_ignored': 'Boutique',
+  ...Object.fromEntries(NETWORK_OPTIONS.flatMap((network) => {
+    const key = network.toLowerCase()
+    return [
+      [key, `Code agent ${network}`],
+      [`numerosAgent.${key}`, `Numéro agent ${network}`],
+    ]
+  })),
 }
 
 function getFieldLabel(field) {
@@ -203,6 +223,18 @@ export function parseWorksheetRows(jsonData) {
       client[field] = normalizeCell(rawValue)
     })
 
+    // Réassembler les champs Numéro agent (clés pointées « numerosAgent.<reseau> ») importés
+    // à plat en objet imbriqué client.numerosAgent = { <reseau>: … }.
+    const numerosAgent = {}
+    for (const k of Object.keys(client)) {
+      if (!k.startsWith('numerosAgent.')) continue
+      const netKey = k.slice('numerosAgent.'.length)
+      const val = String(client[k] ?? '').trim()
+      if (val) numerosAgent[netKey] = val
+      delete client[k]
+    }
+    if (Object.keys(numerosAgent).length > 0) client.numerosAgent = numerosAgent
+
     // Garantie de sécurité : ces champs ne doivent jamais venir du fichier
     delete client.registeredStoreId
     delete client.registeredStoreName
@@ -297,7 +329,11 @@ export const exportClientsToXLSM = async (clients, filename = `clients_${CLIENT_
       client.prenom,
       forceText(client.numeroIdentite),
       forceText(client.numeroPersonnel),
-      forceText(client.orange),
+      // Par réseau : Code agent (clé plate) + Numéro agent (map numerosAgent)
+      ...NETWORK_KEYS.flatMap((key) => [
+        forceText(client[key]),
+        forceText(client.numerosAgent?.[key])
+      ]),
       client.localite,
       client.agentCommercial,
       client.dateAjout
@@ -309,14 +345,14 @@ export const exportClientsToXLSM = async (clients, filename = `clients_${CLIENT_
     // Créer une nouvelle feuille de calcul
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
 
-    // Définir la largeur des colonnes pour une meilleure lisibilité
+    // Définir la largeur des colonnes pour une meilleure lisibilité (2 colonnes par réseau)
     worksheet['!cols'] = [
       { width: 22 }, // Boutique
       { width: 15 }, // Nom
       { width: 15 }, // Prénom
       { width: 20 }, // Numéro d'identité
       { width: 18 }, // Numéro personnel
-      { width: 12 }, // Orange
+      ...NETWORK_KEYS.flatMap(() => [{ width: 16 }, { width: 16 }]), // Code + Numéro par réseau
       { width: 30 }, // Localité
       { width: 20 }, // Agent commercial
       { width: 15 }  // Date d'ajout
