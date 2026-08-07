@@ -56,6 +56,9 @@ export const HTTP_CODES = {
   INSUFFICIENT_DEALER_BALANCE:  'failed-precondition',
   // Dépôt partenaire (sous-dealer hors boîte)
   INVALID_PARTNER:              'invalid-argument',
+  // Config Boutique × Réseau
+  INVALID_STORE_ID:             'invalid-argument',
+  INVALID_NETWORK_CONFIG:       'invalid-argument',
 }
 
 export class DealerRequestError extends Error {
