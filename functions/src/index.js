@@ -32,6 +32,7 @@ import { createPartnerDepositHandler } from './storeTransfers/createPartnerDepos
 import { setStoreNetworkConfigHandler } from './storeNetworkConfig/setStoreNetworkConfig.js'
 import { createStoreCollaborationHandler } from './collaborations/createStoreCollaboration.js'
 import { confirmStoreCollaborationHandler } from './collaborations/confirmStoreCollaboration.js'
+import { rejectStoreCollaborationHandler } from './collaborations/rejectStoreCollaboration.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
 // dans les tests d'intégration (TC-036) qui s'exécutent après TC-035 dans le même processus.
@@ -117,4 +118,9 @@ export const createStoreCollaboration = onCall(
 export const confirmStoreCollaboration = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
   wrapCallable(confirmStoreCollaborationHandler, deps)
+)
+
+export const rejectStoreCollaboration = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(rejectStoreCollaborationHandler, deps)
 )
