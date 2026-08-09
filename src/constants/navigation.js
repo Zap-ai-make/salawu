@@ -1,3 +1,10 @@
+import { activeProfile } from '../config/activeClientProfile.js'
+
+// Collaborations inter-boutiques : pertinentes uniquement en multi-réseaux (une
+// boutique sans SIM sur un réseau s'appuie sur une autre). En mono-réseau (ex.
+// TAOFIC) → items masqués, navigation strictement inchangée (non-régression).
+const IS_MULTI_NETWORK = (activeProfile?.networks?.enabled?.length ?? 0) > 1
+
 export const NAV_ITEMS = [
   { name: 'Tableau de bord', path: '/' },
   { name: 'Clients', path: '/clients' },
@@ -5,6 +12,10 @@ export const NAV_ITEMS = [
   { name: 'Historique', path: '/historique' },
   { name: 'Formulaire', path: '/formulaire' },
   { name: 'Demandes Dealer', path: '/dealer-requests' },
+  ...(IS_MULTI_NETWORK ? [
+    { name: 'Collaborations', path: '/store/collaborations' },
+    { name: 'Dettes internes', path: '/store/debts' },
+  ] : []),
   { name: 'Profil', path: '/profil' }
 ]
 

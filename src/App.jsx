@@ -26,6 +26,9 @@ import Formulaire from './pages/Formulaire'
 import Profil from './pages/Profil'
 import StoreAdminDealerRequests from './pages/store/StoreAdminDealerRequests.jsx'
 import StoreAdminDealerRequestDetails from './pages/store/StoreAdminDealerRequestDetails.jsx'
+import StoreCollaborations from './pages/store/StoreCollaborations.jsx'
+import StoreCollaborationNew from './pages/store/StoreCollaborationNew.jsx'
+import StoreInternalDebts from './pages/store/StoreInternalDebts.jsx'
 
 // Pages Admin (system_manager)
 import AdminDashboard from './pages/admin/AdminDashboard.jsx'
@@ -118,6 +121,9 @@ export function AppContent() {
         <Route path="/dealer-requests" element={<StoreAdminDealerRequests />} />
         <Route path="/dealer-requests/:requestId" element={<StoreAdminDealerRequestDetails />} />
         <Route path="/store/closures" element={<StoreAdminClosures />} />
+        <Route path="/store/collaborations" element={<StoreCollaborations />} />
+        <Route path="/store/collaborations/new" element={<StoreCollaborationNew />} />
+        <Route path="/store/debts" element={<StoreInternalDebts />} />
       </Route>
 
       {/* ── Espace Admin (system_manager) ────────────────────────────────── */}
