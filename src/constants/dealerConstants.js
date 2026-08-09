@@ -53,3 +53,51 @@ export const STORE_TRANSFER_TYPE_LABELS = Object.freeze({
 })
 
 export const STORE_TRANSFERS_PAGE_SIZE = 20
+
+// ── Collaborations inter-boutiques + dettes internes (Vague 2) ───────────────
+export const COLLAB_OPERATION_TYPES = Object.freeze({
+  DEPOSIT: 'deposit',
+  WITHDRAWAL: 'withdrawal',
+})
+
+export const COLLAB_OPERATION_TYPE_LABELS = Object.freeze({
+  deposit: 'Dépôt',
+  withdrawal: 'Retrait',
+})
+
+export const COLLAB_STATUS_LABELS = Object.freeze({
+  pending: 'En attente',
+  confirmed: 'Confirmée',
+  rejected: 'Rejetée',
+})
+
+export const DEBT_STATUS_LABELS = Object.freeze({
+  open: 'Ouverte',
+  partially_settled: 'Partiellement réglée',
+  settled: 'Réglée',
+})
+
+export const DEBT_SETTLEMENT_METHODS = Object.freeze({
+  ESPECES: 'especes',
+  DEPOT_BANCAIRE: 'depot_bancaire',
+  TRANSFERT: 'transfert',
+  COMPENSATION: 'compensation',
+  RETOUR_STOCK: 'retour_stock',
+})
+
+export const DEBT_SETTLEMENT_METHOD_LABELS = Object.freeze({
+  especes: 'Espèces',
+  depot_bancaire: 'Dépôt bancaire',
+  transfert: 'Transfert',
+  compensation: 'Compensation',
+  retour_stock: 'Retour de stock',
+})
+
+export const DEBT_SETTLEMENT_STATUS_LABELS = Object.freeze({
+  declared: 'Déclaré',
+  confirmed: 'Confirmé',
+  rejected: 'Rejeté',
+})
+
+export const COLLABORATIONS_PAGE_SIZE = 20
+export const INTERNAL_DEBTS_PAGE_SIZE = 20
