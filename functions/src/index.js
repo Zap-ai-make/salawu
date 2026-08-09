@@ -36,6 +36,7 @@ import { rejectStoreCollaborationHandler } from './collaborations/rejectStoreCol
 import { declareInternalDebtSettlementHandler } from './collaborations/declareInternalDebtSettlement.js'
 import { confirmInternalDebtSettlementHandler } from './collaborations/confirmInternalDebtSettlement.js'
 import { rejectInternalDebtSettlementHandler } from './collaborations/rejectInternalDebtSettlement.js'
+import { listStoreCollaborationProvidersHandler } from './collaborations/listStoreCollaborationProviders.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
 // dans les tests d'intégration (TC-036) qui s'exécutent après TC-035 dans le même processus.
@@ -141,4 +142,9 @@ export const confirmInternalDebtSettlement = onCall(
 export const rejectInternalDebtSettlement = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
   wrapCallable(rejectInternalDebtSettlementHandler, deps)
+)
+
+export const listStoreCollaborationProviders = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(listStoreCollaborationProvidersHandler, deps)
 )

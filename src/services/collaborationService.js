@@ -102,6 +102,12 @@ export async function rejectStoreCollaboration(collaborationId, rejectionReason)
   return call('rejectStoreCollaboration', { collaborationId: id, rejectionReason: reason })
 }
 
+/** Boutique demandeuse : annuaire des fournisseurs éligibles pour un réseau. */
+export async function listStoreCollaborationProviders(network) {
+  const data = await call('listStoreCollaborationProviders', { network })
+  return data?.providers ?? []
+}
+
 // ── Commandes règlement de dette ─────────────────────────────────────────────
 
 /** Boutique débitrice : déclare une tranche de règlement (idempotent). */
