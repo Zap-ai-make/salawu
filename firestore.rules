@@ -443,6 +443,26 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Dettes internes entre boutiques (Vague 2) — écritures CF-only.
+    // Lecture cloisonnée : boutique débitrice, boutique créancière, gérant.
+    // Les tranches de règlement dénormalisent debtor/creditor → pas de get() du parent.
+    // ─────────────────────────────────────────────────────────────
+
+    match /internalDebts/{debtId} {
+      allow read: if isStoreAdmin(resource.data.debtorStoreId)
+                  || isStoreAdmin(resource.data.creditorStoreId)
+                  || isSystemManager();
+      allow create, update, delete: if false;
+
+      match /settlements/{settlementId} {
+        allow read: if isStoreAdmin(resource.data.debtorStoreId)
+                    || isStoreAdmin(resource.data.creditorStoreId)
+                    || isSystemManager();
+        allow write: if false;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Données par boutique (V1)
     // ─────────────────────────────────────────────────────────────
 
