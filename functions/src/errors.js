@@ -63,6 +63,7 @@ export const HTTP_CODES = {
   INVALID_OPERATION_TYPE:       'invalid-argument',
   INVALID_COLLABORATION_AMOUNT: 'invalid-argument',
   INVALID_COLLABORATION_ID:     'invalid-argument',
+  INVALID_COLLABORATION_NETWORK:'invalid-argument',
   SAME_STORE_COLLABORATION:     'failed-precondition',
   CLIENT_NOT_FOUND:             'not-found',
   SUPPLIER_STORE_NOT_FOUND:     'not-found',

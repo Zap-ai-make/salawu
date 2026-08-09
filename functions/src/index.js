@@ -30,6 +30,7 @@ import { replenishDealerInventoryHandler } from './storeTransfers/replenishDeale
 import { decreaseDealerInventoryHandler } from './storeTransfers/decreaseDealerInventory.js'
 import { createPartnerDepositHandler } from './storeTransfers/createPartnerDeposit.js'
 import { setStoreNetworkConfigHandler } from './storeNetworkConfig/setStoreNetworkConfig.js'
+import { createStoreCollaborationHandler } from './collaborations/createStoreCollaboration.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
 // dans les tests d'intégration (TC-036) qui s'exécutent après TC-035 dans le même processus.
@@ -105,4 +106,9 @@ export const createPartnerDeposit = onCall(
 export const adminSetStoreNetworkConfig = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
   wrapCallable(setStoreNetworkConfigHandler, deps)
+)
+
+export const createStoreCollaboration = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(createStoreCollaborationHandler, deps)
 )
