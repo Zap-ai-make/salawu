@@ -63,10 +63,10 @@ describe('TC-099-SALAWU — valeurs réelles du profil ESAHAF', () => {
     expect(s.areUnregisteredAgentsAllowed('Orange')).toBe(false)
   })
 
-  it('Moov = dépôt uniquement, jamais de retour de stock', async () => {
+  it('Moov = dépôt ET retrait client, mais jamais de retour de stock au dealer', async () => {
     const s = await loadSelectors(salawuProfile)
     expect(s.isAgentOperationAllowed('Moov', 'deposit')).toBe(true)
-    expect(s.isAgentOperationAllowed('Moov', 'withdrawal')).toBe(false)
+    expect(s.isAgentOperationAllowed('Moov', 'withdrawal')).toBe(true)
     expect(s.isStockReturnAllowed('Moov')).toBe(false)
   })
 

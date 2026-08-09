@@ -61,12 +61,13 @@ export const salawuProfile = Object.freeze({
   // Le spread écrase le champ ENTIER (pas de merge profond) → les 6 réseaux sont
   // redéclarés explicitement. Déclaratif : aucun enforcement en Vague 1.
   //   • Orange  : sous-dealer alimenté par un partenaire externe (saisie manuelle Gérant).
-  //   • Moov    : « Envoi de stock uniquement ; jamais de retour de stock Moov de l'agent »
-  //               → agentOperations ['deposit'] + allowStockReturn false.
+  //   • Moov    : « jamais de retour de stock Moov » → allowStockReturn false (bloque le
+  //               retour de stock boutique→dealer). Dépôt ET retrait client restent possibles
+  //               (sémantique validée client 2026-08-09).
   //   • Non enregistrés autorisés UNIQUEMENT pour Moov (Dealer de zone) et Wave (Assistant).
   networkRules: Object.freeze({
     Orange:  Object.freeze({ supplyMode: 'external_partner', agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true,  allowUnregisteredAgents: false }),
-    Moov:    Object.freeze({ supplyMode: 'dealer',           agentOperations: ['deposit'],               allowStockReturn: false, allowUnregisteredAgents: true }),
+    Moov:    Object.freeze({ supplyMode: 'dealer',           agentOperations: ['deposit', 'withdrawal'], allowStockReturn: false, allowUnregisteredAgents: true }),
     Telecel: Object.freeze({ supplyMode: 'dealer',           agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true,  allowUnregisteredAgents: false }),
     Coris:   Object.freeze({ supplyMode: 'dealer',           agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true,  allowUnregisteredAgents: false }),
     Sank:    Object.freeze({ supplyMode: 'dealer',           agentOperations: ['deposit', 'withdrawal'], allowStockReturn: true,  allowUnregisteredAgents: false }),
