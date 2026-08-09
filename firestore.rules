@@ -431,6 +431,18 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Collaborations inter-boutiques (Vague 2) — écritures CF-only.
+    // Lecture cloisonnée : boutique demandeuse, boutique fournisseuse, gérant.
+    // ─────────────────────────────────────────────────────────────
+
+    match /storeCollaborations/{collabId} {
+      allow read: if isStoreAdmin(resource.data.requestingStoreId)
+                  || isStoreAdmin(resource.data.supplierStoreId)
+                  || isSystemManager();
+      allow create, update, delete: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Données par boutique (V1)
     // ─────────────────────────────────────────────────────────────
 
