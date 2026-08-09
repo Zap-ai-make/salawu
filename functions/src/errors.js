@@ -59,6 +59,18 @@ export const HTTP_CODES = {
   // Config Boutique × Réseau
   INVALID_STORE_ID:             'invalid-argument',
   INVALID_NETWORK_CONFIG:       'invalid-argument',
+  // Collaborations inter-boutiques
+  INVALID_OPERATION_TYPE:       'invalid-argument',
+  INVALID_COLLABORATION_AMOUNT: 'invalid-argument',
+  INVALID_COLLABORATION_ID:     'invalid-argument',
+  SAME_STORE_COLLABORATION:     'failed-precondition',
+  CLIENT_NOT_FOUND:             'not-found',
+  SUPPLIER_STORE_NOT_FOUND:     'not-found',
+  SUPPLIER_NOT_PROVIDER:        'failed-precondition',
+  INSUFFICIENT_SUPPLIER_BALANCE:'failed-precondition',
+  COLLABORATION_NOT_FOUND:      'not-found',
+  COLLABORATION_NOT_PENDING:    'failed-precondition',
+  COLLABORATION_STORE_MISMATCH: 'permission-denied',
 }
 
 export class DealerRequestError extends Error {
