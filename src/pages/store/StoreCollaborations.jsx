@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import PageHeader from '../../components/ui/PageHeader'
+import CollaborationFormModal from '../../components/store/CollaborationFormModal'
 import {
   subscribeIncomingCollaborations,
   subscribeOutgoingCollaborations,
@@ -48,13 +48,13 @@ function StatusBadge({ status }) {
 function StoreCollaborations() {
   const { userProfile } = useAuth()
   const storeId = userProfile?.storeId ?? null
-  const navigate = useNavigate()
 
   const [incoming, setIncoming] = useState([])
   const [outgoing, setOutgoing] = useState([])
   const [error, setError] = useState(null)
   const [actioning, setActioning] = useState(null)
   const [rejectId, setRejectId] = useState(null)
+  const [showNew, setShowNew] = useState(false)
 
   useEffect(() => {
     if (!storeId) return undefined
@@ -79,7 +79,7 @@ function StoreCollaborations() {
         title="Collaborations"
         subtitle="Servir un client via une autre boutique, ou exécuter les demandes reçues"
         actions={
-          <button type="button" onClick={() => navigate('/store/collaborations/new')}
+          <button type="button" onClick={() => setShowNew(true)}
             className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
             Nouvelle collaboration
           </button>
@@ -134,6 +134,12 @@ function StoreCollaborations() {
       </section>
 
       {rejectId && <RejectModal onSubmit={handleReject} onClose={() => setRejectId(null)} />}
+      {showNew && (
+        <CollaborationFormModal
+          onClose={() => setShowNew(false)}
+          onCreated={() => setShowNew(false)}
+        />
+      )}
     </div>
   )
 }
