@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 const ORANGE = { tableHeader: 'bg-orange-100/80 border-orange-300', text: 'text-gray-900' }
 
@@ -148,13 +148,22 @@ describe('TC-119 — onglet Opération dealer', () => {
   })
 })
 
+/** Bascule vers le sous-onglet « Reçues (à exécuter) » (défaut : Mes demandes). */
+const showIncoming = () => fireEvent.click(screen.getByTestId('collab-subtab-incoming'))
+
 describe('TC-119 — onglet Collaborations', () => {
-  it('rend deux tableaux teintés, vides mais visibles', () => {
+  it('rend un tableau teinté par sous-onglet, vide mais visible', () => {
     const { container } = render(<StoreCollaborations embedded />)
     assertNoHardcodedGreen(container)
-    expect(container.querySelectorAll('table')).toHaveLength(2)
-    const empties = [...container.querySelectorAll('td[colspan="7"]')].map(td => td.textContent)
-    expect(empties).toEqual(['Aucune collaboration en attente.', 'Aucune demande envoyée.'])
+    assertThemedGrid(container)
+    expect(container.querySelectorAll('table')).toHaveLength(1)
+    expect(container.querySelector('td[colspan="7"]').textContent).toBe('Aucune demande envoyée.')
+
+    showIncoming()
+    assertNoHardcodedGreen(container)
+    assertThemedGrid(container)
+    expect(container.querySelectorAll('table')).toHaveLength(1)
+    expect(container.querySelector('td[colspan="7"]').textContent).toBe('Aucune collaboration en attente.')
   })
 
   it('rend une ligne par collaboration reçue, avec ses actions', () => {
@@ -167,6 +176,7 @@ describe('TC-119 — onglet Collaborations', () => {
       return vi.fn()
     })
     const { container } = render(<StoreCollaborations embedded />)
+    showIncoming()
     assertNoHardcodedGreen(container)
     expect(screen.getByText('ESAHAF POUYTENGA')).toBeInTheDocument()
     expect(screen.getByText('Diallo Ali')).toBeInTheDocument()
@@ -174,7 +184,7 @@ describe('TC-119 — onglet Collaborations', () => {
     expect(screen.getByRole('button', { name: 'Confirmer' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Rejeter' })).toBeInTheDocument()
     // Le tableau des reçues a 7 colonnes, la ligne vide n'y est plus.
-    expect(container.querySelectorAll('table')[0].querySelectorAll('tbody td')).toHaveLength(7)
+    expect(container.querySelector('table').querySelectorAll('tbody td')).toHaveLength(7)
   })
 
   it('affiche le statut des demandes sortantes via le badge partagé', () => {
@@ -202,7 +212,7 @@ describe('TC-119 — onglet Collaborations', () => {
       return vi.fn()
     })
     const { container } = render(<StoreCollaborations embedded />)
-    const firstCell = container.querySelectorAll('table')[1].querySelector('tbody td')
+    const firstCell = container.querySelector('table').querySelector('tbody td')
     expect(firstCell.textContent).toBe('—')
   })
 })

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
 import PageHeader from '../../components/ui/PageHeader'
 import StatusBadge from '../../components/ui/StatusBadge'
+import { tabButtonClass, TabBadge } from '../../components/ui/Tabs.jsx'
 import { themedTableClasses } from '../../components/ui/themedTable.js'
 import CollaborationFormModal from '../../components/store/CollaborationFormModal'
 import {
@@ -55,6 +56,10 @@ function StoreCollaborations({ embedded = false }) {
   const tbl = themedTableClasses(themeClasses)
   const storeId = userProfile?.storeId ?? null
 
+  // « Mes demandes » par défaut : c'est l'écran de la boutique qui sollicite, le
+  // geste courant. Les reçues restent signalées par leur pastille rouge, et par
+  // celle de l'onglet parent Collaborations.
+  const [tab, setTab] = useState('outgoing')
   const [incoming, setIncoming] = useState([])
   const [outgoing, setOutgoing] = useState([])
   const [error, setError] = useState(null)
@@ -103,9 +108,26 @@ function StoreCollaborations({ embedded = false }) {
 
       {error &&<p className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
 
+      {/* Basculeur : les deux abonnements restent montés, les pastilles vivent
+          donc même quand leur tableau n'est pas affiché. */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button type="button" aria-pressed={tab === 'outgoing'} className={tabButtonClass(tab === 'outgoing')}
+          onClick={() => setTab('outgoing')} data-testid="collab-subtab-outgoing">
+          Mes demandes
+          <TabBadge count={outgoing.length} active={tab === 'outgoing'} testId="collab-subtab-outgoing-badge"
+            label={`${outgoing.length} demande${outgoing.length > 1 ? 's' : ''} envoyée${outgoing.length > 1 ? 's' : ''}`} />
+        </button>
+        <button type="button" aria-pressed={tab === 'incoming'} className={tabButtonClass(tab === 'incoming')}
+          onClick={() => setTab('incoming')} data-testid="collab-subtab-incoming">
+          Reçues (à exécuter)
+          <TabBadge count={incoming.length} tone="alert" active={tab === 'incoming'} testId="collab-subtab-incoming-badge"
+            label={`${incoming.length} collaboration${incoming.length > 1 ? 's' : ''} à exécuter`} />
+        </button>
+      </div>
+
       {/* Entrantes à confirmer */}
-      <section className="mb-8">
-        <h2 className={tbl.title}>Reçues (à exécuter) — {incoming.length}</h2>
+      {tab === 'incoming' && (
+      <section>
         <div className={tbl.container}>
           <div className={tbl.scroll}>
             <table className="w-full border-collapse">
@@ -150,10 +172,11 @@ function StoreCollaborations({ embedded = false }) {
           </div>
         </div>
       </section>
+      )}
 
       {/* Sortantes */}
+      {tab === 'outgoing' && (
       <section>
-        <h2 className={tbl.title}>Mes demandes — {outgoing.length}</h2>
         <div className={tbl.container}>
           <div className={tbl.scroll}>
             <table className="w-full border-collapse">
@@ -193,6 +216,7 @@ function StoreCollaborations({ embedded = false }) {
           </div>
         </div>
       </section>
+      )}
 
       {rejectId && <RejectModal onSubmit={handleReject} onClose={() => setRejectId(null)} />}
       {showNew && (
