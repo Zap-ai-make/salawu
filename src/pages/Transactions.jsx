@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '../hooks/useClients'
+import { useAuth } from '../context/AuthContext.jsx'
 import { IS_MULTI_NETWORK } from '../constants/navigation'
+import { subscribeIncomingCollaborationsCount } from '../services/collaborationService'
 import TransactionForm from '../components/transactions/TransactionForm'
 import TransactionTable from '../components/transactions/TransactionTable'
 import DealerTransferForm from '../components/transactions/DealerTransferForm'
@@ -11,6 +14,19 @@ const MODES = ['client', 'dealer', 'collaborations']
 
 function Transactions() {
   const { clients } = useClients()
+  const { userProfile } = useAuth()
+  const [incomingCollabCount, setIncomingCollabCount] = useState(0)
+
+  // Le compteur doit rester visible onglet fermé : on ne peut pas le déduire de
+  // StoreCollaborations, qui n'est monté que lorsque son onglet est actif.
+  useEffect(() => {
+    setIncomingCollabCount(0)
+    if (!IS_MULTI_NETWORK) return undefined
+    return subscribeIncomingCollaborationsCount({
+      storeId: userProfile?.storeId ?? null,
+      onUpdate: setIncomingCollabCount,
+    })
+  }, [userProfile])
 
   // L'onglet vit dans l'URL : partageable, compatible bouton Retour, et cible des
   // redirections depuis les anciennes routes /store/collaborations.
@@ -44,6 +60,15 @@ function Transactions() {
           {IS_MULTI_NETWORK && (
             <button type="button" className={tabClass(mode === 'collaborations')} onClick={() => setMode('collaborations')}>
               Collaborations
+              {incomingCollabCount > 0 && (
+                <span
+                  className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none min-w-[1.2rem]"
+                  aria-label={`${incomingCollabCount} collaboration${incomingCollabCount > 1 ? 's' : ''} à exécuter`}
+                  data-testid="collab-tab-badge"
+                >
+                  {incomingCollabCount > 99 ? '99+' : incomingCollabCount}
+                </span>
+              )}
             </button>
           )}
         </div>

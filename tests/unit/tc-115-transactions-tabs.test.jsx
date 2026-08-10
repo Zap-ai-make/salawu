@@ -12,7 +12,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
-const mocks = vi.hoisted(() => ({ isMultiNetwork: true }))
+const mocks = vi.hoisted(() => ({
+  isMultiNetwork: true,
+  incomingCount: 0,
+  subscribeIncomingCollaborationsCount: vi.fn(),
+}))
 
 vi.mock('../../src/constants/navigation', () => ({
   get IS_MULTI_NETWORK() { return mocks.isMultiNetwork },
@@ -20,6 +24,12 @@ vi.mock('../../src/constants/navigation', () => ({
   STORE_NAV_ITEMS: [],
 }))
 vi.mock('../../src/hooks/useClients', () => ({ useClients: () => ({ clients: [] }) }))
+vi.mock('../../src/context/AuthContext.jsx', () => ({
+  useAuth: () => ({ userProfile: { storeId: 'store-A', role: 'store_admin' } }),
+}))
+vi.mock('../../src/services/collaborationService', () => ({
+  subscribeIncomingCollaborationsCount: mocks.subscribeIncomingCollaborationsCount,
+}))
 vi.mock('../../src/components/transactions/TransactionForm', () => ({ default: () => <div>FORM_CLIENT</div> }))
 vi.mock('../../src/components/transactions/TransactionTable', () => ({ default: () => <div>TABLE_CLIENT</div> }))
 vi.mock('../../src/components/transactions/DealerTransferForm', () => ({ default: () => <div>FORM_DEALER</div> }))
@@ -32,7 +42,15 @@ import Transactions from '../../src/pages/Transactions.jsx'
 const renderAt = (path = '/transactions') =>
   render(<MemoryRouter initialEntries={[path]}><Transactions /></MemoryRouter>)
 
-beforeEach(() => { mocks.isMultiNetwork = true })
+beforeEach(() => {
+  mocks.isMultiNetwork = true
+  mocks.subscribeIncomingCollaborationsCount.mockReset()
+  mocks.subscribeIncomingCollaborationsCount.mockImplementation(({ onUpdate }) => {
+    onUpdate?.(mocks.incomingCount)
+    return () => {}
+  })
+  mocks.incomingCount = 0
+})
 
 describe('TC-115 — sous-onglets de Transactions', () => {
   it('affiche l\'onglet client par défaut, sans collaborations', () => {
@@ -72,5 +90,18 @@ describe('TC-115 — sous-onglets de Transactions', () => {
     expect(screen.queryByRole('button', { name: 'Collaborations' })).not.toBeInTheDocument()
     expect(screen.queryByText(/COLLABORATIONS/)).not.toBeInTheDocument()
     expect(screen.getByText('FORM_CLIENT')).toBeInTheDocument()
+    // Aucun abonnement collaborations chez un client mono-réseau.
+    expect(mocks.subscribeIncomingCollaborationsCount).not.toHaveBeenCalled()
+  })
+
+  it('affiche la pastille des collaborations reçues sur le sous-onglet', () => {
+    mocks.incomingCount = 3
+    renderAt()
+    expect(screen.getByTestId('collab-tab-badge').textContent).toBe('3')
+  })
+
+  it('pas de pastille quand rien n\'est en attente', () => {
+    renderAt()
+    expect(screen.queryByTestId('collab-tab-badge')).not.toBeInTheDocument()
   })
 })
