@@ -462,6 +462,23 @@ service cloud.firestore {
       }
     }
 
+    // Requête collection-group sur `settlements` : alimente le compteur des tranches
+    // en attente de confirmation (badge « Dettes internes »). Le match imbriqué
+    // ci-dessus ne couvre PAS les requêtes de groupe, d'où ce bloc à joker.
+    //
+    // ATTENTION : le nom `settlements` est partagé avec le moteur de transactions
+    // (clients/{storeId}/drafts/{id}/settlements et .../history/{id}/settlements),
+    // que ce joker traverse aussi. La présence de `creditorStoreId` est donc exigée
+    // explicitement : les règlements du moteur n'ont pas ce champ, la condition est
+    // fausse pour eux, ils restent inaccessibles par ce chemin. Pas de clause
+    // isSystemManager() ici — moindre privilège, seule la boutique créancière a
+    // besoin de ce compteur, et le gérant garde ses accès par les blocs dédiés.
+    match /{path=**}/settlements/{settlementId} {
+      allow read: if 'creditorStoreId' in resource.data
+                  && isStoreAdmin(resource.data.creditorStoreId);
+      allow write: if false;
+    }
+
     // ─────────────────────────────────────────────────────────────
     // Données par boutique (V1)
     // ─────────────────────────────────────────────────────────────

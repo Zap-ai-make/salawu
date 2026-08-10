@@ -4,11 +4,15 @@ import { STORE_NAV_ITEMS, IS_MULTI_NETWORK } from '../constants/navigation'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useAuth } from '../context/AuthContext'
 import { subscribeStorePendingCount } from '../services/storeAdminDealerService'
-import { subscribeIncomingCollaborationsCount } from '../services/collaborationService'
+import {
+  subscribeIncomingCollaborationsCount,
+  subscribeSettlementsToConfirmCount,
+} from '../services/collaborationService'
 import PWAInstallButton from './PWAInstallButton'
 
 const DEALER_REQUESTS_PATH = '/dealer-requests'
 const TRANSACTIONS_PATH = '/transactions'
+const DEBTS_PATH = '/store/debts'
 
 // Pastille blanche et non rouge : la navbar prend la couleur du thème choisi
 // (orange ESAHAF, mais aussi bleu, vert, violet…), et un rouge sur orange est
@@ -28,7 +32,7 @@ function PendingBadge({ count, label, testId }) {
 }
 
 // Badge de l'entrée de navigation, sur le modèle de badgeFor() dans DealerLayout.
-function badgeFor(path, { pendingCount, incomingCollabCount }) {
+function badgeFor(path, { pendingCount, incomingCollabCount, settlementsToConfirmCount }) {
   if (path === DEALER_REQUESTS_PATH) {
     return {
       count: pendingCount,
@@ -43,6 +47,13 @@ function badgeFor(path, { pendingCount, incomingCollabCount }) {
       label: `${incomingCollabCount} collaboration${incomingCollabCount > 1 ? 's' : ''} à exécuter`,
     }
   }
+  if (path === DEBTS_PATH) {
+    return {
+      count: settlementsToConfirmCount,
+      testId: 'store-debts-badge',
+      label: `${settlementsToConfirmCount} règlement${settlementsToConfirmCount > 1 ? 's' : ''} à confirmer`,
+    }
+  }
   return { count: 0 }
 }
 
@@ -54,6 +65,7 @@ function NavBar() {
   const [isSticky, setIsSticky] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [incomingCollabCount, setIncomingCollabCount] = useState(0)
+  const [settlementsToConfirmCount, setSettlementsToConfirmCount] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -89,7 +101,19 @@ function NavBar() {
     })
   }, [userProfile])
 
-  const counts = { pendingCount, incomingCollabCount }
+  // Tranches de règlement déclarées attendant ma confirmation : c'est une action à
+  // faire, donc le badge s'éteint dès qu'il n'y a plus rien à traiter — au contraire
+  // d'un compteur de dettes ouvertes, qui resterait allumé en permanence.
+  useEffect(() => {
+    setSettlementsToConfirmCount(0)
+    if (!IS_MULTI_NETWORK) return undefined
+    return subscribeSettlementsToConfirmCount({
+      storeId: userProfile?.storeId ?? null,
+      onUpdate: setSettlementsToConfirmCount,
+    })
+  }, [userProfile])
+
+  const counts = { pendingCount, incomingCollabCount, settlementsToConfirmCount }
 
   return (
     <nav

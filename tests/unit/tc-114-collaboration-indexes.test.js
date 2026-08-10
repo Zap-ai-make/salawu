@@ -17,9 +17,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const { indexes } = JSON.parse(readFileSync(path.join(ROOT, 'firestore.indexes.json'), 'utf8'))
 
 /** Vrai si un index déclaré correspond exactement à la suite de champs attendue. */
-const hasIndex = (collectionGroup, fields) =>
+const hasIndex = (collectionGroup, fields, queryScope = 'COLLECTION') =>
   indexes.some(idx =>
     idx.collectionGroup === collectionGroup &&
+    idx.queryScope === queryScope &&
     idx.fields.length === fields.length &&
     idx.fields.every((f, i) => f.fieldPath === fields[i][0] && f.order === fields[i][1]),
   )
@@ -46,5 +47,14 @@ describe('TC-114 — index composites collaborations et dettes internes', () => 
 
   it('couvre subscribeMyCredits (creditorStoreId + createdAt)', () => {
     expect(hasIndex('internalDebts', [['creditorStoreId', ASC], ['createdAt', DESC]])).toBe(true)
+  })
+
+  it('couvre subscribeSettlementsToConfirmCount (collection-group settlements)', () => {
+    expect(hasIndex('settlements', [['creditorStoreId', ASC], ['settlementStatus', ASC]], 'COLLECTION_GROUP')).toBe(true)
+  })
+
+  it('conserve les index collection-group du moteur de transactions', () => {
+    expect(hasIndex('settlements', [['draftId', ASC], ['createdAt', DESC]], 'COLLECTION_GROUP')).toBe(true)
+    expect(hasIndex('settlements', [['storeId', ASC], ['createdAt', DESC]], 'COLLECTION_GROUP')).toBe(true)
   })
 })

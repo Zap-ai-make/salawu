@@ -190,6 +190,14 @@
       "collectionGroup": "settlements",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "creditorStoreId", "order": "ASCENDING" },
+        { "fieldPath": "settlementStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "settlements",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
         { "fieldPath": "draftId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]

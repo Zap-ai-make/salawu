@@ -10,7 +10,7 @@
  */
 
 import { httpsCallable } from 'firebase/functions'
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
+import { collection, collectionGroup, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { functions, db } from '../config/firebase'
 import { COLLABORATIONS_PAGE_SIZE, INTERNAL_DEBTS_PAGE_SIZE } from '../constants/dealerConstants'
 import { parseStrictInteger } from '../utils/parseStrictInteger'
@@ -189,6 +189,25 @@ export function subscribeMyCredits({ storeId, onUpdate, onError } = {}) {
     limit(INTERNAL_DEBTS_PAGE_SIZE),
   )
   return onSnapshot(q, (snap) => onUpdate?.(mapDocs(snap)), (err) => onError?.(mapCollaborationError(err)))
+}
+
+/**
+ * Compteur léger des tranches déclarées en attente de MA confirmation (créancière).
+ *
+ * Requête collection-group : le nom `settlements` est partagé avec le moteur de
+ * transactions (clients/{id}/drafts|history/{id}/settlements). Le filtre sur
+ * `creditorStoreId` — champ dénormalisé propre aux dettes internes — exclut ces
+ * documents, et la règle Firestore correspondante refuse tout document qui n'a pas
+ * ce champ. La collision de nom reste donc sans effet.
+ */
+export function subscribeSettlementsToConfirmCount({ storeId, onUpdate } = {}) {
+  if (!storeId) { onUpdate?.(0); return () => {} }
+  const q = query(
+    collectionGroup(db, 'settlements'),
+    where('creditorStoreId', '==', storeId),
+    where('settlementStatus', '==', 'declared'),
+  )
+  return onSnapshot(q, (snap) => onUpdate?.(snap.size), () => onUpdate?.(0))
 }
 
 /** Tranches de règlement d'une dette. */

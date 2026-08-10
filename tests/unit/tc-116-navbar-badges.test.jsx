@@ -19,6 +19,7 @@ import { MemoryRouter } from 'react-router-dom'
 const mocks = vi.hoisted(() => ({
   subscribeStorePendingCount: vi.fn(),
   subscribeIncomingCollaborationsCount: vi.fn(),
+  subscribeSettlementsToConfirmCount: vi.fn(),
   useAuth: vi.fn(),
 }))
 
@@ -55,6 +56,7 @@ vi.mock('../../src/services/storeAdminDealerService', () => ({
 }))
 vi.mock('../../src/services/collaborationService', () => ({
   subscribeIncomingCollaborationsCount: mocks.subscribeIncomingCollaborationsCount,
+  subscribeSettlementsToConfirmCount: mocks.subscribeSettlementsToConfirmCount,
 }))
 vi.mock('../../src/components/PWAInstallButton', () => ({ default: () => null }))
 
@@ -72,27 +74,40 @@ beforeEach(() => {
   })
   mocks.subscribeStorePendingCount.mockImplementation(emit(0))
   mocks.subscribeIncomingCollaborationsCount.mockImplementation(emit(0))
+  mocks.subscribeSettlementsToConfirmCount.mockImplementation(emit(0))
 })
 
 describe('TC-116 — badges de la NavBar boutique', () => {
-  it('aucun badge quand les deux compteurs sont à zéro', () => {
+  it('aucun badge quand les compteurs sont à zéro', () => {
     renderNavBar()
     expect(screen.queryByTestId('store-pending-badge')).not.toBeInTheDocument()
     expect(screen.queryByTestId('store-collab-badge')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('store-debts-badge')).not.toBeInTheDocument()
   })
 
   it('place chaque compteur sur sa propre route', async () => {
     mocks.subscribeStorePendingCount.mockImplementation(emit(2))
     mocks.subscribeIncomingCollaborationsCount.mockImplementation(emit(5))
+    mocks.subscribeSettlementsToConfirmCount.mockImplementation(emit(7))
     renderNavBar()
 
     await waitFor(() => expect(screen.getByTestId('store-pending-badge').textContent).toBe('2'))
     expect(screen.getByTestId('store-collab-badge').textContent).toBe('5')
+    expect(screen.getByTestId('store-debts-badge').textContent).toBe('7')
 
     // Chaque badge est bien dans le lien correspondant, pas ailleurs.
     expect(screen.getByRole('link', { name: /Demandes Dealer/ })).toContainElement(screen.getByTestId('store-pending-badge'))
     expect(screen.getByRole('link', { name: /Transactions/ })).toContainElement(screen.getByTestId('store-collab-badge'))
+    expect(screen.getByRole('link', { name: /Dettes internes/ })).toContainElement(screen.getByTestId('store-debts-badge'))
     expect(screen.getByRole('link', { name: /Profil/ }).querySelector('span')).toBeNull()
+  })
+
+  it('le badge des dettes décrit des règlements à confirmer', async () => {
+    mocks.subscribeSettlementsToConfirmCount.mockImplementation(emit(2))
+    renderNavBar()
+    const badge = await screen.findByTestId('store-debts-badge')
+    expect(badge.getAttribute('aria-label')).toBe('2 règlements à confirmer')
+    expect(badge.className).toContain('bg-white')
   })
 
   it('écrête à 99+ et décrit le bon compteur dans aria-label', async () => {
@@ -124,14 +139,17 @@ describe('TC-116 — badges de la NavBar boutique', () => {
     expect(screen.getByRole('option', { name: 'Profil' })).toBeInTheDocument()
   })
 
-  it('se désabonne des deux compteurs au démontage', () => {
+  it('se désabonne des trois compteurs au démontage', () => {
     const unsubPending = vi.fn()
     const unsubCollab = vi.fn()
+    const unsubDebts = vi.fn()
     mocks.subscribeStorePendingCount.mockReturnValue(unsubPending)
     mocks.subscribeIncomingCollaborationsCount.mockReturnValue(unsubCollab)
+    mocks.subscribeSettlementsToConfirmCount.mockReturnValue(unsubDebts)
     const { unmount } = renderNavBar()
     unmount()
     expect(unsubPending).toHaveBeenCalledTimes(1)
     expect(unsubCollab).toHaveBeenCalledTimes(1)
+    expect(unsubDebts).toHaveBeenCalledTimes(1)
   })
 })
