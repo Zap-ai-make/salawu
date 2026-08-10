@@ -146,6 +146,47 @@
       ]
     },
     {
+      "collectionGroup": "storeCollaborations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "requestingStoreId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "storeCollaborations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "supplierStoreId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "storeCollaborations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "supplierStoreId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "internalDebts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "debtorStoreId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "internalDebts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "creditorStoreId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "settlements",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
