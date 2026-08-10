@@ -61,6 +61,11 @@ vi.mock('../../src/services/storeTransferService', () => ({
   subscribeStoreTransfers: mocks.subscribeStoreTransfers,
 }))
 vi.mock('../../src/context/AuthContext', () => ({ useAuth: () => mocks.useAuth() }))
+// DealerTransferForm teinte son tableau d'historique via le thème : hors
+// ThemeProvider, useTheme lève. On fournit un thème orange minimal.
+vi.mock('../../src/context/ThemeContext.jsx', () => ({
+  useTheme: () => ({ themeClasses: { tableHeader: 'bg-orange-100/80 border-orange-300', text: 'text-gray-900' } }),
+}))
 vi.mock('../../src/hooks/useToast', () => ({
   useToast: () => ({ toasts: [], showToast: mocks.showToast, removeToast: vi.fn() }),
 }))

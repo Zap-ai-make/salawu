@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext.jsx'
 import { useToast } from '../../hooks/useToast'
 import { useSimpleNetworkData } from '../../hooks/useSimpleNetworkData'
 import {
@@ -18,6 +19,7 @@ import { parseFcfaAmount } from '../../utils/fcfaAmount.js'
 import { formatCurrency } from '../../utils/formatCurrency'
 import StatusBadge from '../ui/StatusBadge'
 import RejectionRemarkButton from '../ui/RejectionRemarkButton'
+import { themedTableClasses } from '../ui/themedTable.js'
 import Toast from '../Toast'
 import { formatDateTime as formatDate } from '../../utils/formatters'
 
@@ -29,8 +31,10 @@ import { formatDateTime as formatDate } from '../../utils/formatters'
  */
 function DealerTransferForm() {
   const { userProfile } = useAuth()
+  const { themeClasses } = useTheme()
   const { toasts, showToast, removeToast } = useToast()
   const { networkData } = useSimpleNetworkData()
+  const tbl = themedTableClasses(themeClasses)
 
   const [transferType, setTransferType] = useState(STORE_TRANSFER_TYPES.RETURN_STOCK)
   const [network, setNetwork] = useState(DEALER_NETWORKS[0]) // réseau ciblé (multi-réseaux)
@@ -173,43 +177,47 @@ function DealerTransferForm() {
 
       {/* Historique des envois de la boutique */}
       <div className="mt-8">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">Mes envois au dealer</h3>
-        {transfers.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucun envoi pour le moment.</p>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-100 text-sm">
-              <thead className="bg-green-50/70">
-                <tr className="text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Montant</th>
-                  <th className="px-4 py-3">Statut</th>
-                  <th className="px-4 py-3">Remarque</th>
-                  <th className="px-4 py-3">Date</th>
+        <h3 className={tbl.title}>Mes envois au dealer</h3>
+        <div className={tbl.container}>
+          <div className={tbl.scroll}>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className={tbl.headerRow}>
+                  <th className={tbl.headerCell}>Date &amp; heure</th>
+                  <th className={tbl.headerCell}>Type</th>
+                  <th className={tbl.headerCell}>Montant</th>
+                  <th className={tbl.headerCell}>Statut</th>
+                  <th className={tbl.headerCell}>Remarque</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {transfers.map(t => (
-                  <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{STORE_TRANSFER_TYPE_LABELS[t.transferType] ?? t.transferType}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{formatCurrency(t.amount)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <StatusBadge status={t.status} label={DEALER_REQUEST_STATUS_LABELS[t.status] ?? t.status} />
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <RejectionRemarkButton
-                        storeName="Dealer"
-                        reason={t.status === 'rejected' ? t.rejectionReason : null}
-                        testId={`transfer-remark-${t.id}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
+              <tbody>
+                {transfers.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className={tbl.empty}>Aucun envoi pour le moment.</td>
                   </tr>
-                ))}
+                ) : (
+                  transfers.map(tr => (
+                    <tr key={tr.id} className="hover:bg-gray-50">
+                      <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDate(tr.createdAt)}</td>
+                      <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{STORE_TRANSFER_TYPE_LABELS[tr.transferType] ?? tr.transferType}</td>
+                      <td className={`${tbl.cell} whitespace-nowrap font-medium text-gray-800`}>{formatCurrency(tr.amount)}</td>
+                      <td className={`${tbl.cell} whitespace-nowrap`}>
+                        <StatusBadge status={tr.status} label={DEALER_REQUEST_STATUS_LABELS[tr.status] ?? tr.status} />
+                      </td>
+                      <td className={`${tbl.cell} whitespace-nowrap`}>
+                        <RejectionRemarkButton
+                          storeName="Dealer"
+                          reason={tr.status === 'rejected' ? tr.rejectionReason : null}
+                          testId={`transfer-remark-${tr.id}`}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Modale de confirmation */}

@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { useTheme } from '../../context/ThemeContext.jsx'
 import PageHeader from '../../components/ui/PageHeader'
+import StatusBadge from '../../components/ui/StatusBadge'
+import { themedTableClasses } from '../../components/ui/themedTable.js'
 import CollaborationFormModal from '../../components/store/CollaborationFormModal'
 import {
   subscribeIncomingCollaborations,
@@ -12,6 +15,7 @@ import {
   COLLAB_OPERATION_TYPE_LABELS,
   COLLAB_STATUS_LABELS,
 } from '../../constants/dealerConstants'
+import { formatDateTime } from '../../utils/formatters'
 
 const fmtAmount = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
 const clientName = (c) => `${c.clientNom ?? ''} ${c.clientPrenom ?? ''}`.trim() || c.clientId
@@ -40,11 +44,6 @@ function RejectModal({ onSubmit, onClose }) {
   )
 }
 
-function StatusBadge({ status }) {
-  const cls = status === 'confirmed' ? 'bg-green-100 text-green-700' : status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-  return <span className={`rounded-md px-2 py-0.5 text-xs ${cls}`}>{COLLAB_STATUS_LABELS[status] ?? status}</span>
-}
-
 /**
  * @param {boolean} embedded - rendu comme sous-onglet de Transactions : pas de
  *   PageHeader (le <h1>Transactions</h1> tient lieu de titre), l'action passe
@@ -52,6 +51,8 @@ function StatusBadge({ status }) {
  */
 function StoreCollaborations({ embedded = false }) {
   const { userProfile } = useAuth()
+  const { themeClasses } = useTheme()
+  const tbl = themedTableClasses(themeClasses)
   const storeId = userProfile?.storeId ?? null
 
   const [incoming, setIncoming] = useState([])
@@ -104,47 +105,93 @@ function StoreCollaborations({ embedded = false }) {
 
       {/* Entrantes à confirmer */}
       <section className="mb-8">
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Reçues (à exécuter) — {incoming.length}</h2>
-        {incoming.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune collaboration en attente.</p>
-        ) : (
-          <div className="space-y-2">
-            {incoming.map(c => (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3">
-                <div className="text-sm text-gray-700">
-                  <span className="font-medium">{c.requestingStoreName ?? c.requestingStoreId}</span> → {clientName(c)} ·
-                  {' '}{c.network} · {COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? c.operationType} · <span className="font-semibold">{fmtAmount(c.amount)}</span>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" disabled={actioning === c.id} onClick={() => handleConfirm(c.id)}
-                    className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
-                  <button type="button" onClick={() => setRejectId(c.id)}
-                    className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Rejeter</button>
-                </div>
-              </div>
-            ))}
+        <h2 className={tbl.title}>Reçues (à exécuter) — {incoming.length}</h2>
+        <div className={tbl.container}>
+          <div className={tbl.scroll}>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className={tbl.headerRow}>
+                  <th className={tbl.headerCell}>Date &amp; heure</th>
+                  <th className={tbl.headerCell}>Demandeuse</th>
+                  <th className={tbl.headerCell}>Client</th>
+                  <th className={tbl.headerCell}>Type</th>
+                  <th className={tbl.headerCell}>Réseau</th>
+                  <th className={tbl.headerCell}>Montant</th>
+                  <th className={tbl.headerCellCenter}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {incoming.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className={tbl.empty}>Aucune collaboration en attente.</td>
+                  </tr>
+                ) : (
+                  incoming.map(c => (
+                    <tr key={c.id}>
+                      <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(c.createdAt)}</td>
+                      <td className={`${tbl.cell} font-medium text-gray-800`}>{c.requestingStoreName ?? c.requestingStoreId}</td>
+                      <td className={`${tbl.cell} text-gray-700`}>{clientName(c)}</td>
+                      <td className={`${tbl.cell} text-gray-700`}>{COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? c.operationType}</td>
+                      <td className={`${tbl.cell} text-gray-700`}>{c.network}</td>
+                      <td className={`${tbl.cell} whitespace-nowrap font-semibold text-gray-800`}>{fmtAmount(c.amount)}</td>
+                      <td className={tbl.cell}>
+                        <div className="flex justify-center gap-2">
+                          <button type="button" disabled={actioning === c.id} onClick={() => handleConfirm(c.id)}
+                            className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
+                          <button type="button" onClick={() => setRejectId(c.id)}
+                            className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Rejeter</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </section>
 
       {/* Sortantes */}
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-gray-700">Mes demandes — {outgoing.length}</h2>
-        {outgoing.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune demande envoyée.</p>
-        ) : (
-          <div className="space-y-2">
-            {outgoing.map(c => (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3">
-                <div className="text-sm text-gray-700">
-                  → <span className="font-medium">{c.supplierStoreName ?? c.supplierStoreId}</span> · {clientName(c)} ·
-                  {' '}{c.network} · {COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? c.operationType} · <span className="font-semibold">{fmtAmount(c.amount)}</span>
-                </div>
-                <StatusBadge status={c.status} />
-              </div>
-            ))}
+        <h2 className={tbl.title}>Mes demandes — {outgoing.length}</h2>
+        <div className={tbl.container}>
+          <div className={tbl.scroll}>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className={tbl.headerRow}>
+                  <th className={tbl.headerCell}>Date &amp; heure</th>
+                  <th className={tbl.headerCell}>Fournisseur</th>
+                  <th className={tbl.headerCell}>Client</th>
+                  <th className={tbl.headerCell}>Type</th>
+                  <th className={tbl.headerCell}>Réseau</th>
+                  <th className={tbl.headerCell}>Montant</th>
+                  <th className={tbl.headerCell}>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {outgoing.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className={tbl.empty}>Aucune demande envoyée.</td>
+                  </tr>
+                ) : (
+                  outgoing.map(c => (
+                    <tr key={c.id}>
+                      <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(c.createdAt)}</td>
+                      <td className={`${tbl.cell} font-medium text-gray-800`}>{c.supplierStoreName ?? c.supplierStoreId}</td>
+                      <td className={`${tbl.cell} text-gray-700`}>{clientName(c)}</td>
+                      <td className={`${tbl.cell} text-gray-700`}>{COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? c.operationType}</td>
+                      <td className={`${tbl.cell} text-gray-700`}>{c.network}</td>
+                      <td className={`${tbl.cell} whitespace-nowrap font-semibold text-gray-800`}>{fmtAmount(c.amount)}</td>
+                      <td className={`${tbl.cell} whitespace-nowrap`}>
+                        <StatusBadge status={c.status} label={COLLAB_STATUS_LABELS[c.status] ?? c.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </section>
 
       {rejectId && <RejectModal onSubmit={handleReject} onClose={() => setRejectId(null)} />}
