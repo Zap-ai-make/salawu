@@ -6,12 +6,14 @@ import { PAYMENT_METHODS } from '../../utils/constants.js'
 import { getClientName, formatTransactionDateTime } from '../../utils/helpers.js'
 import { TransactionRowSkeleton } from '../ui/LoadingSkeleton.jsx'
 import OptimisticToast from '../ui/OptimisticToast.jsx'
+import { themedTableClasses } from '../ui/themedTable.js'
 import logger from '../../utils/logger.js'
 import { generateIdempotencyKey } from '../../services/settlementService.js'
 
 const TransactionTable = memo(function TransactionTable() {
   const { pendingTransactions, getActionButtons, getTransactionStyles, addPaymentTranche, addRefundTranche, startEditTransaction, loading } = useTransactions()
   const { themeClasses } = useTheme()
+  const tbl = themedTableClasses(themeClasses)
 
   // Déduplicateur pour éviter les erreurs de clés React
   const uniquePendingTransactions = useMemo(() => {
@@ -213,31 +215,31 @@ const TransactionTable = memo(function TransactionTable() {
 
   return (
     <div className="mt-8">
-      <h2 className={`text-xl font-bold ${themeClasses.text} mb-4`}>
+      <h2 className={tbl.title}>
         Non Terminées
       </h2>
 
-      <div className={`bg-white rounded-lg border ${themeClasses.tableHeader.split(' ')[1]}`}>
-        <div className="overflow-x-auto overflow-y-visible">
+      <div className={tbl.container}>
+        <div className={tbl.scroll}>
           <table className="w-full border-collapse">
             <thead>
-              <tr className={themeClasses.tableHeader}>
-                <th className={`border ${themeClasses.tableHeader.split(' ')[1]} px-4 py-3 text-left text-base font-medium ${themeClasses.text}`}>
+              <tr className={tbl.headerRow}>
+                <th className={tbl.headerCell}>
                   Date & heure
                 </th>
-                <th className={`border ${themeClasses.tableHeader.split(' ')[1]} px-4 py-3 text-left text-base font-medium ${themeClasses.text}`}>
+                <th className={tbl.headerCell}>
                   Client
                 </th>
-                <th className={`border ${themeClasses.tableHeader.split(' ')[1]} px-4 py-3 text-left text-base font-medium ${themeClasses.text}`}>
+                <th className={tbl.headerCell}>
                   Type
                 </th>
-                <th className={`border ${themeClasses.tableHeader.split(' ')[1]} px-4 py-3 text-left text-base font-medium ${themeClasses.text}`}>
+                <th className={tbl.headerCell}>
                   Réseau
                 </th>
-                <th className={`border ${themeClasses.tableHeader.split(' ')[1]} px-4 py-3 text-left text-base font-medium ${themeClasses.text}`}>
+                <th className={tbl.headerCell}>
                   Montant
                 </th>
-                <th className={`border ${themeClasses.tableHeader.split(' ')[1]} px-4 py-3 text-center text-base font-medium ${themeClasses.text}`}>
+                <th className={tbl.headerCellCenter}>
                   Actions
                 </th>
               </tr>
@@ -250,7 +252,7 @@ const TransactionTable = memo(function TransactionTable() {
                 ))
               ) : uniquePendingTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="border border-green-300 px-4 py-8 text-center text-gray-500">
+                  <td colSpan="6" className={tbl.empty}>
                     Aucune transaction en attente
                   </td>
                 </tr>
@@ -265,19 +267,19 @@ const TransactionTable = memo(function TransactionTable() {
                       key={transaction.id}
                       className={`${styles.bgColor}`}
                     >
-                      <td className={`border border-green-300 px-4 py-3 text-base ${styles.textColor}`}>
+                      <td className={`${tbl.cell} ${styles.textColor}`}>
                         {formatTransactionDateTime(transaction)}
                       </td>
-                      <td className={`border border-green-300 px-4 py-3 text-base font-medium ${styles.textColor}`}>
+                      <td className={`${tbl.cell} font-medium ${styles.textColor}`}>
                         {getClientName(transaction.client)}
                       </td>
-                      <td className={`border border-green-300 px-4 py-3 text-base font-medium ${styles.textColor}`}>
+                      <td className={`${tbl.cell} font-medium ${styles.textColor}`}>
                         {transaction.type}
                       </td>
-                      <td className={`border border-green-300 px-4 py-3 text-base ${styles.textColor}`}>
+                      <td className={`${tbl.cell} ${styles.textColor}`}>
                         {transaction.reseau} ({transaction.code})
                       </td>
-                      <td className={`border border-green-300 px-4 py-3 text-base font-medium ${styles.textColor}`}>
+                      <td className={`${tbl.cell} font-medium ${styles.textColor}`}>
                         <span>{(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA</span>
                         {transaction.settlementStatus === 'partial' && transaction.remainingAmount != null && (
                           <div className="text-xs font-normal text-orange-600 mt-0.5">
@@ -285,7 +287,7 @@ const TransactionTable = memo(function TransactionTable() {
                           </div>
                         )}
                       </td>
-                      <td className="border border-green-300 px-4 py-3 text-base">
+                      <td className={tbl.cell}>
                         <div className="flex gap-2 justify-center">
                           {actions.modifier && (
                             <button
