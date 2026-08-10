@@ -45,7 +45,12 @@ function StatusBadge({ status }) {
   return <span className={`rounded-md px-2 py-0.5 text-xs ${cls}`}>{COLLAB_STATUS_LABELS[status] ?? status}</span>
 }
 
-function StoreCollaborations() {
+/**
+ * @param {boolean} embedded - rendu comme sous-onglet de Transactions : pas de
+ *   PageHeader (le <h1>Transactions</h1> tient lieu de titre), l'action passe
+ *   au-dessus de la liste.
+ */
+function StoreCollaborations({ embedded = false }) {
   const { userProfile } = useAuth()
   const storeId = userProfile?.storeId ?? null
 
@@ -73,20 +78,29 @@ function StoreCollaborations() {
     setRejectId(null)
   }, [rejectId])
 
+  const newButton = (
+    <button type="button" onClick={() => setShowNew(true)}
+      className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
+      Nouvelle collaboration
+    </button>
+  )
+
   return (
     <div>
-      <PageHeader
-        title="Collaborations"
-        subtitle="Servir un client via une autre boutique, ou exécuter les demandes reçues"
-        actions={
-          <button type="button" onClick={() => setShowNew(true)}
-            className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
-            Nouvelle collaboration
-          </button>
-        }
-      />
+      {embedded ? (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-sm text-gray-500">Servir un client via une autre boutique, ou exécuter les demandes reçues</p>
+          {newButton}
+        </div>
+      ) : (
+        <PageHeader
+          title="Collaborations"
+          subtitle="Servir un client via une autre boutique, ou exécuter les demandes reçues"
+          actions={newButton}
+        />
+      )}
 
-      {error && <p className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
+      {error &&<p className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
 
       {/* Entrantes à confirmer */}
       <section className="mb-8">

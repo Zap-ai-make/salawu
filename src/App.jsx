@@ -26,7 +26,6 @@ import Formulaire from './pages/Formulaire'
 import Profil from './pages/Profil'
 import StoreAdminDealerRequests from './pages/store/StoreAdminDealerRequests.jsx'
 import StoreAdminDealerRequestDetails from './pages/store/StoreAdminDealerRequestDetails.jsx'
-import StoreCollaborations from './pages/store/StoreCollaborations.jsx'
 import StoreInternalDebts from './pages/store/StoreInternalDebts.jsx'
 
 // Pages Admin (system_manager)
@@ -120,9 +119,10 @@ export function AppContent() {
         <Route path="/dealer-requests" element={<StoreAdminDealerRequests />} />
         <Route path="/dealer-requests/:requestId" element={<StoreAdminDealerRequestDetails />} />
         <Route path="/store/closures" element={<StoreAdminClosures />} />
-        <Route path="/store/collaborations" element={<StoreCollaborations />} />
-        {/* Le formulaire est désormais une modal : l'ancienne URL renvoie sur la liste. */}
-        <Route path="/store/collaborations/new" element={<Navigate to="/store/collaborations" replace />} />
+        {/* Les collaborations sont un sous-onglet de Transactions, et le formulaire une
+            modal : les deux anciennes URL redirigent pour ne casser aucun lien existant. */}
+        <Route path="/store/collaborations" element={<Navigate to="/transactions?tab=collaborations" replace />} />
+        <Route path="/store/collaborations/new" element={<Navigate to="/transactions?tab=collaborations" replace />} />
         <Route path="/store/debts" element={<StoreInternalDebts />} />
       </Route>
 

@@ -3,7 +3,7 @@ import { activeProfile } from '../config/activeClientProfile.js'
 // Collaborations inter-boutiques : pertinentes uniquement en multi-réseaux (une
 // boutique sans SIM sur un réseau s'appuie sur une autre). En mono-réseau (ex.
 // TAOFIC) → items masqués, navigation strictement inchangée (non-régression).
-const IS_MULTI_NETWORK = (activeProfile?.networks?.enabled?.length ?? 0) > 1
+export const IS_MULTI_NETWORK = (activeProfile?.networks?.enabled?.length ?? 0) > 1
 
 export const NAV_ITEMS = [
   { name: 'Tableau de bord', path: '/' },
@@ -12,8 +12,10 @@ export const NAV_ITEMS = [
   { name: 'Historique', path: '/historique' },
   { name: 'Formulaire', path: '/formulaire' },
   { name: 'Demandes Dealer', path: '/dealer-requests' },
+  // Les collaborations sont un sous-onglet de Transactions (une collaboration EST
+  // une transaction) — pas d'entrée de premier niveau. Les dettes internes gardent
+  // la leur : une dette n'est pas une transaction.
   ...(IS_MULTI_NETWORK ? [
-    { name: 'Collaborations', path: '/store/collaborations' },
     { name: 'Dettes internes', path: '/store/debts' },
   ] : []),
   { name: 'Profil', path: '/profil' }

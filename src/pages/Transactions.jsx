@@ -1,16 +1,28 @@
-import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useClients } from '../hooks/useClients'
+import { IS_MULTI_NETWORK } from '../constants/navigation'
 import TransactionForm from '../components/transactions/TransactionForm'
 import TransactionTable from '../components/transactions/TransactionTable'
 import DealerTransferForm from '../components/transactions/DealerTransferForm'
+import StoreCollaborations from './store/StoreCollaborations.jsx'
 import ErrorBoundary from '../components/ui/ErrorBoundary'
+
+const MODES = ['client', 'dealer', 'collaborations']
 
 function Transactions() {
   const { clients } = useClients()
-  const [mode, setMode] = useState('client') // 'client' | 'dealer'
+
+  // L'onglet vit dans l'URL : partageable, compatible bouton Retour, et cible des
+  // redirections depuis les anciennes routes /store/collaborations.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requested = searchParams.get('tab')
+  const mode = MODES.includes(requested) && (requested !== 'collaborations' || IS_MULTI_NETWORK)
+    ? requested
+    : 'client'
+  const setMode = (next) => setSearchParams(next === 'client' ? {} : { tab: next }, { replace: true })
 
   const tabClass = (active) =>
-    `px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
+    `px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 inline-flex items-center ${
       active ? 'bg-green-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
     }`
 
@@ -29,9 +41,14 @@ function Transactions() {
           <button type="button" className={tabClass(mode === 'dealer')} onClick={() => setMode('dealer')}>
             Opération dealer
           </button>
+          {IS_MULTI_NETWORK && (
+            <button type="button" className={tabClass(mode === 'collaborations')} onClick={() => setMode('collaborations')}>
+              Collaborations
+            </button>
+          )}
         </div>
 
-        {mode === 'client' ? (
+        {mode === 'client' && (
           <div className="space-y-8">
             <ErrorBoundary>
               <TransactionForm clients={clients} />
@@ -40,9 +57,17 @@ function Transactions() {
               <TransactionTable />
             </ErrorBoundary>
           </div>
-        ) : (
+        )}
+
+        {mode === 'dealer' && (
           <ErrorBoundary>
             <DealerTransferForm />
+          </ErrorBoundary>
+        )}
+
+        {mode === 'collaborations' && (
+          <ErrorBoundary>
+            <StoreCollaborations embedded />
           </ErrorBoundary>
         )}
       </div>
