@@ -120,6 +120,25 @@ describe('TC-120 — sous-onglets des collaborations', () => {
     expect(badge.className).not.toContain('bg-red-600')
   })
 
+  it('ouvre sur les reçues quand le parent le demande (initialTab)', () => {
+    feed({ incoming: [collab('c1')], outgoing: [collab('c2')] })
+    render(<StoreCollaborations embedded initialTab="incoming" />)
+    expect(screen.getByTestId('collab-subtab-incoming')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Demandeuse')).toBeInTheDocument()
+  })
+
+  it('suit le parent quand initialTab change après le montage', () => {
+    feed({ incoming: [collab('c1')], outgoing: [collab('c2')] })
+    const { rerender } = render(<StoreCollaborations embedded initialTab="outgoing" />)
+    expect(screen.getByText('Fournisseur')).toBeInTheDocument()
+
+    // La pastille du parent cliquée alors qu'on est déjà ici : ?sub= change,
+    // initialTab passe à 'incoming', le sous-onglet doit suivre.
+    rerender(<StoreCollaborations embedded initialTab="incoming" />)
+    expect(screen.getByText('Demandeuse')).toBeInTheDocument()
+    expect(screen.queryByText('Fournisseur')).not.toBeInTheDocument()
+  })
+
   it('plafonne l\'affichage à 99+ sans mentir sur le libellé', () => {
     feed({ incoming: Array.from({ length: 120 }, (_, i) => collab(`c${i}`)) })
     render(<StoreCollaborations embedded />)

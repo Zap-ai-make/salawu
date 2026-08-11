@@ -49,8 +49,11 @@ function RejectModal({ onSubmit, onClose }) {
  * @param {boolean} embedded - rendu comme sous-onglet de Transactions : pas de
  *   PageHeader (le <h1>Transactions</h1> tient lieu de titre), l'action passe
  *   au-dessus de la liste.
+ * @param {'incoming'|'outgoing'} [initialTab='outgoing'] - sous-onglet ouvert au
+ *   montage. Le parent le pilote depuis ?sub= pour que la pastille des reçues mène
+ *   à leur onglet ; il change quand la pastille est cliquée, d'où la synchro.
  */
-function StoreCollaborations({ embedded = false }) {
+function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
   const { userProfile } = useAuth()
   const { themeClasses } = useTheme()
   const tbl = themedTableClasses(themeClasses)
@@ -59,13 +62,18 @@ function StoreCollaborations({ embedded = false }) {
   // « Mes demandes » par défaut : c'est l'écran de la boutique qui sollicite, le
   // geste courant. Les reçues restent signalées par leur pastille rouge, et par
   // celle de l'onglet parent Collaborations.
-  const [tab, setTab] = useState('outgoing')
+  const [tab, setTab] = useState(initialTab)
   const [incoming, setIncoming] = useState([])
   const [outgoing, setOutgoing] = useState([])
   const [error, setError] = useState(null)
   const [actioning, setActioning] = useState(null)
   const [rejectId, setRejectId] = useState(null)
   const [showNew, setShowNew] = useState(false)
+
+  // Le parent fait suivre son ?sub= : quand la pastille des reçues est cliquée
+  // alors que ce composant est déjà monté, initialTab passe à 'incoming' et l'on
+  // bascule. La navigation interne (setTab) reste locale entre deux changements.
+  useEffect(() => { setTab(initialTab) }, [initialTab])
 
   useEffect(() => {
     if (!storeId) return undefined

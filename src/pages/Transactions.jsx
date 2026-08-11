@@ -37,6 +37,12 @@ function Transactions() {
     ? requested
     : 'client'
   const setMode = (next) => setSearchParams(next === 'client' ? {} : { tab: next }, { replace: true })
+  // La pastille des reçues ouvre directement leur sous-onglet, via ?sub= que
+  // StoreCollaborations lit pour son onglet initial. Cliquer l'onglet lui-même
+  // efface ?sub= et retombe donc sur « Mes demandes ».
+  const openCollabSub = (sub) =>
+    setSearchParams(sub ? { tab: 'collaborations', sub } : { tab: 'collaborations' }, { replace: true })
+  const collabInitialTab = searchParams.get('sub') === 'incoming' ? 'incoming' : 'outgoing'
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -64,6 +70,7 @@ function Transactions() {
                   active={mode === 'collaborations'}
                   testId="collab-tab-badge"
                   label={`${incomingCollabCount} collaboration${incomingCollabCount > 1 ? 's' : ''} à exécuter`}
+                  onActivate={() => openCollabSub('incoming')}
                 />
               )}
             </button>
@@ -89,7 +96,7 @@ function Transactions() {
 
         {mode === 'collaborations' && (
           <ErrorBoundary>
-            <StoreCollaborations embedded />
+            <StoreCollaborations embedded initialTab={collabInitialTab} />
           </ErrorBoundary>
         )}
       </div>

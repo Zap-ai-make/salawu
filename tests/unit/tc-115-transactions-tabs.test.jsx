@@ -34,7 +34,11 @@ vi.mock('../../src/components/transactions/TransactionForm', () => ({ default: (
 vi.mock('../../src/components/transactions/TransactionTable', () => ({ default: () => <div>TABLE_CLIENT</div> }))
 vi.mock('../../src/components/transactions/DealerTransferForm', () => ({ default: () => <div>FORM_DEALER</div> }))
 vi.mock('../../src/pages/store/StoreCollaborations.jsx', () => ({
-  default: ({ embedded }) => <div>COLLABORATIONS embedded={String(embedded)}</div>,
+  // data-tab expose le sous-onglet initial (piloté par ?sub=), sans altérer le
+  // texte que les cas historiques recherchent.
+  default: ({ embedded, initialTab }) => (
+    <div data-testid="collab-stub" data-tab={String(initialTab)}>COLLABORATIONS embedded={String(embedded)}</div>
+  ),
 }))
 
 import Transactions from '../../src/pages/Transactions.jsx'
@@ -103,5 +107,24 @@ describe('TC-115 — sous-onglets de Transactions', () => {
   it('pas de pastille quand rien n\'est en attente', () => {
     renderAt()
     expect(screen.queryByTestId('collab-tab-badge')).not.toBeInTheDocument()
+  })
+
+  it('le corps de l\'onglet ouvre « Mes demandes » (sous-onglet outgoing)', () => {
+    renderAt()
+    fireEvent.click(screen.getByRole('button', { name: 'Collaborations' }))
+    expect(screen.getByTestId('collab-stub').getAttribute('data-tab')).toBe('outgoing')
+  })
+
+  it('la pastille rouge ouvre directement les reçues, sans passer par outgoing', () => {
+    mocks.incomingCount = 2
+    renderAt()
+    fireEvent.click(screen.getByTestId('collab-tab-badge'))
+    // stopPropagation : l'onglet parent ne l'a pas emporté sur « outgoing ».
+    expect(screen.getByTestId('collab-stub').getAttribute('data-tab')).toBe('incoming')
+  })
+
+  it('?sub=incoming ouvre les reçues au chargement', () => {
+    renderAt('/transactions?tab=collaborations&sub=incoming')
+    expect(screen.getByTestId('collab-stub').getAttribute('data-tab')).toBe('incoming')
   })
 })
