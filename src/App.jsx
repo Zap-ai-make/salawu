@@ -10,6 +10,7 @@ import { getDefaultRouteForRole } from './utils/roleRouting'
 import RoleGuard from './components/auth/RoleGuard.jsx'
 import ErrorBoundary from './components/ui/ErrorBoundary.jsx'
 import OfflineBanner from './components/OfflineBanner.jsx'
+import EnvBanner from './components/EnvBanner.jsx'
 import { APP_FULL_NAME } from './constants/branding'
 
 // Layouts
@@ -100,6 +101,7 @@ function RoleBasedRedirect() {
 export function AppContent() {
   return (
     <>
+      <EnvBanner />
       <OfflineBanner />
       <Routes>
       {/* ── Espace Boutique (store_admin) ────────────────────────────────── */}
