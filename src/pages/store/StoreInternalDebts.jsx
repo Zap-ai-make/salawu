@@ -52,6 +52,12 @@ const DEBT_STATUS_COLOR = {
   settled: 'bg-green-100 text-green-800',
 }
 
+// Teinte d'une tranche selon son statut (déclarée = en attente ; confirmée/rejetée = lecture seule).
+const TRANCHE_BG = { declared: 'bg-amber-50', confirmed: 'bg-green-50', rejected: 'bg-gray-50' }
+const isSettled = (d) => d.status === 'settled'
+// Bascule Actives / Soldées.
+const segClass = (on) => `rounded-full px-3 py-1 text-xs font-medium transition ${on ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
+
 /** Cellule « Montant » : reste dû en avant, original rappelé s'il diffère. */
 function AmountCell({ debt, tbl }) {
   const remaining = Number(debt.remainingAmount) || 0
@@ -150,7 +156,10 @@ function CreditRow({ debt, tbl }) {
     return () => u()
   }, [debt.id])
 
-  const declared = settlements.filter(s => s.settlementStatus === 'declared')
+  // Historique COMPLET des tranches (déclarées, confirmées, rejetées), plus récentes
+  // d'abord. Une dette réglée n'est plus actionnable : on montre la trace, sans bouton.
+  const sorted = [...settlements].sort((a, b) => tsMillis(b.declaredAt) - tsMillis(a.declaredAt))
+  const canAct = !isSettled(debt)
 
   const act = async (fn, settlementId) => {
     setBusy(settlementId); setErr(null)
@@ -176,21 +185,26 @@ function CreditRow({ debt, tbl }) {
         <StatusBadge status={debt.status} label={DEBT_STATUS_LABELS[debt.status] ?? debt.status} color={DEBT_STATUS_COLOR[debt.status]} />
       </td>
       <td className={tbl.cell}>
-        {declared.length === 0 ? (
+        {sorted.length === 0 ? (
           <span className="text-xs text-gray-400">—</span>
         ) : (
           <div className="space-y-1">
-            {declared.map(s => (
-              <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded bg-amber-50 px-2 py-1 text-xs">
-                <span>{fmt(s.amount)} · {DEBT_SETTLEMENT_METHOD_LABELS[s.method] ?? s.method} · {DEBT_SETTLEMENT_STATUS_LABELS[s.settlementStatus]}</span>
-                <span className="flex gap-1">
-                  <button type="button" disabled={busy === s.id} onClick={() => act(() => confirmTranche(s), s.id)}
-                    className="rounded bg-green-600 px-2 py-0.5 text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
-                  <button type="button" disabled={busy === s.id} onClick={() => act(() => rejectTranche(s), s.id)}
-                    className="rounded border border-red-200 px-2 py-0.5 text-red-600 hover:bg-red-50 disabled:opacity-50">Rejeter</button>
-                </span>
-              </div>
-            ))}
+            {sorted.map(s => {
+              const actionable = canAct && s.settlementStatus === 'declared'
+              return (
+                <div key={s.id} className={`flex flex-wrap items-center justify-between gap-2 rounded px-2 py-1 text-xs ${TRANCHE_BG[s.settlementStatus] ?? 'bg-gray-50'}`}>
+                  <span>{fmt(s.amount)} · {DEBT_SETTLEMENT_METHOD_LABELS[s.method] ?? s.method} · {DEBT_SETTLEMENT_STATUS_LABELS[s.settlementStatus] ?? s.settlementStatus}</span>
+                  {actionable && (
+                    <span className="flex gap-1">
+                      <button type="button" disabled={busy === s.id} onClick={() => act(() => confirmTranche(s), s.id)}
+                        className="rounded bg-green-600 px-2 py-0.5 text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
+                      <button type="button" disabled={busy === s.id} onClick={() => act(() => rejectTranche(s), s.id)}
+                        className="rounded border border-red-200 px-2 py-0.5 text-red-600 hover:bg-red-50 disabled:opacity-50">Rejeter</button>
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
         {err && <p className="mt-1 text-xs text-red-600">{err}</p>}
@@ -199,12 +213,15 @@ function CreditRow({ debt, tbl }) {
   )
 }
 
-/** Carte-total qui sert aussi de sélecteur de vue (dette / créance). */
-function TotalCard({ label, total, count, color, active, onClick, testId }) {
+/** Carte-total qui sert aussi de sélecteur de vue (dette / créance). Le total et le
+ *  compte ne concernent que les lignes ACTIVES ; les soldées sont rappelées à part. */
+function TotalCard({ label, total, count, settledCount = 0, color, active, onClick, testId }) {
+  const sub = `${count} ${count > 1 ? 'lignes' : 'ligne'}`
+    + (settledCount > 0 ? ` · ${settledCount} soldée${settledCount > 1 ? 's' : ''}` : '')
   return (
     <button type="button" onClick={onClick} aria-pressed={active} data-testid={testId}
       className={`block w-full rounded-2xl text-left transition ${active ? 'ring-2 ring-offset-1 ring-blue-500' : 'ring-1 ring-transparent hover:ring-gray-200'}`}>
-      <StatCard label={label} value={fmt(total)} sub={`${count} ${count > 1 ? 'lignes' : 'ligne'}`} color={color} />
+      <StatCard label={label} value={fmt(total)} sub={sub} color={color} />
     </button>
   )
 }
@@ -215,6 +232,7 @@ function StoreInternalDebts() {
   const tbl = themedTableClasses(themeClasses)
   const storeId = userProfile?.storeId ?? null
   const [tab, setTab] = useState('debts')
+  const [view, setView] = useState('active') // 'active' | 'settled'
   const [debts, setDebts] = useState([])
   const [credits, setCredits] = useState([])
   const [error, setError] = useState(null)
@@ -226,8 +244,24 @@ function StoreInternalDebts() {
     return () => { u1(); u2() }
   }, [storeId])
 
-  const totalDebts = debts.reduce((s, d) => s + num(d.remainingAmount), 0)
-  const totalCredits = credits.reduce((s, d) => s + num(d.remainingAmount), 0)
+  // Une dette réglée quitte la vue active (elle vaut 0 et n'est plus actionnable) ; elle
+  // reste consultable via la bascule « Soldées ».
+  const activeDebts = debts.filter((d) => !isSettled(d))
+  const settledDebts = debts.filter(isSettled)
+  const activeCredits = credits.filter((c) => !isSettled(c))
+  const settledCredits = credits.filter(isSettled)
+
+  const totalDebts = activeDebts.reduce((s, d) => s + num(d.remainingAmount), 0)
+  const totalCredits = activeCredits.reduce((s, d) => s + num(d.remainingAmount), 0)
+
+  const isDebts = tab === 'debts'
+  const selectTab = (t) => { setTab(t); setView('active') }
+  const activeRows = isDebts ? activeDebts : activeCredits
+  const settledRows = isDebts ? settledDebts : settledCredits
+  const rows = view === 'settled' ? settledRows : activeRows
+  const emptyMsg = view === 'settled'
+    ? (isDebts ? 'Aucune dette soldée.' : 'Aucune créance soldée.')
+    : (isDebts ? 'Aucune dette.' : 'Aucune créance.')
 
   // Solde NET par partenaire : ce que je dois − ce qu'on me doit, toutes dettes et
   // tous réseaux confondus avec la même boutique → le bilan de fin de journée.
@@ -248,12 +282,12 @@ function StoreInternalDebts() {
     <div>
       <PageHeader title="Dettes internes" subtitle="Dettes et créances entre boutiques, et leurs règlements" />
 
-      {/* Bilan en un coup d'œil : les deux totaux, qui sélectionnent aussi la liste. */}
+      {/* Bilan en un coup d'œil : totaux des lignes ACTIVES, qui sélectionnent aussi la liste. */}
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <TotalCard label="Mes dettes" total={totalDebts} count={debts.length} color="blue"
-          active={tab === 'debts'} onClick={() => setTab('debts')} testId="debts-card" />
-        <TotalCard label="Mes créances" total={totalCredits} count={credits.length} color="green"
-          active={tab === 'credits'} onClick={() => setTab('credits')} testId="credits-card" />
+        <TotalCard label="Mes dettes" total={totalDebts} count={activeDebts.length} settledCount={settledDebts.length} color="blue"
+          active={isDebts} onClick={() => selectTab('debts')} testId="debts-card" />
+        <TotalCard label="Mes créances" total={totalCredits} count={activeCredits.length} settledCount={settledCredits.length} color="green"
+          active={!isDebts} onClick={() => selectTab('credits')} testId="credits-card" />
       </div>
 
       {/* Solde net par partenaire — repère la boutique où une compensation est possible. */}
@@ -283,6 +317,18 @@ function StoreInternalDebts() {
 
       {error && <p className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
 
+      {/* Bascule Actives / Soldées — visible seulement s'il y a des lignes soldées. */}
+      {settledRows.length > 0 && (
+        <div className="mb-3 flex gap-2" data-testid="settled-toggle">
+          <button type="button" aria-pressed={view === 'active'} onClick={() => setView('active')} className={segClass(view === 'active')}>
+            Actives ({activeRows.length})
+          </button>
+          <button type="button" aria-pressed={view === 'settled'} onClick={() => setView('settled')} className={segClass(view === 'settled')}>
+            Soldées ({settledRows.length})
+          </button>
+        </div>
+      )}
+
       <div className={tbl.container}>
         <div className={tbl.scroll}>
           <table className="w-full border-collapse">
@@ -298,18 +344,12 @@ function StoreInternalDebts() {
               </tr>
             </thead>
             <tbody>
-              {tab === 'debts' ? (
-                debts.length === 0 ? (
-                  <tr><td colSpan="7" className={tbl.empty}>Aucune dette.</td></tr>
-                ) : (
-                  debts.map(d => <DebtRow key={d.id} debt={d} credits={credits} tbl={tbl} />)
-                )
+              {rows.length === 0 ? (
+                <tr><td colSpan="7" className={tbl.empty}>{emptyMsg}</td></tr>
               ) : (
-                credits.length === 0 ? (
-                  <tr><td colSpan="7" className={tbl.empty}>Aucune créance.</td></tr>
-                ) : (
-                  credits.map(d => <CreditRow key={d.id} debt={d} tbl={tbl} />)
-                )
+                rows.map(d => isDebts
+                  ? <DebtRow key={d.id} debt={d} credits={activeCredits} tbl={tbl} />
+                  : <CreditRow key={d.id} debt={d} tbl={tbl} />)
               )}
             </tbody>
           </table>
