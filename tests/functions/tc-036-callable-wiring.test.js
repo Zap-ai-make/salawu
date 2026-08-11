@@ -100,6 +100,9 @@ describe('TC-036-WRA — exports callable de index.js', () => {
       'declareInternalDebtSettlement',
       'confirmInternalDebtSettlement',
       'rejectInternalDebtSettlement',
+      'declareInternalDebtCompensation',
+      'confirmInternalDebtCompensation',
+      'rejectInternalDebtCompensation',
       'listStoreCollaborationProviders',
     ])
     for (const key of Object.keys(indexModule)) {

@@ -36,6 +36,9 @@ import { rejectStoreCollaborationHandler } from './collaborations/rejectStoreCol
 import { declareInternalDebtSettlementHandler } from './collaborations/declareInternalDebtSettlement.js'
 import { confirmInternalDebtSettlementHandler } from './collaborations/confirmInternalDebtSettlement.js'
 import { rejectInternalDebtSettlementHandler } from './collaborations/rejectInternalDebtSettlement.js'
+import { declareInternalDebtCompensationHandler } from './collaborations/declareInternalDebtCompensation.js'
+import { confirmInternalDebtCompensationHandler } from './collaborations/confirmInternalDebtCompensation.js'
+import { rejectInternalDebtCompensationHandler } from './collaborations/rejectInternalDebtCompensation.js'
 import { listStoreCollaborationProvidersHandler } from './collaborations/listStoreCollaborationProviders.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
@@ -142,6 +145,21 @@ export const confirmInternalDebtSettlement = onCall(
 export const rejectInternalDebtSettlement = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
   wrapCallable(rejectInternalDebtSettlementHandler, deps)
+)
+
+export const declareInternalDebtCompensation = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(declareInternalDebtCompensationHandler, deps)
+)
+
+export const confirmInternalDebtCompensation = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(confirmInternalDebtCompensationHandler, deps)
+)
+
+export const rejectInternalDebtCompensation = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(rejectInternalDebtCompensationHandler, deps)
 )
 
 export const listStoreCollaborationProviders = onCall(

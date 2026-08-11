@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
 import PageHeader from '../../components/ui/PageHeader'
@@ -14,6 +14,9 @@ import {
   declareInternalDebtSettlement,
   confirmInternalDebtSettlement,
   rejectInternalDebtSettlement,
+  declareInternalDebtCompensation,
+  confirmInternalDebtCompensation,
+  rejectInternalDebtCompensation,
   generateIdempotencyKey,
 } from '../../services/collaborationService'
 import {
@@ -25,6 +28,16 @@ import {
 
 const fmt = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
 const opLabel = (t) => COLLAB_OPERATION_TYPE_LABELS[t] ?? t
+const num = (v) => Number(v) || 0
+const notSettled = (d) => d.status !== 'settled' && num(d.remainingAmount) > 0
+// Millisecondes d'un createdAt (Timestamp Firestore, Date, ISO ou {seconds}).
+const tsMillis = (ts) => {
+  if (!ts) return 0
+  if (typeof ts.toMillis === 'function') return ts.toMillis()
+  if (typeof ts.seconds === 'number') return ts.seconds * 1000
+  const d = new Date(ts)
+  return Number.isNaN(d.getTime()) ? 0 : d.getTime()
+}
 // Un remboursement de dette emprunte les mêmes canaux qu'une transaction client
 // (Mobile Money par réseau) + la banque. Les anciens codes (especes, transfert…)
 // des tranches historiques restent lisibles via DEBT_SETTLEMENT_METHOD_LABELS.
@@ -53,13 +66,23 @@ function AmountCell({ debt, tbl }) {
   )
 }
 
-// ── Ligne dette (côté débitrice) : déclarer un règlement ─────────────────────
-function DebtRow({ debt, tbl }) {
+// ── Ligne dette (côté débitrice) : rembourser OU compenser ───────────────────
+// `credits` = mes créances (elles pour la compensation) ; la créance opposée du
+// même partenaire (tous réseaux) permet de solder les deux dettes d'un clic.
+function DebtRow({ debt, credits, tbl }) {
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState(METHODS[0])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const [err, setErr] = useState(null)
+
+  // Créance opposée la plus ancienne du même partenaire (débitrice = ma créancière).
+  const target = useMemo(() => {
+    return credits
+      .filter((c) => c.debtorStoreId === debt.creditorStoreId && notSettled(c))
+      .sort((a, b) => tsMillis(a.createdAt) - tsMillis(b.createdAt))[0] ?? null
+  }, [credits, debt.creditorStoreId])
+  const compensable = target ? Math.min(num(debt.remainingAmount), num(target.remainingAmount)) : 0
 
   const rembourser = async () => {
     setBusy(true); setErr(null); setMsg(null)
@@ -67,6 +90,14 @@ function DebtRow({ debt, tbl }) {
       await declareInternalDebtSettlement({ debtId: debt.id, amount, method, idempotencyKey: generateIdempotencyKey() })
       setMsg('Remboursement déclaré. En attente de confirmation.')
       setAmount('')
+    } catch (e) { setErr(e.message) } finally { setBusy(false) }
+  }
+
+  const compenser = async () => {
+    setBusy(true); setErr(null); setMsg(null)
+    try {
+      await declareInternalDebtCompensation({ debtId: debt.id, oppositeDebtId: target.id, amount: compensable, idempotencyKey: generateIdempotencyKey() })
+      setMsg('Compensation proposée. En attente de confirmation par la boutique créancière.')
     } catch (e) { setErr(e.message) } finally { setBusy(false) }
   }
 
@@ -85,6 +116,13 @@ function DebtRow({ debt, tbl }) {
           <span className="text-xs text-gray-400">—</span>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
+            {compensable > 0 && (
+              <button type="button" disabled={busy} onClick={compenser}
+                className="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                title="Solder avec la créance opposée de cette boutique">
+                Compenser {fmt(compensable)}
+              </button>
+            )}
             <input type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder="Montant" className="w-28 rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Montant règlement" />
             <select value={method} onChange={e => setMethod(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Méthode">
@@ -119,6 +157,14 @@ function CreditRow({ debt, tbl }) {
     try { await fn() } catch (e) { setErr(e.message) } finally { setBusy(null) }
   }
 
+  // Une compensation confirme/rejette LES DEUX dettes → callables dédiés.
+  const confirmTranche = (s) => s.method === 'compensation'
+    ? confirmInternalDebtCompensation({ debtId: debt.id, settlementId: s.id })
+    : confirmInternalDebtSettlement({ debtId: debt.id, settlementId: s.id })
+  const rejectTranche = (s) => s.method === 'compensation'
+    ? rejectInternalDebtCompensation({ debtId: debt.id, settlementId: s.id, rejectionReason: 'Refusée' })
+    : rejectInternalDebtSettlement({ debtId: debt.id, settlementId: s.id, rejectionReason: 'Non reçu' })
+
   return (
     <tr>
       <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(debt.createdAt)}</td>
@@ -138,9 +184,9 @@ function CreditRow({ debt, tbl }) {
               <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded bg-amber-50 px-2 py-1 text-xs">
                 <span>{fmt(s.amount)} · {DEBT_SETTLEMENT_METHOD_LABELS[s.method] ?? s.method} · {DEBT_SETTLEMENT_STATUS_LABELS[s.settlementStatus]}</span>
                 <span className="flex gap-1">
-                  <button type="button" disabled={busy === s.id} onClick={() => act(() => confirmInternalDebtSettlement({ debtId: debt.id, settlementId: s.id }), s.id)}
+                  <button type="button" disabled={busy === s.id} onClick={() => act(() => confirmTranche(s), s.id)}
                     className="rounded bg-green-600 px-2 py-0.5 text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
-                  <button type="button" disabled={busy === s.id} onClick={() => act(() => rejectInternalDebtSettlement({ debtId: debt.id, settlementId: s.id, rejectionReason: 'Non reçu' }), s.id)}
+                  <button type="button" disabled={busy === s.id} onClick={() => act(() => rejectTranche(s), s.id)}
                     className="rounded border border-red-200 px-2 py-0.5 text-red-600 hover:bg-red-50 disabled:opacity-50">Rejeter</button>
                 </span>
               </div>
@@ -180,8 +226,23 @@ function StoreInternalDebts() {
     return () => { u1(); u2() }
   }, [storeId])
 
-  const totalDebts = debts.reduce((s, d) => s + (Number(d.remainingAmount) || 0), 0)
-  const totalCredits = credits.reduce((s, d) => s + (Number(d.remainingAmount) || 0), 0)
+  const totalDebts = debts.reduce((s, d) => s + num(d.remainingAmount), 0)
+  const totalCredits = credits.reduce((s, d) => s + num(d.remainingAmount), 0)
+
+  // Solde NET par partenaire : ce que je dois − ce qu'on me doit, toutes dettes et
+  // tous réseaux confondus avec la même boutique → le bilan de fin de journée.
+  const partners = useMemo(() => {
+    const map = new Map()
+    const touch = (id, name) => {
+      const cur = map.get(id) ?? { id, name: name ?? id, debt: 0, credit: 0 }
+      if (name) cur.name = name
+      map.set(id, cur)
+      return cur
+    }
+    debts.forEach((d) => { touch(d.creditorStoreId, d.creditorStoreName).debt += num(d.remainingAmount) })
+    credits.forEach((c) => { touch(c.debtorStoreId, c.debtorStoreName).credit += num(c.remainingAmount) })
+    return [...map.values()].filter((p) => p.debt > 0 || p.credit > 0)
+  }, [debts, credits])
 
   return (
     <div>
@@ -194,6 +255,31 @@ function StoreInternalDebts() {
         <TotalCard label="Mes créances" total={totalCredits} count={credits.length} color="green"
           active={tab === 'credits'} onClick={() => setTab('credits')} testId="credits-card" />
       </div>
+
+      {/* Solde net par partenaire — repère la boutique où une compensation est possible. */}
+      {partners.length > 0 && (
+        <div className="mb-6" data-testid="net-by-partner">
+          <h2 className="mb-2 text-sm font-semibold text-gray-600">Solde net par partenaire</h2>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {partners.map((p) => {
+              const net = p.debt - p.credit
+              const both = p.debt > 0 && p.credit > 0
+              const label = net > 0 ? 'Vous devez' : net < 0 ? 'On vous doit' : 'Soldé'
+              const tone = net > 0 ? 'text-blue-700' : net < 0 ? 'text-green-700' : 'text-gray-500'
+              return (
+                <div key={p.id} data-testid={`partner-net-${p.id}`}
+                  className="rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
+                  <p className="truncate text-sm font-medium text-gray-800">{p.name}</p>
+                  <p className={`text-sm font-semibold ${tone}`}>{label}{net !== 0 ? ` ${fmt(Math.abs(net))}` : ''}</p>
+                  {both && (
+                    <p className="text-xs text-gray-400">Compensable jusqu'à {fmt(Math.min(p.debt, p.credit))}</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {error && <p className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
 
@@ -216,7 +302,7 @@ function StoreInternalDebts() {
                 debts.length === 0 ? (
                   <tr><td colSpan="7" className={tbl.empty}>Aucune dette.</td></tr>
                 ) : (
-                  debts.map(d => <DebtRow key={d.id} debt={d} tbl={tbl} />)
+                  debts.map(d => <DebtRow key={d.id} debt={d} credits={credits} tbl={tbl} />)
                 )
               ) : (
                 credits.length === 0 ? (

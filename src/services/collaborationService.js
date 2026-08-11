@@ -43,6 +43,9 @@ const ERROR_MESSAGES = {
   SETTLEMENT_NOT_DECLARED:      "Ce règlement n'est pas en attente de confirmation.",
   SETTLEMENT_NOT_FOUND:         'Règlement introuvable.',
   SETTLEMENT_EXCEEDS_REMAINING: 'Le montant dépasse le reste dû.',
+  INVALID_OPPOSITE_DEBT:        'Dette opposée invalide.',
+  NOT_OPPOSITE_PAIR:            'La dette opposée doit lier les deux mêmes boutiques en sens inverse.',
+  COMPENSATION_EXCEEDS_REMAINING:'Le montant dépasse ce qui est compensable.',
   IDEMPOTENCY_CONFLICT:         'Une tranche différente existe déjà pour cette action.',
   INVALID_REJECTION_REASON:     'Le motif est invalide (3 à 500 caractères).',
   TRANSACTION_FAILED:           "L'opération n'a pas pu être finalisée.",
@@ -127,6 +130,27 @@ export async function rejectInternalDebtSettlement({ debtId, settlementId, rejec
   const reason = String(rejectionReason ?? '').trim()
   if (reason.length < 3 || reason.length > 500) throw new Error(ERROR_MESSAGES.INVALID_REJECTION_REASON)
   return call('rejectInternalDebtSettlement', { debtId, settlementId, rejectionReason: reason })
+}
+
+// ── Compensation de deux dettes opposées (débitrice de D1 déclare, créancière confirme) ──
+
+/** Boutique débitrice de D1 : propose de compenser D1 contre la dette opposée D2. */
+export async function declareInternalDebtCompensation({ debtId, oppositeDebtId, amount, idempotencyKey } = {}) {
+  const parsed = parseStrictInteger(amount)
+  if (parsed === null) throw new Error(ERROR_MESSAGES.INVALID_SETTLEMENT_AMOUNT)
+  return call('declareInternalDebtCompensation', { debtId, oppositeDebtId, amount: parsed, idempotencyKey })
+}
+
+/** Boutique créancière de D1 : confirme la compensation (impute sur les deux dettes). */
+export async function confirmInternalDebtCompensation({ debtId, settlementId } = {}) {
+  return call('confirmInternalDebtCompensation', { debtId, settlementId })
+}
+
+/** Boutique créancière de D1 : rejette la compensation (motif 3–500). */
+export async function rejectInternalDebtCompensation({ debtId, settlementId, rejectionReason } = {}) {
+  const reason = String(rejectionReason ?? '').trim()
+  if (reason.length < 3 || reason.length > 500) throw new Error(ERROR_MESSAGES.INVALID_REJECTION_REASON)
+  return call('rejectInternalDebtCompensation', { debtId, settlementId, rejectionReason: reason })
 }
 
 // ── Lectures temps réel ──────────────────────────────────────────────────────

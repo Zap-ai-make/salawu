@@ -64,3 +64,33 @@ export function validateIdempotencyKey(key) {
 export function deterministicSettlementId(debtId, actorUid, idempotencyKey) {
   return `dst_${debtId}_${actorUid}_${idempotencyKey}`
 }
+
+// ── Compensation de deux dettes opposées (Vague 2, LOT 9) ────────────────────
+// Une compensation solde une dette D1 (A→B) contre la dette OPPOSÉE D2 (B→A) :
+// même paire de boutiques, sens inverse, TOUS réseaux confondus (décision client
+// 2026-08-11). Elle ne bouge aucun float, seulement le reste dû des deux dettes.
+
+// Id de compensation déterministe — préfixe distinct des règlements (`dst_`) pour
+// éviter toute collision de document dans la même sous-collection `settlements`.
+export function deterministicCompensationId(debtId, actorUid, idempotencyKey) {
+  return `dcp_${debtId}_${actorUid}_${idempotencyKey}`
+}
+
+// D2 doit être la dette opposée entre les DEUX MÊMES boutiques (débitrice/créancière
+// inversées). Aucune contrainte de réseau : on compense la position nette entre A et B.
+export function validateOppositeDebtPair(debt, oppositeDebt) {
+  if (!debt || typeof debt !== 'object' || !oppositeDebt || typeof oppositeDebt !== 'object') {
+    throw new DealerRequestError('INVALID_OPPOSITE_DEBT', 'Dette opposée invalide.')
+  }
+  const opposite =
+    oppositeDebt.debtorStoreId === debt.creditorStoreId &&
+    oppositeDebt.creditorStoreId === debt.debtorStoreId
+  if (!opposite) {
+    throw new DealerRequestError('NOT_OPPOSITE_PAIR', 'La dette opposée doit lier les deux mêmes boutiques en sens inverse.')
+  }
+}
+
+// Montant compensable = plus petit des deux restes dus.
+export function compensableAmount(debt, oppositeDebt) {
+  return Math.min(Number(debt?.remainingAmount) || 0, Number(oppositeDebt?.remainingAmount) || 0)
+}
