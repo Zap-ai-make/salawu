@@ -48,7 +48,7 @@ import Historique from '../../src/pages/Historique.jsx'
 const TX = { id: 't1', date: '09/08/2026 10:00', client: { nom: 'Diallo', prenom: 'Ali' }, type: 'Dépôt', reseau: 'Coris', code: '01', montant: 20000, statut: 'Validée' }
 const TRANSFER = { id: 'tr1', createdAt: new Date('2026-08-09T09:00:00Z'), transferType: 'return_stock', amount: 7000, status: 'confirmed', network: 'Coris' }
 const INC = { id: 'c1', createdAt: new Date('2026-08-08T09:00:00Z'), requestingStoreName: 'ESAHAF POUYTENGA', clientNom: 'Sawadogo', clientPrenom: 'M', network: 'Orange', operationType: 'deposit', amount: 5000, status: 'confirmed' }
-const OUT = { id: 'c2', createdAt: new Date('2026-08-07T09:00:00Z'), supplierStoreName: 'ESAHAF KAYA', clientNom: 'Kabore', clientPrenom: 'J', network: 'Moov', operationType: 'withdrawal', amount: 3000, status: 'pending' }
+const OUT = { id: 'c2', createdAt: new Date('2026-08-07T09:00:00Z'), supplierStoreName: 'ESAHAF KAYA', clientNom: 'Kabore', clientPrenom: 'J', network: 'Moov', operationType: 'withdrawal', amount: 3000, status: 'rejected' }
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -90,6 +90,23 @@ describe('TC-122 — sous-onglets Historique', () => {
     expect(screen.getByText('Reçue')).toBeInTheDocument()
     expect(screen.getByText('Envoyée')).toBeInTheDocument()
     expect(screen.getByTestId('histo-tab-collab-badge').textContent).toBe('2')
+  })
+
+  it('n\'affiche que le terminé : les collaborations « En attente » sont exclues', () => {
+    const pending = { ...INC, id: 'c9', requestingStoreName: 'ESAHAF EN ATTENTE', status: 'pending' }
+    mocks.subscribeIncomingCollaborations.mockImplementation(({ onUpdate }) => { onUpdate?.([INC, pending]); return vi.fn() })
+    render(<Historique />)
+    // INC (confirmée) + OUT (rejetée) comptent ; la pending non.
+    expect(screen.getByTestId('histo-tab-collab-badge').textContent).toBe('2')
+    fireEvent.click(screen.getByRole('button', { name: /Collaborations/ }))
+    expect(screen.queryByText('ESAHAF EN ATTENTE')).not.toBeInTheDocument()
+  })
+
+  it('n\'affiche que le terminé : les opérations dealer « En attente » sont exclues', () => {
+    const pending = { ...TRANSFER, id: 'tr9', status: 'pending' }
+    mocks.subscribeStoreTransfers.mockImplementation(({ onUpdate }) => { onUpdate?.([TRANSFER, pending]); return vi.fn() })
+    render(<Historique />)
+    expect(screen.getByTestId('histo-tab-dealer-badge').textContent).toBe('1')
   })
 
   it('mono-réseau : onglet Collaborations masqué, aucun abonnement collab', () => {

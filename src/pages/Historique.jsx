@@ -27,6 +27,10 @@ import {
 
 const fmtAmount = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
 const toDate = (ts) => (ts?.toDate ? ts.toDate() : ts ? new Date(ts) : null)
+// L'Historique ne montre que le TERMINÉ, comme les transactions client (seules les
+// complétées y vont). Une opération dealer / collaboration « En attente » reste dans
+// son onglet opérationnel (Transactions), pas ici.
+const isTerminal = (status) => status === 'confirmed' || status === 'rejected'
 const collabClient = (c) => `${c.clientNom ?? ''} ${c.clientPrenom ?? ''}`.trim() || c.clientId || '—'
 
 function Historique() {
@@ -72,16 +76,18 @@ function Historique() {
 
   const filterArgs = { from: dateFilter.from, to: dateFilter.to, search: searchTerm, todayOnly: showTodayOnly }
 
-  const dealerRows = transfers.map((t) => ({
-    when: toDate(t.createdAt),
-    search: `${STORE_TRANSFER_TYPE_LABELS[t.transferType] ?? t.transferType ?? ''} ${t.network ?? ''} ${t.amount ?? ''}`,
-    data: t,
-  }))
+  const dealerRows = transfers
+    .filter((t) => isTerminal(t.status))
+    .map((t) => ({
+      when: toDate(t.createdAt),
+      search: `${STORE_TRANSFER_TYPE_LABELS[t.transferType] ?? t.transferType ?? ''} ${t.network ?? ''} ${t.amount ?? ''}`,
+      data: t,
+    }))
   const dealerFiltered = filterHistoryRows(dealerRows, filterArgs)
 
   const collabRows = [
-    ...incoming.map((c) => ({ sens: 'Reçue', partner: c.requestingStoreName ?? c.requestingStoreId, c })),
-    ...outgoing.map((c) => ({ sens: 'Envoyée', partner: c.supplierStoreName ?? c.supplierStoreId, c })),
+    ...incoming.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Reçue', partner: c.requestingStoreName ?? c.requestingStoreId, c })),
+    ...outgoing.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Envoyée', partner: c.supplierStoreName ?? c.supplierStoreId, c })),
   ]
     .map(({ sens, partner, c }) => ({
       when: toDate(c.createdAt),
