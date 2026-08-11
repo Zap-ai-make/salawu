@@ -37,11 +37,14 @@ function Transactions() {
     ? requested
     : 'client'
   const setMode = (next) => setSearchParams(next === 'client' ? {} : { tab: next }, { replace: true })
-  // La pastille des reçues ouvre directement leur sous-onglet, via ?sub= que
-  // StoreCollaborations lit pour son onglet initial. Cliquer l'onglet lui-même
-  // efface ?sub= et retombe donc sur « Mes demandes ».
-  const openCollabSub = (sub) =>
-    setSearchParams(sub ? { tab: 'collaborations', sub } : { tab: 'collaborations' }, { replace: true })
+  // L'onglet Collaborations pointe sur la tâche : s'il y a des reçues en attente,
+  // il ouvre leur sous-onglet (?sub=incoming) ; sinon « Mes demandes ». C'est tout
+  // le bouton qui mène au travail à faire, pas seulement la pastille.
+  const openCollab = () =>
+    setSearchParams(
+      incomingCollabCount > 0 ? { tab: 'collaborations', sub: 'incoming' } : { tab: 'collaborations' },
+      { replace: true },
+    )
   const collabInitialTab = searchParams.get('sub') === 'incoming' ? 'incoming' : 'outgoing'
 
   return (
@@ -60,7 +63,7 @@ function Transactions() {
             Opération dealer
           </button>
           {IS_MULTI_NETWORK && (
-            <button type="button" aria-pressed={mode === 'collaborations'} className={tabButtonClass(mode === 'collaborations')} onClick={() => setMode('collaborations')}>
+            <button type="button" aria-pressed={mode === 'collaborations'} className={tabButtonClass(mode === 'collaborations')} onClick={openCollab}>
               Collaborations
               {/* Masquée à zéro : l'onglet fermé ne doit alerter que s'il y a à faire. */}
               {incomingCollabCount > 0 && (
@@ -70,7 +73,6 @@ function Transactions() {
                   active={mode === 'collaborations'}
                   testId="collab-tab-badge"
                   label={`${incomingCollabCount} collaboration${incomingCollabCount > 1 ? 's' : ''} à exécuter`}
-                  onActivate={() => openCollabSub('incoming')}
                 />
               )}
             </button>

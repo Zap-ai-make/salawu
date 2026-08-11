@@ -109,17 +109,17 @@ describe('TC-115 — sous-onglets de Transactions', () => {
     expect(screen.queryByTestId('collab-tab-badge')).not.toBeInTheDocument()
   })
 
-  it('le corps de l\'onglet ouvre « Mes demandes » (sous-onglet outgoing)', () => {
+  it('sans reçue en attente, l\'onglet ouvre « Mes demandes » (outgoing)', () => {
     renderAt()
     fireEvent.click(screen.getByRole('button', { name: 'Collaborations' }))
     expect(screen.getByTestId('collab-stub').getAttribute('data-tab')).toBe('outgoing')
   })
 
-  it('la pastille rouge ouvre directement les reçues, sans passer par outgoing', () => {
+  it('avec des reçues en attente, l\'onglet pointe droit sur les reçues', () => {
     mocks.incomingCount = 2
     renderAt()
-    fireEvent.click(screen.getByTestId('collab-tab-badge'))
-    // stopPropagation : l'onglet parent ne l'a pas emporté sur « outgoing ».
+    // Tout le bouton mène à la tâche à faire, pas seulement la pastille.
+    fireEvent.click(screen.getByRole('button', { name: /Collaborations/ }))
     expect(screen.getByTestId('collab-stub').getAttribute('data-tab')).toBe('incoming')
   })
 
