@@ -17,12 +17,15 @@ import { subscribeStoreTransfers } from '../services/storeTransferService'
 import {
   subscribeIncomingCollaborations,
   subscribeOutgoingCollaborations,
+  subscribeMyDebts,
+  subscribeMyCredits,
 } from '../services/collaborationService'
 import {
   STORE_TRANSFER_TYPE_LABELS,
   DEALER_REQUEST_STATUS_LABELS,
   COLLAB_OPERATION_TYPE_LABELS,
   COLLAB_STATUS_LABELS,
+  DEBT_STATUS_LABELS,
 } from '../constants/dealerConstants'
 
 const fmtAmount = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
@@ -59,6 +62,8 @@ function Historique() {
   const [transfers, setTransfers] = useState([])
   const [incoming, setIncoming] = useState([])
   const [outgoing, setOutgoing] = useState([])
+  const [debts, setDebts] = useState([])
+  const [credits, setCredits] = useState([])
 
   // Les deux abonnements restent montés quel que soit l'onglet : les pastilles de
   // comptage vivent, et basculer d'onglet n'attend pas un rechargement.
@@ -71,6 +76,13 @@ function Historique() {
     if (!storeId || !IS_MULTI_NETWORK) { setIncoming([]); setOutgoing([]); return undefined }
     const u1 = subscribeIncomingCollaborations({ storeId, onUpdate: setIncoming, onError: () => setIncoming([]) })
     const u2 = subscribeOutgoingCollaborations({ storeId, onUpdate: setOutgoing, onError: () => setOutgoing([]) })
+    return () => { u1(); u2() }
+  }, [storeId])
+
+  useEffect(() => {
+    if (!storeId || !IS_MULTI_NETWORK) { setDebts([]); setCredits([]); return undefined }
+    const u1 = subscribeMyDebts({ storeId, onUpdate: setDebts, onError: () => setDebts([]) })
+    const u2 = subscribeMyCredits({ storeId, onUpdate: setCredits, onError: () => setCredits([]) })
     return () => { u1(); u2() }
   }, [storeId])
 
@@ -98,6 +110,22 @@ function Historique() {
     }))
     .sort((a, b) => (b.when?.getTime() ?? 0) - (a.when?.getTime() ?? 0))
   const collabFiltered = filterHistoryRows(collabRows, filterArgs)
+
+  // Dettes internes : seules les RÉGLÉES vont à l'historique (même principe que le reste).
+  // Un même document est une « Dette » (je suis débitrice) ou une « Créance » (je suis créancière).
+  const internalDebtRows = [
+    ...debts.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Dette', partner: d.creditorStoreName ?? d.creditorStoreId, d })),
+    ...credits.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Créance', partner: d.debtorStoreName ?? d.debtorStoreId, d })),
+  ]
+    .map(({ sens, partner, d }) => ({
+      when: toDate(d.updatedAt ?? d.createdAt),
+      search: `${sens} ${partner ?? ''} ${d.network ?? ''} ${COLLAB_OPERATION_TYPE_LABELS[d.operationType] ?? ''} ${d.originalAmount ?? ''}`,
+      sens,
+      partner,
+      data: d,
+    }))
+    .sort((a, b) => (b.when?.getTime() ?? 0) - (a.when?.getTime() ?? 0))
+  const internalDebtFiltered = filterHistoryRows(internalDebtRows, filterArgs)
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -133,6 +161,12 @@ function Historique() {
               <button type="button" aria-pressed={tab === 'collab'} className={tabButtonClass(tab === 'collab')} onClick={() => setTab('collab')}>
                 Collaborations
                 <TabBadge count={collabFiltered.length} active={tab === 'collab'} testId="histo-tab-collab-badge" label={`${collabFiltered.length} collaborations`} />
+              </button>
+            )}
+            {IS_MULTI_NETWORK && (
+              <button type="button" aria-pressed={tab === 'internaldebts'} className={tabButtonClass(tab === 'internaldebts')} onClick={() => setTab('internaldebts')}>
+                Dettes internes
+                <TabBadge count={internalDebtFiltered.length} active={tab === 'internaldebts'} testId="histo-tab-internaldebts-badge" label={`${internalDebtFiltered.length} dettes internes réglées`} />
               </button>
             )}
           </div>
@@ -218,6 +252,46 @@ function Historique() {
                           <td className={`${tbl.cell} whitespace-nowrap font-semibold text-gray-800`}>{fmtAmount(c.amount)}</td>
                           <td className={`${tbl.cell} whitespace-nowrap`}>
                             <StatusBadge status={c.status} label={COLLAB_STATUS_LABELS[c.status] ?? c.status} />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Onglet Dettes internes (réglées) */}
+          {tab === 'internaldebts' && IS_MULTI_NETWORK && (
+            <div className={tbl.container}>
+              <div className={tbl.scroll}>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className={tbl.headerRow}>
+                      <th className={tbl.headerCell}>Date &amp; heure</th>
+                      <th className={tbl.headerCell}>Sens</th>
+                      <th className={tbl.headerCell}>Partenaire</th>
+                      <th className={tbl.headerCell}>Type</th>
+                      <th className={tbl.headerCell}>Réseau</th>
+                      <th className={tbl.headerCell}>Montant</th>
+                      <th className={tbl.headerCell}>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {internalDebtFiltered.length === 0 ? (
+                      <tr><td colSpan="7" className={tbl.empty}>Aucune dette réglée.</td></tr>
+                    ) : (
+                      internalDebtFiltered.map(({ data: d, sens, partner }) => (
+                        <tr key={d.id}>
+                          <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(d.updatedAt ?? d.createdAt)}</td>
+                          <td className={`${tbl.cell} text-gray-700`}>{sens}</td>
+                          <td className={`${tbl.cell} font-medium text-gray-800`}>{partner ?? '—'}</td>
+                          <td className={`${tbl.cell} text-gray-700`}>{COLLAB_OPERATION_TYPE_LABELS[d.operationType] ?? d.operationType}</td>
+                          <td className={`${tbl.cell} text-gray-700`}>{d.network}</td>
+                          <td className={`${tbl.cell} whitespace-nowrap font-semibold text-gray-800`}>{fmtAmount(d.originalAmount)}</td>
+                          <td className={`${tbl.cell} whitespace-nowrap`}>
+                            <StatusBadge status={d.status} label={DEBT_STATUS_LABELS[d.status] ?? d.status} />
                           </td>
                         </tr>
                       ))

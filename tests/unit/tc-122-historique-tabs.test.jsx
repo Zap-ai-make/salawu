@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
   subscribeStoreTransfers: vi.fn(),
   subscribeIncomingCollaborations: vi.fn(),
   subscribeOutgoingCollaborations: vi.fn(),
+  subscribeMyDebts: vi.fn(),
+  subscribeMyCredits: vi.fn(),
   isMultiNetwork: true,
 }))
 
@@ -41,6 +43,8 @@ vi.mock('../../src/services/storeTransferService', () => ({
 vi.mock('../../src/services/collaborationService', () => ({
   subscribeIncomingCollaborations: mocks.subscribeIncomingCollaborations,
   subscribeOutgoingCollaborations: mocks.subscribeOutgoingCollaborations,
+  subscribeMyDebts: mocks.subscribeMyDebts,
+  subscribeMyCredits: mocks.subscribeMyCredits,
 }))
 
 import Historique from '../../src/pages/Historique.jsx'
@@ -49,6 +53,9 @@ const TX = { id: 't1', date: '09/08/2026 10:00', client: { nom: 'Diallo', prenom
 const TRANSFER = { id: 'tr1', createdAt: new Date('2026-08-09T09:00:00Z'), transferType: 'return_stock', amount: 7000, status: 'confirmed', network: 'Coris' }
 const INC = { id: 'c1', createdAt: new Date('2026-08-08T09:00:00Z'), requestingStoreName: 'ESAHAF POUYTENGA', clientNom: 'Sawadogo', clientPrenom: 'M', network: 'Orange', operationType: 'deposit', amount: 5000, status: 'confirmed' }
 const OUT = { id: 'c2', createdAt: new Date('2026-08-07T09:00:00Z'), supplierStoreName: 'ESAHAF KAYA', clientNom: 'Kabore', clientPrenom: 'J', network: 'Moov', operationType: 'withdrawal', amount: 3000, status: 'rejected' }
+// Dettes internes RÉGLÉES : store-a débitrice (Dette) et créancière (Créance).
+const DEBT_SETTLED = { id: 'idt1', createdAt: new Date('2026-08-06T09:00:00Z'), updatedAt: new Date('2026-08-06T10:00:00Z'), debtorStoreId: 'store-a', creditorStoreId: 'store-x', creditorStoreName: 'ESAHAF DODO', network: 'Coris', operationType: 'deposit', originalAmount: 12000, status: 'settled' }
+const CREDIT_SETTLED = { id: 'idt2', createdAt: new Date('2026-08-05T09:00:00Z'), updatedAt: new Date('2026-08-05T10:00:00Z'), debtorStoreId: 'store-y', debtorStoreName: 'ESAHAF ZORGHO', creditorStoreId: 'store-a', network: 'Moov', operationType: 'withdrawal', originalAmount: 7000, status: 'settled' }
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -62,6 +69,8 @@ beforeEach(() => {
   mocks.subscribeStoreTransfers.mockImplementation(({ onUpdate }) => { onUpdate?.([TRANSFER]); return vi.fn() })
   mocks.subscribeIncomingCollaborations.mockImplementation(({ onUpdate }) => { onUpdate?.([INC]); return vi.fn() })
   mocks.subscribeOutgoingCollaborations.mockImplementation(({ onUpdate }) => { onUpdate?.([OUT]); return vi.fn() })
+  mocks.subscribeMyDebts.mockImplementation(({ onUpdate }) => { onUpdate?.([DEBT_SETTLED]); return vi.fn() })
+  mocks.subscribeMyCredits.mockImplementation(({ onUpdate }) => { onUpdate?.([CREDIT_SETTLED]); return vi.fn() })
 })
 
 describe('TC-122 — sous-onglets Historique', () => {
@@ -92,6 +101,26 @@ describe('TC-122 — sous-onglets Historique', () => {
     expect(screen.getByTestId('histo-tab-collab-badge').textContent).toBe('2')
   })
 
+  it('l\'onglet Dettes internes regroupe dettes et créances réglées', () => {
+    render(<Historique />)
+    expect(screen.getByTestId('histo-tab-internaldebts-badge').textContent).toBe('2')
+    fireEvent.click(screen.getByRole('button', { name: /Dettes internes/ }))
+    expect(screen.getByText('ESAHAF DODO')).toBeInTheDocument()
+    expect(screen.getByText('ESAHAF ZORGHO')).toBeInTheDocument()
+    expect(screen.getByText('Dette')).toBeInTheDocument()
+    expect(screen.getByText('Créance')).toBeInTheDocument()
+  })
+
+  it('Dettes internes : n\'affiche que le réglé, une dette « en cours » est exclue', () => {
+    const open = { ...DEBT_SETTLED, id: 'idt9', creditorStoreName: 'ESAHAF EN COURS', status: 'open' }
+    mocks.subscribeMyDebts.mockImplementation(({ onUpdate }) => { onUpdate?.([DEBT_SETTLED, open]); return vi.fn() })
+    render(<Historique />)
+    // DEBT_SETTLED + CREDIT_SETTLED comptent ; la dette open non.
+    expect(screen.getByTestId('histo-tab-internaldebts-badge').textContent).toBe('2')
+    fireEvent.click(screen.getByRole('button', { name: /Dettes internes/ }))
+    expect(screen.queryByText('ESAHAF EN COURS')).not.toBeInTheDocument()
+  })
+
   it('n\'affiche que le terminé : les collaborations « En attente » sont exclues', () => {
     const pending = { ...INC, id: 'c9', requestingStoreName: 'ESAHAF EN ATTENTE', status: 'pending' }
     mocks.subscribeIncomingCollaborations.mockImplementation(({ onUpdate }) => { onUpdate?.([INC, pending]); return vi.fn() })
@@ -113,7 +142,9 @@ describe('TC-122 — sous-onglets Historique', () => {
     mocks.isMultiNetwork = false
     render(<Historique />)
     expect(screen.queryByRole('button', { name: /Collaborations/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Dettes internes/ })).not.toBeInTheDocument()
     expect(mocks.subscribeIncomingCollaborations).not.toHaveBeenCalled()
+    expect(mocks.subscribeMyDebts).not.toHaveBeenCalled()
     // L'onglet dealer, lui, reste disponible.
     expect(screen.getByRole('button', { name: /Opérations dealer/ })).toBeInTheDocument()
   })
@@ -127,6 +158,7 @@ describe('TC-122 — sous-onglets Historique', () => {
 
     expect(screen.getByTestId('histo-tab-dealer-badge').textContent).toBe('0')
     expect(screen.getByTestId('histo-tab-collab-badge').textContent).toBe('0')
+    expect(screen.getByTestId('histo-tab-internaldebts-badge').textContent).toBe('0')
   })
 })
 

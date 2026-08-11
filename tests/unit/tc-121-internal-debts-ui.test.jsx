@@ -90,13 +90,13 @@ describe('TC-121 — bilan en cartes', () => {
 
     expect(screen.getByTestId('debts-card')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('credits-card')).toHaveAttribute('aria-pressed', 'false')
-    // Colonne « Envers » propre aux dettes.
-    expect(screen.getByText('Envers')).toBeInTheDocument()
+    // Colonne « À qui » propre aux dettes (langage simple).
+    expect(screen.getByText('À qui')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('credits-card'))
     expect(screen.getByTestId('credits-card')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('De')).toBeInTheDocument()
-    expect(screen.queryByText('Envers')).not.toBeInTheDocument()
+    expect(screen.getByText('Qui')).toBeInTheDocument()
+    expect(screen.queryByText('À qui')).not.toBeInTheDocument()
   })
 })
 
@@ -114,12 +114,12 @@ describe('TC-121 — tableau teinté', () => {
 
   it('rend l\'état vide comme une ligne du tableau', () => {
     render(<StoreInternalDebts />)
-    const empty = screen.getByText('Aucune dette.')
+    const empty = screen.getByText('Aucune dette en cours.')
     expect(empty.tagName).toBe('TD')
     expect(empty).toHaveAttribute('colspan', '7')
 
     fireEvent.click(screen.getByTestId('credits-card'))
-    const emptyC = screen.getByText('Aucune créance.')
+    const emptyC = screen.getByText('Aucune créance en cours.')
     expect(emptyC.tagName).toBe('TD')
   })
 })

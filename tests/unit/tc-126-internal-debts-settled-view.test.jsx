@@ -1,10 +1,10 @@
 /**
- * TC-126 — Dettes internes : les soldées sortent de la vue active + tranches lisibles.
+ * TC-126 — Dettes internes : l'espace ne montre QUE l'en-cours.
  *
- * Correctif d'affichage (front only) suite à l'audit : une dette réglée ne doit plus
- * polluer la vue active ni compter comme une ligne active, mais rester consultable via
- * la bascule « Soldées » ; côté créancier, une dette réglée n'offre plus de bouton
- * mort — on montre l'historique des tranches (confirmée/rejetée) en lecture seule.
+ * Décision client : ne jamais mélanger l'en-cours et le déjà géré. Les dettes/créances
+ * RÉGLÉES quittent cet espace (elles vont dans l'Historique → onglet « Dettes internes »).
+ * Ici : les soldées sont masquées et non comptées, il n'y a PLUS de bascule Actives/Soldées,
+ * et les cartes parlent un langage simple (« Ce que je dois » / « Ce qu'on me doit »).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -66,68 +66,44 @@ beforeEach(() => {
   feed()
 })
 
-describe('TC-126 — les soldées quittent la vue active', () => {
-  it('une dette réglée est masquée en vue active et non comptée dans la carte', () => {
+describe('TC-126 — l\'espace ne montre que l\'en-cours', () => {
+  it('une dette réglée est masquée et non comptée dans la carte', () => {
     feed({ debts: [
       debt('d1', { remainingAmount: 20000, creditorStoreId: 'store-b', creditorStoreName: 'ESAHAF ACTIVE' }),
       debt('d2', { status: 'settled', remainingAmount: 0, creditorStoreId: 'store-c', creditorStoreName: 'ESAHAF SOLDEE' }),
     ] })
     render(<StoreInternalDebts />)
 
-    // Vue active par défaut : dans le TABLEAU, seule la dette ouverte s'affiche
-    // (le récap net par partenaire, hors tableau, peut citer d'autres noms).
     const table = screen.getByRole('table')
     expect(within(table).getByText('ESAHAF ACTIVE')).toBeInTheDocument()
     expect(within(table).queryByText('ESAHAF SOLDEE')).not.toBeInTheDocument()
 
-    // La carte compte 1 ligne active (pas 2) et rappelle « 1 soldée » ; total = actives.
+    // La carte compte 1 ligne en cours (pas 2) ; plus aucune mention « soldée » ici.
     const card = norm(screen.getByTestId('debts-card').textContent)
     expect(card).toContain('20 000 FCFA')
     expect(card).toContain('1 ligne')
-    expect(card).toContain('1 soldée')
+    expect(card).not.toContain('soldée')
     expect(card).not.toContain('2 lignes')
   })
 
-  it('la bascule « Soldées » révèle la dette réglée', () => {
+  it('plus de bascule Actives / Soldées', () => {
     feed({ debts: [
-      debt('d1', { creditorStoreId: 'store-b', creditorStoreName: 'ESAHAF ACTIVE' }),
-      debt('d2', { status: 'settled', remainingAmount: 0, creditorStoreId: 'store-c', creditorStoreName: 'ESAHAF SOLDEE' }),
+      debt('d1'),
+      debt('d2', { status: 'settled', remainingAmount: 0, creditorStoreId: 'store-c' }),
     ] })
     render(<StoreInternalDebts />)
-
-    expect(screen.getByTestId('settled-toggle')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /Soldées/ }))
-    const table = screen.getByRole('table')
-    expect(within(table).getByText('ESAHAF SOLDEE')).toBeInTheDocument()
-    expect(within(table).queryByText('ESAHAF ACTIVE')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settled-toggle')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Soldées/ })).not.toBeInTheDocument()
   })
 
-  it('sans dette soldée, aucune bascule', () => {
+  it('langage simple : « Ce que je dois » / « Ce qu\'on me doit »', () => {
     feed({ debts: [debt('d1')] })
     render(<StoreInternalDebts />)
-    expect(screen.queryByTestId('settled-toggle')).not.toBeInTheDocument()
-  })
-})
-
-describe('TC-126 — côté créancier : plus de bouton mort, tranches lisibles', () => {
-  it('une créance réglée n\'offre plus Confirmer/Rejeter et montre la tranche en lecture seule', () => {
-    feed({ credits: [debt('debt-x', { status: 'settled', remainingAmount: 0, debtorStoreName: 'ESAHAF POUYTENGA' })] })
-    mocks.subscribeDebtSettlements.mockImplementation(({ onUpdate }) => {
-      onUpdate?.([{ id: 's1', amount: 20000, method: 'especes', settlementStatus: 'confirmed', declaredAt: new Date('2026-08-09T09:00:00Z') }])
-      return vi.fn()
-    })
-    render(<StoreInternalDebts />)
-    fireEvent.click(screen.getByTestId('credits-card'))
-    fireEvent.click(screen.getByRole('button', { name: /Soldées/ }))
-
-    // Aucun bouton d'action sur une créance réglée.
-    expect(screen.queryByRole('button', { name: 'Confirmer' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Rejeter' })).not.toBeInTheDocument()
-    // La tranche confirmée reste tracée (lecture seule).
-    expect(screen.getByText(/Confirmé/)).toBeInTheDocument()
+    expect(screen.getByText('Ce que je dois')).toBeInTheDocument()
+    expect(screen.getByText('Ce qu\'on me doit')).toBeInTheDocument()
   })
 
-  it('une créance active garde Confirmer/Rejeter sur une tranche déclarée (non-régression)', () => {
+  it('une créance en cours garde Confirmer/Rejeter sur une tranche déclarée', () => {
     feed({ credits: [debt('debt-y', { status: 'open', remainingAmount: 20000, debtorStoreName: 'ESAHAF POUYTENGA' })] })
     mocks.subscribeDebtSettlements.mockImplementation(({ onUpdate }) => {
       onUpdate?.([{ id: 's1', amount: 5000, method: 'especes', settlementStatus: 'declared', declaredAt: new Date('2026-08-09T09:00:00Z') }])
@@ -135,7 +111,6 @@ describe('TC-126 — côté créancier : plus de bouton mort, tranches lisibles'
     })
     render(<StoreInternalDebts />)
     fireEvent.click(screen.getByTestId('credits-card'))
-
     expect(screen.getByRole('button', { name: 'Confirmer' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Rejeter' })).toBeInTheDocument()
   })

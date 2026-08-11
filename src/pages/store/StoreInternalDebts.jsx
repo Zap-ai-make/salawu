@@ -55,8 +55,6 @@ const DEBT_STATUS_COLOR = {
 // Teinte d'une tranche selon son statut (déclarée = en attente ; confirmée/rejetée = lecture seule).
 const TRANCHE_BG = { declared: 'bg-amber-50', confirmed: 'bg-green-50', rejected: 'bg-gray-50' }
 const isSettled = (d) => d.status === 'settled'
-// Bascule Actives / Soldées.
-const segClass = (on) => `rounded-full px-3 py-1 text-xs font-medium transition ${on ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
 
 /** Cellule « Montant » : reste dû en avant, original rappelé s'il diffère. */
 function AmountCell({ debt, tbl }) {
@@ -215,11 +213,11 @@ function CreditRow({ debt, tbl }) {
   )
 }
 
-/** Carte-total qui sert aussi de sélecteur de vue (dette / créance). Le total et le
- *  compte ne concernent que les lignes ACTIVES ; les soldées sont rappelées à part. */
-function TotalCard({ label, total, count, settledCount = 0, color, active, onClick, testId }) {
+/** Carte-total qui sert aussi de sélecteur de vue (ce que je dois / ce qu'on me doit).
+ *  Le total et le compte ne concernent que les lignes EN COURS (les réglées sont dans
+ *  l'Historique). */
+function TotalCard({ label, total, count, color, active, onClick, testId }) {
   const sub = `${count} ${count > 1 ? 'lignes' : 'ligne'}`
-    + (settledCount > 0 ? ` · ${settledCount} soldée${settledCount > 1 ? 's' : ''}` : '')
   return (
     <button type="button" onClick={onClick} aria-pressed={active} data-testid={testId}
       className={`block w-full rounded-2xl text-left transition ${active ? 'ring-2 ring-offset-1 ring-blue-500' : 'ring-1 ring-transparent hover:ring-gray-200'}`}>
@@ -234,7 +232,6 @@ function StoreInternalDebts() {
   const tbl = themedTableClasses(themeClasses)
   const storeId = userProfile?.storeId ?? null
   const [tab, setTab] = useState('debts')
-  const [view, setView] = useState('active') // 'active' | 'settled'
   const [debts, setDebts] = useState([])
   const [credits, setCredits] = useState([])
   const [error, setError] = useState(null)
@@ -246,24 +243,18 @@ function StoreInternalDebts() {
     return () => { u1(); u2() }
   }, [storeId])
 
-  // Une dette réglée quitte la vue active (elle vaut 0 et n'est plus actionnable) ; elle
-  // reste consultable via la bascule « Soldées ».
+  // Cet espace ne montre QUE l'en-cours : une dette réglée vaut 0, n'est plus actionnable,
+  // et se consulte dans l'Historique → onglet « Dettes internes ». On ne mélange jamais
+  // l'en-cours et le déjà géré.
   const activeDebts = debts.filter((d) => !isSettled(d))
-  const settledDebts = debts.filter(isSettled)
   const activeCredits = credits.filter((c) => !isSettled(c))
-  const settledCredits = credits.filter(isSettled)
 
   const totalDebts = activeDebts.reduce((s, d) => s + num(d.remainingAmount), 0)
   const totalCredits = activeCredits.reduce((s, d) => s + num(d.remainingAmount), 0)
 
   const isDebts = tab === 'debts'
-  const selectTab = (t) => { setTab(t); setView('active') }
-  const activeRows = isDebts ? activeDebts : activeCredits
-  const settledRows = isDebts ? settledDebts : settledCredits
-  const rows = view === 'settled' ? settledRows : activeRows
-  const emptyMsg = view === 'settled'
-    ? (isDebts ? 'Aucune dette soldée.' : 'Aucune créance soldée.')
-    : (isDebts ? 'Aucune dette.' : 'Aucune créance.')
+  const rows = isDebts ? activeDebts : activeCredits
+  const emptyMsg = isDebts ? 'Aucune dette en cours.' : 'Aucune créance en cours.'
 
   // Solde NET par partenaire : ce que je dois − ce qu'on me doit, toutes dettes et
   // tous réseaux confondus avec la même boutique → le bilan de fin de journée.
@@ -282,14 +273,14 @@ function StoreInternalDebts() {
 
   return (
     <div>
-      <PageHeader title="Dettes internes" subtitle="Dettes et créances entre boutiques, et leurs règlements" />
+      <PageHeader title="Dettes internes" subtitle="Ce que je dois et ce qu'on me doit, en cours. Les dettes réglées sont dans l'Historique." />
 
-      {/* Bilan en un coup d'œil : totaux des lignes ACTIVES, qui sélectionnent aussi la liste. */}
+      {/* Bilan en un coup d'œil : totaux des lignes EN COURS, qui sélectionnent aussi la liste. */}
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <TotalCard label="Mes dettes" total={totalDebts} count={activeDebts.length} settledCount={settledDebts.length} color="blue"
-          active={isDebts} onClick={() => selectTab('debts')} testId="debts-card" />
-        <TotalCard label="Mes créances" total={totalCredits} count={activeCredits.length} settledCount={settledCredits.length} color="green"
-          active={!isDebts} onClick={() => selectTab('credits')} testId="credits-card" />
+        <TotalCard label="Ce que je dois" total={totalDebts} count={activeDebts.length} color="blue"
+          active={isDebts} onClick={() => setTab('debts')} testId="debts-card" />
+        <TotalCard label="Ce qu'on me doit" total={totalCredits} count={activeCredits.length} color="green"
+          active={!isDebts} onClick={() => setTab('credits')} testId="credits-card" />
       </div>
 
       {/* Solde net par partenaire — repère la boutique où une compensation est possible. */}
@@ -319,25 +310,13 @@ function StoreInternalDebts() {
 
       {error && <p className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
 
-      {/* Bascule Actives / Soldées — visible seulement s'il y a des lignes soldées. */}
-      {settledRows.length > 0 && (
-        <div className="mb-3 flex gap-2" data-testid="settled-toggle">
-          <button type="button" aria-pressed={view === 'active'} onClick={() => setView('active')} className={segClass(view === 'active')}>
-            Actives ({activeRows.length})
-          </button>
-          <button type="button" aria-pressed={view === 'settled'} onClick={() => setView('settled')} className={segClass(view === 'settled')}>
-            Soldées ({settledRows.length})
-          </button>
-        </div>
-      )}
-
       <div className={tbl.container}>
         <div className={tbl.scroll}>
           <table className="w-full border-collapse">
             <thead>
               <tr className={tbl.headerRow}>
                 <th className={tbl.headerCell}>Date &amp; heure</th>
-                <th className={tbl.headerCell}>{tab === 'debts' ? 'Envers' : 'De'}</th>
+                <th className={tbl.headerCell}>{isDebts ? 'À qui' : 'Qui'}</th>
                 <th className={tbl.headerCell}>Type</th>
                 <th className={tbl.headerCell}>Réseau</th>
                 <th className={tbl.headerCell}>Montant</th>
