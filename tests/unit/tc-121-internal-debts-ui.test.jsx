@@ -125,25 +125,31 @@ describe('TC-121 — tableau teinté', () => {
 })
 
 describe('TC-121 — caractérisation : mêmes appels de service', () => {
-  it('Déclarer envoie declareInternalDebtSettlement (débitrice)', async () => {
+  it('Rembourser envoie declareInternalDebtSettlement avec une méthode de transaction', async () => {
     feed({ debts: [debt('d1', { id: 'debt-9' })] })
     render(<StoreInternalDebts />)
 
+    // Le menu propose les méthodes de transaction + Banque (plus les anciens codes).
+    const methodSelect = screen.getByLabelText('Méthode')
+    const options = [...methodSelect.querySelectorAll('option')].map(o => o.value)
+    expect(options).toContain('Banque')
+    expect(options).toContain('Orange Money')
+
     fireEvent.change(screen.getByLabelText('Montant règlement'), { target: { value: '5000' } })
-    fireEvent.change(screen.getByLabelText('Méthode'), { target: { value: 'transfert' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Déclarer' }))
+    fireEvent.change(methodSelect, { target: { value: 'Banque' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rembourser' }))
 
     await waitFor(() => {
       expect(mocks.declareInternalDebtSettlement).toHaveBeenCalledWith(
-        expect.objectContaining({ debtId: 'debt-9', amount: '5000', method: 'transfert', idempotencyKey: 'key-1' }),
+        expect.objectContaining({ debtId: 'debt-9', amount: '5000', method: 'Banque', idempotencyKey: 'key-1' }),
       )
     })
   })
 
-  it('une dette réglée n\'offre plus de formulaire de règlement', () => {
+  it('une dette réglée n\'offre plus de bouton Rembourser', () => {
     feed({ debts: [debt('d1', { status: 'settled', remainingAmount: 0 })] })
     render(<StoreInternalDebts />)
-    expect(screen.queryByRole('button', { name: 'Déclarer' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Rembourser' })).not.toBeInTheDocument()
   })
 
   it('Confirmer / Rejeter une tranche appellent le bon service (créancière)', async () => {

@@ -10,7 +10,14 @@
 
 import { DealerRequestError } from '../errors.js'
 
-export const SETTLEMENT_METHODS = new Set(['especes', 'depot_bancaire', 'transfert', 'compensation', 'retour_stock'])
+// Canaux de remboursement d'une dette interne = les méthodes de paiement du produit
+// (Mobile Money par réseau) + la banque. Superset client-agnostique, aligné sur
+// METHODES_PAIEMENT_SUPPORTEES du front. Les tranches historiques en anciens codes
+// (especes…) se confirment toujours : confirmInternalDebtSettlement ne revalide pas
+// la méthode.
+export const SETTLEMENT_METHODS = new Set([
+  'Orange Money', 'Moov Money', 'Telecel Money', 'Coris Money', 'Sank Money', 'Wave', 'Cash', 'Banque',
+])
 
 export function validateDebtId(debtId) {
   if (!debtId || typeof debtId !== 'string' || debtId.trim() === '') {

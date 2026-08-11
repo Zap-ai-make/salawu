@@ -43,8 +43,8 @@ describe('TC-111 — commandes', () => {
   })
 
   it('declareInternalDebtSettlement : parse le montant', async () => {
-    await declareInternalDebtSettlement({ debtId: 'd1', amount: '5000', method: 'especes', idempotencyKey: 'k1' })
-    expect(mocks.callable).toHaveBeenCalledWith({ debtId: 'd1', amount: 5000, method: 'especes', idempotencyKey: 'k1' })
+    await declareInternalDebtSettlement({ debtId: 'd1', amount: '5000', method: 'Cash', idempotencyKey: 'k1' })
+    expect(mocks.callable).toHaveBeenCalledWith({ debtId: 'd1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' })
   })
 })
 

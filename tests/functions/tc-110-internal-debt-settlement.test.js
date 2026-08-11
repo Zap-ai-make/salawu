@@ -61,7 +61,7 @@ const settlement = async (id) => (await db.doc(`internalDebts/debt-1/settlements
 describe('TC-110 — declare', () => {
   it('[DS-01] déclare une tranche : declared, dette inchangée', async () => {
     await seedDebt()
-    const res = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue })
+    const res = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
     expect(res).toMatchObject({ success: true, idempotent: false })
     expect((await settlement(res.settlementId)).settlementStatus).toBe('declared')
     expect((await debt()).remainingAmount).toBe(20000) // inchangée avant confirmation
@@ -69,7 +69,7 @@ describe('TC-110 — declare', () => {
 
   it('[DS-02] idempotence : même clé + même payload → no-op', async () => {
     await seedDebt()
-    const p = { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }
+    const p = { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }
     const r1 = await declareInternalDebtSettlementHandler(req(DEBTOR, p), { db, FieldValue })
     const r2 = await declareInternalDebtSettlementHandler(req(DEBTOR, p), { db, FieldValue })
     expect(r2.idempotent).toBe(true)
@@ -79,43 +79,43 @@ describe('TC-110 — declare', () => {
 
   it('[DS-03] même clé + payload différent → IDEMPOTENCY_CONFLICT', async () => {
     await seedDebt()
-    await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue })
-    await expectError(declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 9000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue }), 'IDEMPOTENCY_CONFLICT')
+    await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
+    await expectError(declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 9000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue }), 'IDEMPOTENCY_CONFLICT')
   })
 
   it('[DS-04] créancière déclare → DEBT_STORE_MISMATCH', async () => {
     await seedDebt()
-    await expectError(declareInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue }), 'DEBT_STORE_MISMATCH')
+    await expectError(declareInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue }), 'DEBT_STORE_MISMATCH')
   })
 
   it('[DS-05] montant > reste dû → SETTLEMENT_EXCEEDS_REMAINING', async () => {
     await seedDebt()
-    await expectError(declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 25000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue }), 'SETTLEMENT_EXCEEDS_REMAINING')
+    await expectError(declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 25000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue }), 'SETTLEMENT_EXCEEDS_REMAINING')
   })
 })
 
 describe('TC-110 — confirm', () => {
   it('[DS-06] partiel puis solde : status et remaining corrects', async () => {
     await seedDebt(20000)
-    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue })
+    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
     const c1 = await confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d1.settlementId }), { db, FieldValue })
     expect(c1).toMatchObject({ debtStatus: 'partially_settled', remainingAmount: 15000, settledAmount: 5000 })
     expect((await settlement(d1.settlementId)).settlementStatus).toBe('confirmed')
 
-    const d2 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 15000, method: 'transfert', idempotencyKey: 'k2' }), { db, FieldValue })
+    const d2 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 15000, method: 'Banque', idempotencyKey: 'k2' }), { db, FieldValue })
     const c2 = await confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d2.settlementId }), { db, FieldValue })
     expect(c2).toMatchObject({ debtStatus: 'settled', remainingAmount: 0 })
   })
 
   it('[DS-07] débitrice confirme → DEBT_STORE_MISMATCH', async () => {
     await seedDebt()
-    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue })
+    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
     await expectError(confirmInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', settlementId: d1.settlementId }), { db, FieldValue }), 'DEBT_STORE_MISMATCH')
   })
 
   it('[DS-08] confirmer 2 fois → SETTLEMENT_NOT_DECLARED', async () => {
     await seedDebt()
-    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue })
+    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
     await confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d1.settlementId }), { db, FieldValue })
     await expectError(confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d1.settlementId }), { db, FieldValue }), 'SETTLEMENT_NOT_DECLARED')
   })
@@ -124,7 +124,7 @@ describe('TC-110 — confirm', () => {
 describe('TC-110 — reject', () => {
   it('[DS-09] créancière rejette : tranche rejected, dette inchangée', async () => {
     await seedDebt(20000)
-    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue })
+    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
     await rejectInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d1.settlementId, rejectionReason: 'Non reçu' }), { db, FieldValue })
     expect((await settlement(d1.settlementId)).settlementStatus).toBe('rejected')
     expect((await debt()).remainingAmount).toBe(20000)
@@ -132,7 +132,7 @@ describe('TC-110 — reject', () => {
 
   it('[DS-10] débitrice rejette → DEBT_STORE_MISMATCH', async () => {
     await seedDebt()
-    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'especes', idempotencyKey: 'k1' }), { db, FieldValue })
+    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
     await expectError(rejectInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', settlementId: d1.settlementId, rejectionReason: 'pas moi' }), { db, FieldValue }), 'DEBT_STORE_MISMATCH')
   })
 })

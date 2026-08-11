@@ -17,13 +17,19 @@ import {
 const codeOf = (fn) => { try { fn(); return null } catch (e) { return e.code } }
 
 describe('TC-109 — validations règlement de dette', () => {
-  it('méthodes = les 5 attendues', () => {
-    expect([...SETTLEMENT_METHODS].sort()).toEqual(['compensation', 'depot_bancaire', 'especes', 'retour_stock', 'transfert'])
+  it('méthodes = canaux de paiement produit + Banque', () => {
+    expect([...SETTLEMENT_METHODS].sort()).toEqual(
+      ['Banque', 'Cash', 'Coris Money', 'Moov Money', 'Orange Money', 'Sank Money', 'Telecel Money', 'Wave'],
+    )
   })
 
-  it('validateSettlementMethod accepte/rejette', () => {
-    expect(validateSettlementMethod('especes')).toBe('especes')
+  it('validateSettlementMethod accepte les canaux, rejette inconnu et anciens codes retirés', () => {
+    expect(validateSettlementMethod('Orange Money')).toBe('Orange Money')
+    expect(validateSettlementMethod('Cash')).toBe('Cash')
+    expect(validateSettlementMethod('Banque')).toBe('Banque')
     expect(codeOf(() => validateSettlementMethod('paypal'))).toBe('INVALID_SETTLEMENT_METHOD')
+    // Les anciens codes internes ne sont plus des méthodes proposées.
+    expect(codeOf(() => validateSettlementMethod('especes'))).toBe('INVALID_SETTLEMENT_METHOD')
   })
 
   it('validateSettlementAmount : entier strictement positif', () => {

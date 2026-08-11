@@ -6,6 +6,7 @@ import StatCard from '../../components/ui/StatCard'
 import StatusBadge from '../../components/ui/StatusBadge'
 import { themedTableClasses } from '../../components/ui/themedTable.js'
 import { formatDateTime } from '../../utils/formatters'
+import { PAYMENT_METHODS } from '../../utils/constants.js'
 import {
   subscribeMyDebts,
   subscribeMyCredits,
@@ -18,14 +19,16 @@ import {
 import {
   COLLAB_OPERATION_TYPE_LABELS,
   DEBT_STATUS_LABELS,
-  DEBT_SETTLEMENT_METHODS,
   DEBT_SETTLEMENT_METHOD_LABELS,
   DEBT_SETTLEMENT_STATUS_LABELS,
 } from '../../constants/dealerConstants'
 
 const fmt = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
 const opLabel = (t) => COLLAB_OPERATION_TYPE_LABELS[t] ?? t
-const METHODS = Object.values(DEBT_SETTLEMENT_METHODS)
+// Un remboursement de dette emprunte les mêmes canaux qu'une transaction client
+// (Mobile Money par réseau) + la banque. Les anciens codes (especes, transfert…)
+// des tranches historiques restent lisibles via DEBT_SETTLEMENT_METHOD_LABELS.
+const METHODS = [...PAYMENT_METHODS, 'Banque']
 
 // Statut de dette → couleurs du badge partagé. Les statuts de dette (open /
 // partially_settled / settled) ne figurent pas dans les presets de StatusBadge :
@@ -53,16 +56,16 @@ function AmountCell({ debt, tbl }) {
 // ── Ligne dette (côté débitrice) : déclarer un règlement ─────────────────────
 function DebtRow({ debt, tbl }) {
   const [amount, setAmount] = useState('')
-  const [method, setMethod] = useState('especes')
+  const [method, setMethod] = useState(METHODS[0])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const [err, setErr] = useState(null)
 
-  const declare = async () => {
+  const rembourser = async () => {
     setBusy(true); setErr(null); setMsg(null)
     try {
       await declareInternalDebtSettlement({ debtId: debt.id, amount, method, idempotencyKey: generateIdempotencyKey() })
-      setMsg('Règlement déclaré. En attente de confirmation.')
+      setMsg('Remboursement déclaré. En attente de confirmation.')
       setAmount('')
     } catch (e) { setErr(e.message) } finally { setBusy(false) }
   }
@@ -85,10 +88,10 @@ function DebtRow({ debt, tbl }) {
             <input type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder="Montant" className="w-28 rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Montant règlement" />
             <select value={method} onChange={e => setMethod(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Méthode">
-              {METHODS.map(m => <option key={m} value={m}>{DEBT_SETTLEMENT_METHOD_LABELS[m]}</option>)}
+              {METHODS.map(m => <option key={m} value={m}>{DEBT_SETTLEMENT_METHOD_LABELS[m] ?? m}</option>)}
             </select>
-            <button type="button" disabled={busy} onClick={declare}
-              className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Déclarer</button>
+            <button type="button" disabled={busy} onClick={rembourser}
+              className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Rembourser</button>
             {msg && <p className="w-full text-xs text-green-700">{msg}</p>}
             {err && <p className="w-full text-xs text-red-600">{err}</p>}
           </div>
