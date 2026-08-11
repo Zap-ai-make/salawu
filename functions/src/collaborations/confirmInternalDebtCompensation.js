@@ -14,7 +14,7 @@
 
 import { DealerRequestError } from '../errors.js'
 import { validateAuthUid, validateInputPayload, validateProfileData } from '../dealerRequests/shared.js'
-import { validateDebtId, validateSettlementId, validateOppositeDebtPair, compensableAmount } from './debtShared.js'
+import { validateDebtId, validateSettlementId, validateOppositeDebtPair, compensableAmount, deterministicMirrorId } from './debtShared.js'
 
 const nextStatus = (remaining) => (remaining === 0 ? 'settled' : 'partially_settled')
 
@@ -106,7 +106,9 @@ export async function confirmInternalDebtCompensationHandler(request, { db, Fiel
       })
 
       // Tranche miroir confirmée sous D2 (traçabilité côté dette opposée).
-      const mirrorRef = db.doc(`internalDebts/${oppositeDebtId}/settlements/comp_${debtId}_${settlementId}`)
+      // La déclaration réelle a été faite par le débiteur de D1 (settlement.declaredBy/At) :
+      // on la reporte fidèlement sur le miroir, et on n'attribue que la confirmation à l'acteur.
+      const mirrorRef = db.doc(`internalDebts/${oppositeDebtId}/settlements/${deterministicMirrorId(debtId, settlementId)}`)
       t.set(mirrorRef, {
         debtId: oppositeDebtId,
         oppositeDebtId: debtId,
@@ -118,8 +120,8 @@ export async function confirmInternalDebtCompensationHandler(request, { db, Fiel
         mirrorOf: settlementId,
         previousRemaining: opp.remainingAmount,
         newRemaining: oppRemaining,
-        declaredBy: actorUid,
-        declaredAt: now,
+        declaredBy: settlement.declaredBy ?? null,
+        declaredAt: settlement.declaredAt ?? now,
         confirmedBy: actorUid,
         confirmedAt: now,
         rejectedBy: null,

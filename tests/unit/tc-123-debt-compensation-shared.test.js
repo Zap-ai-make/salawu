@@ -14,6 +14,7 @@ import {
   validateOppositeDebtPair,
   compensableAmount,
   deterministicCompensationId,
+  deterministicMirrorId,
   deterministicSettlementId,
 } from '../../functions/src/collaborations/debtShared.js'
 
@@ -65,5 +66,12 @@ describe('TC-123 — deterministicCompensationId', () => {
     expect(deterministicCompensationId('d1', 'uidA', 'k1')).toBe('dcp_d1_uidA_k1')
     expect(deterministicCompensationId('d1', 'uidA', 'k1'))
       .not.toBe(deterministicSettlementId('d1', 'uidA', 'k1'))
+  })
+})
+
+describe('TC-123 — deterministicMirrorId', () => {
+  it('id de miroir stable, préfixe distinct de dcp_/dst_', () => {
+    expect(deterministicMirrorId('d1', 'dcp_d1_uidA_k1')).toBe('comp_d1_dcp_d1_uidA_k1')
+    expect(deterministicMirrorId('d1', 's1').startsWith('comp_')).toBe(true)
   })
 })

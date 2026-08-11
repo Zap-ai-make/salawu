@@ -133,6 +133,10 @@ describe('TC-124 — confirm (compensation)', () => {
     expect((await tranche('debt-1', d.settlementId)).settlementStatus).toBe('confirmed')
     const mirror = await tranche('debt-2', `comp_debt-1_${d.settlementId}`)
     expect(mirror).toMatchObject({ method: 'compensation', settlementStatus: 'confirmed', amount: 15000, mirrorOf: d.settlementId })
+    // Fidélité d'audit : le miroir attribue la DÉCLARATION au débiteur A (déclarant réel),
+    // et la CONFIRMATION à la créancière B (l'acteur).
+    expect(mirror.declaredBy).toBe(A)
+    expect(mirror.confirmedBy).toBe(B)
   })
 
   it('[C-08] la débitrice de D1 confirme → DEBT_STORE_MISMATCH', async () => {

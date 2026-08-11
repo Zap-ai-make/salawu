@@ -76,6 +76,12 @@ export function deterministicCompensationId(debtId, actorUid, idempotencyKey) {
   return `dcp_${debtId}_${actorUid}_${idempotencyKey}`
 }
 
+// Id de la tranche MIROIR écrite sous la dette opposée D2 à la confirmation. Déterministe
+// (un seul miroir par tranche de compensation), préfixe `comp_` distinct de `dcp_`/`dst_`.
+export function deterministicMirrorId(debtId, settlementId) {
+  return `comp_${debtId}_${settlementId}`
+}
+
 // D2 doit être la dette opposée entre les DEUX MÊMES boutiques (débitrice/créancière
 // inversées). Aucune contrainte de réseau : on compense la position nette entre A et B.
 export function validateOppositeDebtPair(debt, oppositeDebt) {

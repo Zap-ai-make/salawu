@@ -100,6 +100,8 @@ function DebtRow({ debt, credits, tbl }) {
   }
 
   const compenser = async () => {
+    // La créance opposée peut avoir été soldée entre l'affichage et le clic (temps réel).
+    if (!target) { setErr('La créance opposée n\'est plus disponible.'); return }
     setBusy(true); setErr(null); setMsg(null)
     try {
       await declareInternalDebtCompensation({ debtId: debt.id, oppositeDebtId: target.id, amount: compensable, idempotencyKey: generateIdempotencyKey() })
