@@ -163,6 +163,33 @@ describe('TC-124 — confirm (compensation)', () => {
   })
 })
 
+describe('TC-124 — plafond des déclarations en attente', () => {
+  it('[COMP-CAP-01] une tranche déclarée sur D2 réduit la capacité de compensation', async () => {
+    await seed() // D1=20000, D2=15000
+    // B a déjà déclaré 10 000 sur D2 (en attente) → compensable côté D2 = 5 000.
+    await db.doc('internalDebts/debt-2/settlements/pre-d2').set({ settlementStatus: 'declared', amount: 10000, method: 'Cash' })
+    await expectError(
+      declareInternalDebtCompensationHandler(req(A, { ...P, amount: 15000, idempotencyKey: 'k1' }), { db, FieldValue }),
+      'COMPENSATION_EXCEEDS_REMAINING',
+    )
+    // Jusqu'à 5 000 : accepté.
+    const ok = await declareInternalDebtCompensationHandler(req(A, { ...P, amount: 5000, idempotencyKey: 'k2' }), { db, FieldValue })
+    expect(ok).toMatchObject({ success: true, idempotent: false })
+  })
+
+  it('[COMP-CAP-02] une tranche déclarée sur D1 réduit aussi la capacité', async () => {
+    await seed()
+    // A a déjà déclaré 18 000 sur D1 (en attente) → compensable côté D1 = 2 000.
+    await db.doc('internalDebts/debt-1/settlements/pre-d1').set({ settlementStatus: 'declared', amount: 18000, method: 'Cash' })
+    await expectError(
+      declareInternalDebtCompensationHandler(req(A, { ...P, amount: 15000, idempotencyKey: 'k1' }), { db, FieldValue }),
+      'COMPENSATION_EXCEEDS_REMAINING',
+    )
+    const ok = await declareInternalDebtCompensationHandler(req(A, { ...P, amount: 2000, idempotencyKey: 'k2' }), { db, FieldValue })
+    expect(ok).toMatchObject({ success: true, idempotent: false })
+  })
+})
+
 describe('TC-124 — reject (compensation)', () => {
   it('[C-11] créancière rejette : tranche rejected, dettes inchangées', async () => {
     await seed()

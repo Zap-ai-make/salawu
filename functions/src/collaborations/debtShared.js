@@ -100,3 +100,11 @@ export function validateOppositeDebtPair(debt, oppositeDebt) {
 export function compensableAmount(debt, oppositeDebt) {
   return Math.min(Number(debt?.remainingAmount) || 0, Number(oppositeDebt?.remainingAmount) || 0)
 }
+
+// Somme des montants de tranches DÉJÀ déclarées (non encore confirmées). Ces tranches
+// « réservent » du reste dû : à la déclaration, on plafonne pour que la somme des
+// déclarations en attente ne dépasse jamais le reste dû. `docs` = QueryDocumentSnapshot[]
+// (résultat d'une requête `settlementStatus == 'declared'`).
+export function sumDeclaredAmounts(docs) {
+  return (docs || []).reduce((sum, d) => sum + (Number(d.data()?.amount) || 0), 0)
+}

@@ -123,4 +123,35 @@ describe('TC-126 — l\'espace ne montre que l\'en-cours', () => {
     expect(screen.getByRole('button', { name: 'Confirmer' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Rejeter' })).toBeInTheDocument()
   })
+
+  it('remboursement : bouton désactivé quand les tranches en attente couvrent déjà le reste dû', () => {
+    feed({ debts: [debt('d1', { remainingAmount: 5000 })] })
+    mocks.subscribeDebtSettlements.mockImplementation(({ onUpdate }) => {
+      onUpdate?.([{ id: 's1', amount: 5000, method: 'Cash', settlementStatus: 'declared', declaredAt: new Date('2026-08-09T09:00:00Z') }])
+      return vi.fn()
+    })
+    render(<StoreInternalDebts />)
+    expect(screen.getByRole('button', { name: 'Rembourser' })).toBeDisabled()
+    expect(screen.getByText('Déjà couvert par les règlements en attente.')).toBeInTheDocument()
+  })
+
+  it('remboursement : montant supérieur au reste dû → message, aucun appel réseau', () => {
+    feed({ debts: [debt('d1', { remainingAmount: 5000 })] })
+    render(<StoreInternalDebts />)
+    fireEvent.change(screen.getByLabelText('Montant règlement'), { target: { value: '6000' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rembourser' }))
+    expect(mocks.declareInternalDebtSettlement).not.toHaveBeenCalled()
+    expect(screen.getByText(/dépasse le reste dû/)).toBeInTheDocument()
+  })
+
+  it('remboursement : les tranches en attente sont affichées (« Déjà en attente »)', () => {
+    feed({ debts: [debt('d1', { remainingAmount: 5000 })] })
+    mocks.subscribeDebtSettlements.mockImplementation(({ onUpdate }) => {
+      onUpdate?.([{ id: 's1', amount: 2000, method: 'Cash', settlementStatus: 'declared', declaredAt: new Date('2026-08-09T09:00:00Z') }])
+      return vi.fn()
+    })
+    render(<StoreInternalDebts />)
+    expect(screen.getByText((_, el) => el?.tagName === 'P' && /Déjà en attente/.test(el.textContent))).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Rembourser' })).toBeEnabled()
+  })
 })

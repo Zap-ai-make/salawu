@@ -121,6 +121,70 @@ describe('TC-110 — confirm', () => {
   })
 })
 
+describe('TC-110 — plafond des déclarations en attente', () => {
+  it('[SETTLE-CAP-01] deux déclarations dont la somme dépasse le reste dû → 2e rejetée', async () => {
+    await seedDebt(5000)
+    await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
+    // Le reste dû est déjà entièrement réservé par la 1re tranche déclarée.
+    await expectError(
+      declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 500, method: 'Cash', idempotencyKey: 'k2' }), { db, FieldValue }),
+      'SETTLEMENT_EXCEEDS_REMAINING',
+    )
+    // Dette et 1re tranche intactes : la 2e n'a rien écrit.
+    expect((await debt()).remainingAmount).toBe(5000)
+    expect((await db.collection('internalDebts/debt-1/settlements').get()).size).toBe(1)
+  })
+
+  it('[SETTLE-CAP-02] déclarations cumulatives jusqu\'au reste dû, puis 1 de trop → rejetée', async () => {
+    await seedDebt(5000)
+    await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 3000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
+    await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 2000, method: 'Cash', idempotencyKey: 'k2' }), { db, FieldValue }) // somme = 5000 = reste dû
+    await expectError(
+      declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 1, method: 'Cash', idempotencyKey: 'k3' }), { db, FieldValue }),
+      'SETTLEMENT_EXCEEDS_REMAINING',
+    )
+    expect((await db.collection('internalDebts/debt-1/settlements').get()).size).toBe(2)
+  })
+
+  it('[SETTLE-CAP-03] dette réglée / reste dû 0 (même statut « open » transitoire) → DEBT_ALREADY_SETTLED', async () => {
+    await seedDebt(0, { status: 'settled' })
+    await expectError(
+      declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 100, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue }),
+      'DEBT_ALREADY_SETTLED',
+    )
+    // Reste dû 0 mais statut resté "open" (état incohérent) : refusé aussi.
+    await db.doc('internalDebts/debt-1').update({ status: 'open' })
+    await expectError(
+      declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 100, method: 'Cash', idempotencyKey: 'k2' }), { db, FieldValue }),
+      'DEBT_ALREADY_SETTLED',
+    )
+  })
+
+  it('[SETTLE-CAP-04] reste dû saturé : le RETRY identique reste idempotent (pas rejeté par la somme)', async () => {
+    await seedDebt(5000)
+    const p = { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }
+    const r1 = await declareInternalDebtSettlementHandler(req(DEBTOR, p), { db, FieldValue })
+    const r2 = await declareInternalDebtSettlementHandler(req(DEBTOR, p), { db, FieldValue })
+    expect(r2.idempotent).toBe(true)
+    expect(r2.settlementId).toBe(r1.settlementId)
+    expect((await db.collection('internalDebts/debt-1/settlements').get()).size).toBe(1)
+  })
+
+  it('[SETTLE-CAP-05] rejeter une tranche déclarée LIBÈRE la capacité', async () => {
+    await seedDebt(5000)
+    const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
+    // Capacité saturée → une 2e déclaration échoue…
+    await expectError(
+      declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k2' }), { db, FieldValue }),
+      'SETTLEMENT_EXCEEDS_REMAINING',
+    )
+    // …mais après rejet de la 1re, la capacité est rendue.
+    await rejectInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d1.settlementId, rejectionReason: 'Non reçu' }), { db, FieldValue })
+    const d3 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k3' }), { db, FieldValue })
+    expect(d3).toMatchObject({ success: true, idempotent: false })
+  })
+})
+
 describe('TC-110 — reject', () => {
   it('[DS-09] créancière rejette : tranche rejected, dette inchangée', async () => {
     await seedDebt(20000)

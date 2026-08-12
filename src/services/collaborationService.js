@@ -42,7 +42,7 @@ const ERROR_MESSAGES = {
   DEBT_STORE_MISMATCH:          "Vous n'êtes pas autorisé sur cette dette.",
   SETTLEMENT_NOT_DECLARED:      "Ce règlement n'est pas en attente de confirmation.",
   SETTLEMENT_NOT_FOUND:         'Règlement introuvable.',
-  SETTLEMENT_EXCEEDS_REMAINING: 'Le montant dépasse le reste dû.',
+  SETTLEMENT_EXCEEDS_REMAINING: 'Le montant dépasse le reste dû (des règlements sont peut-être déjà en attente).',
   INVALID_OPPOSITE_DEBT:        'Dette opposée invalide.',
   NOT_OPPOSITE_PAIR:            'La dette opposée doit lier les deux mêmes boutiques en sens inverse.',
   COMPENSATION_EXCEEDS_REMAINING:'Le montant dépasse ce qui est compensable.',

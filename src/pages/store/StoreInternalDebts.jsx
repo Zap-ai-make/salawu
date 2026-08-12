@@ -6,6 +6,7 @@ import StatCard from '../../components/ui/StatCard'
 import StatusBadge from '../../components/ui/StatusBadge'
 import { themedTableClasses } from '../../components/ui/themedTable.js'
 import { formatDateTime } from '../../utils/formatters'
+import { parseStrictInteger } from '../../utils/parseStrictInteger'
 import { PAYMENT_METHODS } from '../../utils/constants.js'
 import {
   subscribeMyDebts,
@@ -79,6 +80,16 @@ function DebtRow({ debt, credits, tbl }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const [err, setErr] = useState(null)
+  const [settlements, setSettlements] = useState([])
+
+  // Mes propres tranches sur cette dette : les DÉCLARÉES (non confirmées) réservent
+  // du reste dû. `available` = ce qu'il reste réellement à déclarer.
+  useEffect(() => {
+    const u = subscribeDebtSettlements({ debtId: debt.id, onUpdate: setSettlements, onError: (e) => setErr(e.message) })
+    return () => u()
+  }, [debt.id])
+  const pending = settlements.reduce((s, x) => (x.settlementStatus === 'declared' ? s + num(x.amount) : s), 0)
+  const available = num(debt.remainingAmount) - pending
 
   // Créance opposée la plus ancienne du même partenaire (débitrice = ma créancière).
   const target = useMemo(() => {
@@ -86,11 +97,22 @@ function DebtRow({ debt, credits, tbl }) {
       .filter((c) => c.debtorStoreId === debt.creditorStoreId && notSettled(c))
       .sort((a, b) => tsMillis(a.createdAt) - tsMillis(b.createdAt))[0] ?? null
   }, [credits, debt.creditorStoreId])
-  const compensable = target ? Math.min(num(debt.remainingAmount), num(target.remainingAmount)) : 0
+  // Compensable plafonné par le reste dû NET des tranches en attente de ma dette
+  // (le pending de la créance opposée reste garanti côté serveur).
+  const compensable = target ? Math.min(available, num(target.remainingAmount)) : 0
 
   const rembourser = async () => {
+    const n = parseStrictInteger(amount)
+    if (n === null) { setErr('Le montant doit être un entier positif.'); return }
+    if (n > available) {
+      setErr(pending > 0
+        ? `Le montant dépasse le reste dû (${fmt(pending)} déjà en attente).`
+        : 'Le montant dépasse le reste dû.')
+      return
+    }
     setBusy(true); setErr(null); setMsg(null)
     try {
+      // On transmet la saisie brute : le service reste la source unique du parse (idempotent).
       await declareInternalDebtSettlement({ debtId: debt.id, amount, method, idempotencyKey: generateIdempotencyKey() })
       setMsg('Remboursement déclaré. En attente de confirmation.')
       setAmount('')
@@ -134,8 +156,11 @@ function DebtRow({ debt, credits, tbl }) {
             <select value={method} onChange={e => setMethod(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Méthode">
               {METHODS.map(m => <option key={m} value={m}>{DEBT_SETTLEMENT_METHOD_LABELS[m] ?? m}</option>)}
             </select>
-            <button type="button" disabled={busy} onClick={rembourser}
+            <button type="button" disabled={busy || available <= 0} onClick={rembourser}
               className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Rembourser</button>
+            {available <= 0
+              ? <p className="w-full text-xs text-gray-500">Déjà couvert par les règlements en attente.</p>
+              : pending > 0 && <p className="w-full text-xs text-gray-500">Déjà en attente : {fmt(pending)}</p>}
             {msg && <p className="w-full text-xs text-green-700">{msg}</p>}
             {err && <p className="w-full text-xs text-red-600">{err}</p>}
           </div>

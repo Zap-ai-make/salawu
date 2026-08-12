@@ -16,6 +16,7 @@ import {
   validateSettlementMethod,
   validateIdempotencyKey,
   deterministicSettlementId,
+  sumDeclaredAmounts,
 } from './debtShared.js'
 
 export async function declareInternalDebtSettlementHandler(request, { db, FieldValue }) {
@@ -54,13 +55,9 @@ export async function declareInternalDebtSettlementHandler(request, { db, FieldV
       if (debt.debtorStoreId !== actorStoreId) {
         throw new DealerRequestError('DEBT_STORE_MISMATCH', 'Seule la boutique débitrice peut déclarer un règlement.')
       }
-      if (debt.status === 'settled') {
-        throw new DealerRequestError('DEBT_ALREADY_SETTLED', 'Cette dette est déjà réglée.')
-      }
-      if (amount > debt.remainingAmount) {
-        throw new DealerRequestError('SETTLEMENT_EXCEEDS_REMAINING', 'Le montant dépasse le reste dû.')
-      }
 
+      // Idempotence D'ABORD : un retry de la MÊME déclaration doit court-circuiter avant
+      // le calcul du reste dû (sinon la tranche déjà écrite se compterait elle-même).
       const settlementRef = db.doc(`internalDebts/${debtId}/settlements/${settlementId}`)
       const existing = await t.get(settlementRef)
       if (existing.exists) {
@@ -70,6 +67,22 @@ export async function declareInternalDebtSettlementHandler(request, { db, FieldV
           return { settlementId, idempotent: true }
         }
         throw new DealerRequestError('IDEMPOTENCY_CONFLICT', 'Une tranche différente existe déjà pour cette clé.')
+      }
+
+      if (debt.status === 'settled' || (Number(debt.remainingAmount) || 0) <= 0) {
+        throw new DealerRequestError('DEBT_ALREADY_SETTLED', 'Cette dette est déjà réglée.')
+      }
+
+      // Les tranches DÉJÀ déclarées (non confirmées) réservent du reste dû : la somme des
+      // déclarations en attente + cette tranche ne peut pas dépasser le reste dû. Requête
+      // à égalité sur un seul champ (index automatique), lue dans la transaction AVANT tout
+      // write. La tranche courante n'existe pas encore → pas d'auto-comptage.
+      const declaredSnap = await t.get(
+        db.collection(`internalDebts/${debtId}/settlements`).where('settlementStatus', '==', 'declared'),
+      )
+      const pending = sumDeclaredAmounts(declaredSnap.docs)
+      if (amount > debt.remainingAmount - pending) {
+        throw new DealerRequestError('SETTLEMENT_EXCEEDS_REMAINING', 'Le montant dépasse le reste dû.')
       }
 
       const now = FieldValue.serverTimestamp()

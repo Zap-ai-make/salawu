@@ -17,7 +17,7 @@ import {
   validateSettlementAmount,
   validateIdempotencyKey,
   validateOppositeDebtPair,
-  compensableAmount,
+  sumDeclaredAmounts,
   deterministicCompensationId,
 } from './debtShared.js'
 
@@ -71,13 +71,8 @@ export async function declareInternalDebtCompensationHandler(request, { db, Fiel
       // D2 doit être la dette opposée de la même paire (tous réseaux).
       validateOppositeDebtPair(debt, opp)
 
-      if (debt.status === 'settled' || opp.status === 'settled') {
-        throw new DealerRequestError('DEBT_ALREADY_SETTLED', 'Une des deux dettes est déjà réglée.')
-      }
-      if (amount > compensableAmount(debt, opp)) {
-        throw new DealerRequestError('COMPENSATION_EXCEEDS_REMAINING', 'Le montant dépasse ce qui est compensable.')
-      }
-
+      // Idempotence D'ABORD : un retry de la MÊME compensation court-circuite avant le
+      // calcul des restes dus (sinon la tranche déjà écrite se compterait elle-même).
       const settlementRef = db.doc(`internalDebts/${debtId}/settlements/${settlementId}`)
       const existing = await t.get(settlementRef)
       if (existing.exists) {
@@ -87,6 +82,26 @@ export async function declareInternalDebtCompensationHandler(request, { db, Fiel
           return { settlementId, idempotent: true }
         }
         throw new DealerRequestError('IDEMPOTENCY_CONFLICT', 'Une compensation différente existe déjà pour cette clé.')
+      }
+
+      if (debt.status === 'settled' || opp.status === 'settled' ||
+          (Number(debt.remainingAmount) || 0) <= 0 || (Number(opp.remainingAmount) || 0) <= 0) {
+        throw new DealerRequestError('DEBT_ALREADY_SETTLED', 'Une des deux dettes est déjà réglée.')
+      }
+
+      // Les tranches DÉJÀ déclarées de CHAQUE dette réservent du reste dû : la compensation
+      // ne peut pas dépasser min(reste D1 − en attente D1, reste D2 − en attente D2). Deux
+      // requêtes à égalité (index automatique), lues dans la transaction AVANT tout write.
+      const [declaredD1, declaredD2] = await Promise.all([
+        t.get(db.collection(`internalDebts/${debtId}/settlements`).where('settlementStatus', '==', 'declared')),
+        t.get(db.collection(`internalDebts/${oppositeDebtId}/settlements`).where('settlementStatus', '==', 'declared')),
+      ])
+      const capacity = Math.min(
+        debt.remainingAmount - sumDeclaredAmounts(declaredD1.docs),
+        opp.remainingAmount - sumDeclaredAmounts(declaredD2.docs),
+      )
+      if (amount > capacity) {
+        throw new DealerRequestError('COMPENSATION_EXCEEDS_REMAINING', 'Le montant dépasse ce qui est compensable.')
       }
 
       const now = FieldValue.serverTimestamp()
