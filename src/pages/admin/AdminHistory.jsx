@@ -223,7 +223,7 @@ function AdminHistory() {
                   {visibleRecords.map(r => (
                     <tr key={r.id + (r.storeId ?? '')} className="hover:bg-gray-50/60 transition-colors">
                       <td className="px-5 py-3.5 whitespace-nowrap">
-                        <p className="text-sm font-semibold text-gray-800 truncate max-w-[140px]">{r.storeName ?? r.storeId ?? '—'}</p>
+                        <p className="text-sm font-semibold text-gray-800 truncate max-w-[140px]">{r.storeName ?? '—'}</p>
                       </td>
                       <td className="px-5 py-3.5 text-gray-600 whitespace-nowrap text-xs">{r.type ?? '—'}</td>
                       <td className="px-5 py-3.5 font-semibold text-gray-900 whitespace-nowrap">

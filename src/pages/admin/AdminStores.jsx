@@ -59,12 +59,6 @@ function StoreDetail({ store, onClose }) {
               <dd className="text-gray-800">{store.email}</dd>
             </div>
           )}
-          {store.adminUid && (
-            <div className="flex py-2.5">
-              <dt className="w-36 flex-shrink-0 text-gray-500">Admin UID</dt>
-              <dd className="text-gray-600 font-mono text-xs break-all">{store.adminUid}</dd>
-            </div>
-          )}
         </dl>
 
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Soldes Orange</h3>

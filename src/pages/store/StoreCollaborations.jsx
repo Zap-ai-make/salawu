@@ -19,7 +19,7 @@ import {
 import { formatDateTime } from '../../utils/formatters'
 
 const fmtAmount = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
-const clientName = (c) => `${c.clientNom ?? ''} ${c.clientPrenom ?? ''}`.trim() || c.clientId
+const clientName = (c) => `${c.clientNom ?? ''} ${c.clientPrenom ?? ''}`.trim() || 'Client inconnu'
 
 function RejectModal({ onSubmit, onClose }) {
   const [reason, setReason] = useState('')
@@ -159,7 +159,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
                   incoming.map(c => (
                     <tr key={c.id}>
                       <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(c.createdAt)}</td>
-                      <td className={`${tbl.cell} font-medium text-gray-800`}>{c.requestingStoreName ?? c.requestingStoreId}</td>
+                      <td className={`${tbl.cell} font-medium text-gray-800`}>{c.requestingStoreName || 'Boutique inconnue'}</td>
                       <td className={`${tbl.cell} text-gray-700`}>{clientName(c)}</td>
                       <td className={`${tbl.cell} text-gray-700`}>{COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? c.operationType}</td>
                       <td className={`${tbl.cell} text-gray-700`}>{c.network}</td>
@@ -208,7 +208,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
                   outgoing.map(c => (
                     <tr key={c.id}>
                       <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(c.createdAt)}</td>
-                      <td className={`${tbl.cell} font-medium text-gray-800`}>{c.supplierStoreName ?? c.supplierStoreId}</td>
+                      <td className={`${tbl.cell} font-medium text-gray-800`}>{c.supplierStoreName || 'Boutique inconnue'}</td>
                       <td className={`${tbl.cell} text-gray-700`}>{clientName(c)}</td>
                       <td className={`${tbl.cell} text-gray-700`}>{COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? c.operationType}</td>
                       <td className={`${tbl.cell} text-gray-700`}>{c.network}</td>

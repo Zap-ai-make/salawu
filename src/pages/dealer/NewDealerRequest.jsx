@@ -177,7 +177,7 @@ function NewDealerRequest() {
               <>
                 <div className="flex py-3">
                   <dt className="w-36 flex-shrink-0 text-sm text-gray-500">Boutique</dt>
-                  <dd className="text-sm font-medium text-gray-800" data-testid="confirm-store">{selectedStore?.name ?? selectedStoreId}</dd>
+                  <dd className="text-sm font-medium text-gray-800" data-testid="confirm-store">{selectedStore?.name || 'Boutique inconnue'}</dd>
                 </div>
                 <div className="flex py-3">
                   <dt className="w-36 flex-shrink-0 text-sm text-gray-500">Type</dt>

@@ -111,6 +111,16 @@ describe('TC-122 — sous-onglets Historique', () => {
     expect(screen.getByText('Créance')).toBeInTheDocument()
   })
 
+  it('Dettes internes : un partenaire sans nom n\'affiche jamais l\'id', () => {
+    const noName = { ...DEBT_SETTLED, id: 'idt5', creditorStoreName: undefined, creditorStoreId: 'store-SECRET' }
+    mocks.subscribeMyDebts.mockImplementation(({ onUpdate }) => { onUpdate?.([noName]); return vi.fn() })
+    mocks.subscribeMyCredits.mockImplementation(({ onUpdate }) => { onUpdate?.([]); return vi.fn() })
+    render(<Historique />)
+    fireEvent.click(screen.getByRole('button', { name: /Dettes internes/ }))
+    expect(screen.queryByText('store-SECRET')).toBeNull()
+    expect(screen.getByText('Boutique inconnue')).toBeInTheDocument()
+  })
+
   it('Dettes internes : n\'affiche que le réglé, une dette « en cours » est exclue', () => {
     const open = { ...DEBT_SETTLED, id: 'idt9', creditorStoreName: 'ESAHAF EN COURS', status: 'open' }
     mocks.subscribeMyDebts.mockImplementation(({ onUpdate }) => { onUpdate?.([DEBT_SETTLED, open]); return vi.fn() })

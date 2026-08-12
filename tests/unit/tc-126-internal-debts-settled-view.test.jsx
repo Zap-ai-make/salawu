@@ -96,6 +96,15 @@ describe('TC-126 — l\'espace ne montre que l\'en-cours', () => {
     expect(screen.queryByRole('button', { name: /Soldées/ })).not.toBeInTheDocument()
   })
 
+  it('un nom de boutique manquant n\'affiche jamais l\'id (repli neutre)', () => {
+    feed({ debts: [debt('d1', { creditorStoreName: undefined, creditorStoreId: 'store-SECRET-id' })] })
+    render(<StoreInternalDebts />)
+    // L'id ne doit apparaître nulle part comme texte visible.
+    expect(screen.queryByText('store-SECRET-id')).toBeNull()
+    const table = screen.getByRole('table')
+    expect(within(table).getByText('Boutique inconnue')).toBeInTheDocument()
+  })
+
   it('langage simple : « Ce que je dois » / « Ce qu\'on me doit »', () => {
     feed({ debts: [debt('d1')] })
     render(<StoreInternalDebts />)

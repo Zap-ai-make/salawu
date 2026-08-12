@@ -97,7 +97,7 @@ function DealerTransfers() {
             <tbody className="divide-y divide-gray-50">
               {transfers.map(t => (
                 <tr key={t.id} className="hover:bg-gray-50" data-testid={`transfer-row-${t.id}`}>
-                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{t.storeName ?? t.storeId}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{t.storeName || 'Boutique inconnue'}</td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{STORE_TRANSFER_TYPE_LABELS[t.transferType] ?? t.transferType}</td>
                   <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{formatCurrency(t.amount)}</td>
                   <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>

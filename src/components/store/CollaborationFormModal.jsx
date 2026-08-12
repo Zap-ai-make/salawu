@@ -157,7 +157,7 @@ function CollaborationFormModal({ onClose, onCreated }) {
               disabled={loadingProviders || providers.length === 0}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:opacity-50" aria-label="Boutique fournisseuse">
               <option value="">{loadingProviders ? 'Chargement…' : (providers.length ? 'Choisir…' : 'Aucun fournisseur pour ce réseau')}</option>
-              {providers.map(p => <option key={p.storeId} value={p.storeId}>{p.storeName ?? p.storeId}</option>)}
+              {providers.map(p => <option key={p.storeId} value={p.storeId}>{p.storeName || 'Boutique sans nom'}</option>)}
             </select>
           </div>
 

@@ -34,7 +34,7 @@ const toDate = (ts) => (ts?.toDate ? ts.toDate() : ts ? new Date(ts) : null)
 // complétées y vont). Une opération dealer / collaboration « En attente » reste dans
 // son onglet opérationnel (Transactions), pas ici.
 const isTerminal = (status) => status === 'confirmed' || status === 'rejected'
-const collabClient = (c) => `${c.clientNom ?? ''} ${c.clientPrenom ?? ''}`.trim() || c.clientId || '—'
+const collabClient = (c) => `${c.clientNom ?? ''} ${c.clientPrenom ?? ''}`.trim() || 'Client inconnu'
 
 function Historique() {
   const { userProfile } = useAuth()
@@ -98,8 +98,8 @@ function Historique() {
   const dealerFiltered = filterHistoryRows(dealerRows, filterArgs)
 
   const collabRows = [
-    ...incoming.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Reçue', partner: c.requestingStoreName ?? c.requestingStoreId, c })),
-    ...outgoing.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Envoyée', partner: c.supplierStoreName ?? c.supplierStoreId, c })),
+    ...incoming.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Reçue', partner: c.requestingStoreName || 'Boutique inconnue', c })),
+    ...outgoing.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Envoyée', partner: c.supplierStoreName || 'Boutique inconnue', c })),
   ]
     .map(({ sens, partner, c }) => ({
       when: toDate(c.createdAt),
@@ -114,8 +114,8 @@ function Historique() {
   // Dettes internes : seules les RÉGLÉES vont à l'historique (même principe que le reste).
   // Un même document est une « Dette » (je suis débitrice) ou une « Créance » (je suis créancière).
   const internalDebtRows = [
-    ...debts.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Dette', partner: d.creditorStoreName ?? d.creditorStoreId, d })),
-    ...credits.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Créance', partner: d.debtorStoreName ?? d.debtorStoreId, d })),
+    ...debts.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Dette', partner: d.creditorStoreName || 'Boutique inconnue', d })),
+    ...credits.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Créance', partner: d.debtorStoreName || 'Boutique inconnue', d })),
   ]
     .map(({ sens, partner, d }) => ({
       when: toDate(d.updatedAt ?? d.createdAt),

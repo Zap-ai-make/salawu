@@ -565,7 +565,6 @@ function StoreAdminDealerRequestDetails() {
         <div className="flex items-start justify-between gap-3 mb-6">
           <div>
             <h1 className="text-lg font-bold text-gray-800">Détail de la demande</h1>
-            <p className="text-xs text-gray-400 mt-0.5 break-all">{request.id}</p>
           </div>
           <DealerRequestStatusBadge status={request.status} />
         </div>

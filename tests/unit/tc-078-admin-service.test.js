@@ -444,14 +444,16 @@ describe('TC-078-SH — listStoreHistory', () => {
     await expect(listStoreHistory({})).rejects.toThrow('storeId requis pour listStoreHistory.')
   })
 
-  it('[SH-02] tri client-side décroissant + storeName par défaut = storeId', async () => {
+  it('[SH-02] tri client-side décroissant + storeName null si aucun nom (jamais l\'id)', async () => {
     mocks.getDocs.mockResolvedValue(makeQuerySnap([
       { __id: 'h1', createdAt: ts(100) },
       { __id: 'h2', createdAt: ts(200) },
     ]))
     const res = await listStoreHistory({ storeId: 'store-a' })
     expect(res.records.map(r => r.id)).toEqual(['h2', 'h1'])
-    expect(res.records[0].storeName).toBe('store-a')
+    // Règle « aucun id à l'écran » : sans nom réel, storeName reste null (l'UI affiche « — »),
+    // jamais le storeId.
+    expect(res.records[0].storeName).toBeNull()
   })
 })
 

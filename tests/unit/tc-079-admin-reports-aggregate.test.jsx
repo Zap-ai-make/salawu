@@ -108,7 +108,7 @@ describe('TC-079-TY — par type de demande', () => {
 // ---------------------------------------------------------------------------
 
 describe('TC-079-DL — par dealer / par boutique', () => {
-  it('[DL-01] nom dealer = dealerName, sinon dealerEmail, sinon uid', async () => {
+  it('[DL-01] nom dealer = dealerName, sinon dealerEmail, sinon « Dealer inconnu » (jamais l\'uid)', async () => {
     await renderLoaded([
       ...REQUESTS,
       { id: 'r5', requestType: 'stock_add', status: 'pending', amount: 1, dealerUid: 'd3', targetStoreId: 's3' },
@@ -116,7 +116,8 @@ describe('TC-079-DL — par dealer / par boutique', () => {
     const table = screen.getByTestId('report-table-dealer')
     expect(within(table).getByText('Moussa')).toBeInTheDocument()      // dealerName
     expect(within(table).getByText('d2@x.com')).toBeInTheDocument()    // fallback email
-    expect(within(table).getByText('d3')).toBeInTheDocument()          // fallback uid
+    expect(within(table).getByText('Dealer inconnu')).toBeInTheDocument() // repli neutre
+    expect(within(table).queryByText('d3')).toBeNull()                // jamais l'uid
   })
 
   it('[DL-02] montant dealer = somme des confirmées seulement', async () => {
@@ -126,7 +127,7 @@ describe('TC-079-DL — par dealer / par boutique', () => {
     expect(d2Row).toHaveTextContent(fmt(2000))
   })
 
-  it('[DL-03] nom boutique = targetStoreName, sinon storeId ; tri par volume décroissant', async () => {
+  it('[DL-03] nom boutique = targetStoreName, sinon « Boutique inconnue » ; tri par volume décroissant', async () => {
     await renderLoaded([
       { id: 'a1', requestType: 'stock_add', status: 'pending', amount: 1, dealerUid: 'd1', targetStoreId: 's-solo' },
       { id: 'b1', requestType: 'stock_add', status: 'pending', amount: 1, dealerUid: 'd1', targetStoreId: 's-big', targetStoreName: 'Grande' },
@@ -136,7 +137,8 @@ describe('TC-079-DL — par dealer / par boutique', () => {
     const rows = within(table).getAllByRole('row').slice(1) // sans thead
     // 's-big' (2 demandes) avant 's-solo' (1 demande)
     expect(rows[0]).toHaveTextContent('Grande')
-    expect(rows[1]).toHaveTextContent('s-solo') // fallback id
+    expect(rows[1]).toHaveTextContent('Boutique inconnue') // repli neutre, jamais l'id
+    expect(rows[1]).not.toHaveTextContent('s-solo')
   })
 })
 

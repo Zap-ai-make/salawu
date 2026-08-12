@@ -110,7 +110,7 @@ function DebtRow({ debt, credits, tbl }) {
   return (
     <tr>
       <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(debt.createdAt)}</td>
-      <td className={`${tbl.cell} font-medium text-gray-800`}>{debt.creditorStoreName ?? debt.creditorStoreId}</td>
+      <td className={`${tbl.cell} font-medium text-gray-800`}>{debt.creditorStoreName || 'Boutique inconnue'}</td>
       <td className={`${tbl.cell} text-gray-700`}>{opLabel(debt.operationType)}</td>
       <td className={`${tbl.cell} text-gray-700`}>{debt.network}</td>
       <AmountCell debt={debt} tbl={tbl} />
@@ -177,7 +177,7 @@ function CreditRow({ debt, tbl }) {
   return (
     <tr>
       <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(debt.createdAt)}</td>
-      <td className={`${tbl.cell} font-medium text-gray-800`}>{debt.debtorStoreName ?? debt.debtorStoreId}</td>
+      <td className={`${tbl.cell} font-medium text-gray-800`}>{debt.debtorStoreName || 'Boutique inconnue'}</td>
       <td className={`${tbl.cell} text-gray-700`}>{opLabel(debt.operationType)}</td>
       <td className={`${tbl.cell} text-gray-700`}>{debt.network}</td>
       <AmountCell debt={debt} tbl={tbl} />
@@ -261,7 +261,7 @@ function StoreInternalDebts() {
   const partners = useMemo(() => {
     const map = new Map()
     const touch = (id, name) => {
-      const cur = map.get(id) ?? { id, name: name ?? id, debt: 0, credit: 0 }
+      const cur = map.get(id) ?? { id, name: name || 'Boutique inconnue', debt: 0, credit: 0 }
       if (name) cur.name = name
       map.set(id, cur)
       return cur

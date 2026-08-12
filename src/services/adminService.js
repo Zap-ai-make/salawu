@@ -474,7 +474,7 @@ export async function listStoreHistory({ storeId, storeName = null, lastDoc = nu
     const rawDocs = hasMore ? snap.docs.slice(0, PAGE) : snap.docs
 
     const records = rawDocs
-      .map(d => ({ id: d.id, storeId, storeName: storeName ?? storeId, ...d.data() }))
+      .map(d => ({ id: d.id, storeId, storeName: storeName ?? null, ...d.data() }))
       .sort((a, b) => {
         const ta = a.createdAt?.toMillis?.() ?? (a.createdAt ? new Date(a.createdAt).getTime() : 0)
         const tb = b.createdAt?.toMillis?.() ?? (b.createdAt ? new Date(b.createdAt).getTime() : 0)

@@ -50,13 +50,13 @@ function aggregate(requests) {
 
     // par dealer
     const dk = r.dealerUid ?? 'unknown'
-    byDealer[dk] = byDealer[dk] ?? { name: r.dealerName ?? r.dealerEmail ?? dk, count: 0, amount: 0 }
+    byDealer[dk] = byDealer[dk] ?? { name: r.dealerName ?? r.dealerEmail ?? 'Dealer inconnu', count: 0, amount: 0 }
     byDealer[dk].count++
     if (r.status === 'confirmed') byDealer[dk].amount += r.amount ?? 0
 
     // par boutique
     const sk = r.targetStoreId ?? 'unknown'
-    byStore[sk] = byStore[sk] ?? { name: r.targetStoreName ?? sk, count: 0, amount: 0 }
+    byStore[sk] = byStore[sk] ?? { name: r.targetStoreName ?? 'Boutique inconnue', count: 0, amount: 0 }
     byStore[sk].count++
     if (r.status === 'confirmed') byStore[sk].amount += r.amount ?? 0
   }
