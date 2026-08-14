@@ -82,6 +82,7 @@ export const HTTP_CODES = {
   DEBT_STORE_MISMATCH:          'permission-denied',
   SETTLEMENT_NOT_DECLARED:      'failed-precondition',
   SETTLEMENT_NOT_FOUND:         'not-found',
+  SETTLEMENT_INSUFFICIENT_BALANCE: 'failed-precondition',
 }
 
 export class DealerRequestError extends Error {

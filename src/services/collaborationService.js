@@ -43,6 +43,7 @@ const ERROR_MESSAGES = {
   SETTLEMENT_NOT_DECLARED:      "Ce règlement n'est pas en attente de confirmation.",
   SETTLEMENT_NOT_FOUND:         'Règlement introuvable.',
   SETTLEMENT_EXCEEDS_REMAINING: 'Le montant dépasse le reste dû (des règlements sont peut-être déjà en attente).',
+  SETTLEMENT_INSUFFICIENT_BALANCE: 'Solde réseau insuffisant chez la boutique débitrice pour ce remboursement.',
   INVALID_OPPOSITE_DEBT:        'Dette opposée invalide.',
   NOT_OPPOSITE_PAIR:            'La dette opposée doit lier les deux mêmes boutiques en sens inverse.',
   COMPENSATION_EXCEEDS_REMAINING:'Le montant dépasse ce qui est compensable.',

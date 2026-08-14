@@ -57,6 +57,9 @@ async function seedDebt(remaining = 20000, over = {}) {
 }
 const debt = async () => (await db.doc('internalDebts/debt-1').get()).data()
 const settlement = async (id) => (await db.doc(`internalDebts/debt-1/settlements/${id}`).get()).data()
+const stockOf = async (storeId, net) => (await db.doc(`clients/${storeId}/networkBalances/current`).get()).data()?.balances?.[net]?.stock ?? 0
+const seedStock = (storeId, net, stock) => db.doc(`clients/${storeId}/networkBalances/current`).set({ balances: { [net]: { stock } } })
+const auditCount = async (storeId, action) => (await db.collection(`clients/${storeId}/auditLogs`).where('action', '==', action).get()).size
 
 describe('TC-110 — declare', () => {
   it('[DS-01] déclare une tranche : declared, dette inchangée', async () => {
@@ -118,6 +121,48 @@ describe('TC-110 — confirm', () => {
     const d1 = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Cash', idempotencyKey: 'k1' }), { db, FieldValue })
     await confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d1.settlementId }), { db, FieldValue })
     await expectError(confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d1.settlementId }), { db, FieldValue }), 'SETTLEMENT_NOT_DECLARED')
+  })
+})
+
+describe('TC-110 — mouvement de solde réseau (remboursement MM)', () => {
+  it('[BAL-01] remboursement Orange Money : stock débitrice −, créancière +, dette imputée, 2 audits', async () => {
+    await seedDebt(20000)
+    await seedStock('store-A', 'Orange', 50000) // débitrice = payeuse
+    await seedStock('store-B', 'Orange', 10000) // créancière = receveuse
+    const d = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Orange Money', idempotencyKey: 'k1' }), { db, FieldValue })
+    const c = await confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d.settlementId }), { db, FieldValue })
+
+    expect(c).toMatchObject({ balanceMoved: true, network: 'Orange', remainingAmount: 15000 })
+    expect(await stockOf('store-A', 'Orange')).toBe(45000)
+    expect(await stockOf('store-B', 'Orange')).toBe(15000)
+    expect(await auditCount('store-A', 'INTERNAL_DEBT_SETTLEMENT_BALANCE_MOVED')).toBe(1)
+    expect(await auditCount('store-B', 'INTERNAL_DEBT_SETTLEMENT_BALANCE_MOVED')).toBe(1)
+  })
+
+  it('[BAL-02] stock débitrice insuffisant → SETTLEMENT_INSUFFICIENT_BALANCE, rien ne bouge', async () => {
+    await seedDebt(20000)
+    await seedStock('store-A', 'Orange', 3000) // < 5000
+    await seedStock('store-B', 'Orange', 10000)
+    const d = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Orange Money', idempotencyKey: 'k1' }), { db, FieldValue })
+    await expectError(confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d.settlementId }), { db, FieldValue }), 'SETTLEMENT_INSUFFICIENT_BALANCE')
+    // Aucune imputation ni mouvement (transaction annulée).
+    expect((await debt()).remainingAmount).toBe(20000)
+    expect(await stockOf('store-A', 'Orange')).toBe(3000)
+    expect(await stockOf('store-B', 'Orange')).toBe(10000)
+    expect((await settlement(d.settlementId)).settlementStatus).toBe('declared')
+  })
+
+  it('[BAL-03] méthode Cash/Banque : dette imputée, aucun solde touché', async () => {
+    await seedDebt(20000)
+    await seedStock('store-A', 'Orange', 50000)
+    await seedStock('store-B', 'Orange', 10000)
+    const d = await declareInternalDebtSettlementHandler(req(DEBTOR, { debtId: 'debt-1', amount: 5000, method: 'Banque', idempotencyKey: 'k1' }), { db, FieldValue })
+    const c = await confirmInternalDebtSettlementHandler(req(CREDITOR, { debtId: 'debt-1', settlementId: d.settlementId }), { db, FieldValue })
+
+    expect(c).toMatchObject({ balanceMoved: false, remainingAmount: 15000 })
+    expect(await stockOf('store-A', 'Orange')).toBe(50000)
+    expect(await stockOf('store-B', 'Orange')).toBe(10000)
+    expect(await auditCount('store-A', 'INTERNAL_DEBT_SETTLEMENT_BALANCE_MOVED')).toBe(0)
   })
 })
 
