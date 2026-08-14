@@ -4,7 +4,7 @@
  * parsing du montant, et mapping d'erreur par details.code.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ callable: vi.fn(() => Promise.resolve({ data: { success: true } })) }))
 
@@ -18,10 +18,12 @@ import {
   createStoreCollaboration,
   confirmStoreCollaboration,
   declareInternalDebtSettlement,
+  subscribeMyDebts,
   generateIdempotencyKey,
   mapCollaborationError,
 } from '../../src/services/collaborationService.js'
 import { httpsCallable } from 'firebase/functions'
+import { onSnapshot } from 'firebase/firestore'
 
 beforeEach(() => { vi.clearAllMocks() })
 
@@ -61,5 +63,33 @@ describe('TC-111 — divers', () => {
     const e = mapCollaborationError({ details: { code: 'INSUFFICIENT_SUPPLIER_BALANCE' } })
     expect(e.code).toBe('INSUFFICIENT_SUPPLIER_BALANCE')
     expect(e.message).toMatch(/insuffisant/i)
+  })
+})
+
+describe('TC-111 — abonnement résilient (temps réel qui se rétablit)', () => {
+  beforeEach(() => { vi.useFakeTimers() })
+  afterEach(() => { vi.useRealTimers() })
+
+  it('un listener en erreur se réabonne après le délai (onSnapshot terminal)', () => {
+    onSnapshot.mockImplementation(() => vi.fn())
+    const onError = vi.fn()
+    subscribeMyDebts({ storeId: 'store-a', onUpdate: vi.fn(), onError })
+
+    expect(onSnapshot).toHaveBeenCalledTimes(1)
+    // 3e argument d'onSnapshot = le gestionnaire d'erreur ; on simule un listener mort.
+    onSnapshot.mock.calls[0][2]({ code: 'unavailable' })
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onSnapshot).toHaveBeenCalledTimes(1) // pas de réabonnement immédiat
+    vi.advanceTimersByTime(4000)
+    expect(onSnapshot).toHaveBeenCalledTimes(2) // réabonné après le délai
+  })
+
+  it('le désabonnement annule le réabonnement en attente', () => {
+    onSnapshot.mockImplementation(() => vi.fn())
+    const unsub = subscribeMyDebts({ storeId: 'store-a', onUpdate: vi.fn(), onError: vi.fn() })
+    onSnapshot.mock.calls[0][2]({ code: 'unavailable' }) // erreur → programme un réabonnement
+    unsub()                                              // annule le minuteur
+    vi.advanceTimersByTime(10000)
+    expect(onSnapshot).toHaveBeenCalledTimes(1)          // pas de réabonnement
   })
 })

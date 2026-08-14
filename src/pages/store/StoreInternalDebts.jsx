@@ -85,7 +85,7 @@ function DebtRow({ debt, credits, tbl }) {
   // Mes propres tranches sur cette dette : les DÉCLARÉES (non confirmées) réservent
   // du reste dû. `available` = ce qu'il reste réellement à déclarer.
   useEffect(() => {
-    const u = subscribeDebtSettlements({ debtId: debt.id, onUpdate: setSettlements, onError: (e) => setErr(e.message) })
+    const u = subscribeDebtSettlements({ debtId: debt.id, onUpdate: (s) => { setSettlements(s); setErr(null) }, onError: (e) => setErr(e.message) })
     return () => u()
   }, [debt.id])
   const pending = settlements.reduce((s, x) => (x.settlementStatus === 'declared' ? s + num(x.amount) : s), 0)
@@ -177,7 +177,7 @@ function CreditRow({ debt, tbl }) {
   const [err, setErr] = useState(null)
 
   useEffect(() => {
-    const u = subscribeDebtSettlements({ debtId: debt.id, onUpdate: setSettlements, onError: (e) => setErr(e.message) })
+    const u = subscribeDebtSettlements({ debtId: debt.id, onUpdate: (s) => { setSettlements(s); setErr(null) }, onError: (e) => setErr(e.message) })
     return () => u()
   }, [debt.id])
 
@@ -263,8 +263,10 @@ function StoreInternalDebts() {
 
   useEffect(() => {
     if (!storeId) return undefined
-    const u1 = subscribeMyDebts({ storeId, onUpdate: setDebts, onError: (e) => setError(e.message) })
-    const u2 = subscribeMyCredits({ storeId, onUpdate: setCredits, onError: (e) => setError(e.message) })
+    // On efface l'erreur au premier snapshot réussi : couplé au réabonnement résilient du
+    // service, un blip de listener ne laisse plus de bandeau figé ni de page non-synchronisée.
+    const u1 = subscribeMyDebts({ storeId, onUpdate: (d) => { setDebts(d); setError(null) }, onError: (e) => setError(e.message) })
+    const u2 = subscribeMyCredits({ storeId, onUpdate: (c) => { setCredits(c); setError(null) }, onError: (e) => setError(e.message) })
     return () => { u1(); u2() }
   }, [storeId])
 

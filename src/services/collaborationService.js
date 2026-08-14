@@ -157,6 +157,32 @@ export async function rejectInternalDebtCompensation({ debtId, settlementId, rej
 
 const mapDocs = (snap) => snap.docs.map(d => ({ id: d.id, ...d.data() }))
 
+// Abonnement temps réel RÉSILIENT. Un onSnapshot qui tombe en erreur est TERMINAL : le
+// listener meurt et ne se rétablit jamais → la page cesse de se mettre à jour et le bandeau
+// d'erreur reste affiché. Ici, sur erreur on prévient l'appelant PUIS on se réabonne après un
+// court délai ; au prochain snapshot réussi l'appelant efface son erreur. L'unsubscribe rendu
+// annule le minuteur ET le listener courant.
+const RESUBSCRIBE_DELAY_MS = 4000
+function resilientOnSnapshot(q, { onNext, onError, delayMs = RESUBSCRIBE_DELAY_MS } = {}) {
+  let stopped = false
+  let unsub = null
+  let timer = null
+  const attach = () => {
+    if (stopped) return
+    unsub = onSnapshot(q, onNext, (err) => {
+      onError?.(err)
+      if (stopped) return
+      timer = setTimeout(() => { timer = null; attach() }, delayMs)
+    })
+  }
+  attach()
+  return () => {
+    stopped = true
+    if (timer) { clearTimeout(timer); timer = null }
+    if (unsub) { unsub(); unsub = null }
+  }
+}
+
 /** Boutique demandeuse : ses collaborations sortantes. */
 export function subscribeOutgoingCollaborations({ storeId, onUpdate, onError } = {}) {
   if (!storeId) { onUpdate?.([]); return () => {} }
@@ -166,7 +192,10 @@ export function subscribeOutgoingCollaborations({ storeId, onUpdate, onError } =
     orderBy('createdAt', 'desc'),
     limit(COLLABORATIONS_PAGE_SIZE),
   )
-  return onSnapshot(q, (snap) => onUpdate?.(mapDocs(snap)), (err) => onError?.(mapCollaborationError(err)))
+  return resilientOnSnapshot(q, {
+    onNext: (snap) => onUpdate?.(mapDocs(snap)),
+    onError: (err) => onError?.(mapCollaborationError(err)),
+  })
 }
 
 /** Boutique fournisseuse : collaborations entrantes (optionnellement par statut). */
@@ -177,7 +206,10 @@ export function subscribeIncomingCollaborations({ storeId, statusFilter = null, 
   constraints.push(orderBy('createdAt', 'desc'))
   constraints.push(limit(COLLABORATIONS_PAGE_SIZE))
   const q = query(collection(db, 'storeCollaborations'), ...constraints)
-  return onSnapshot(q, (snap) => onUpdate?.(mapDocs(snap)), (err) => onError?.(mapCollaborationError(err)))
+  return resilientOnSnapshot(q, {
+    onNext: (snap) => onUpdate?.(mapDocs(snap)),
+    onError: (err) => onError?.(mapCollaborationError(err)),
+  })
 }
 
 /** Boutique fournisseuse : compteur léger des collaborations en attente. */
@@ -188,7 +220,10 @@ export function subscribeIncomingCollaborationsCount({ storeId, onUpdate } = {})
     where('supplierStoreId', '==', storeId),
     where('status', '==', 'pending'),
   )
-  return onSnapshot(q, (snap) => onUpdate?.(snap.size), () => onUpdate?.(0))
+  return resilientOnSnapshot(q, {
+    onNext: (snap) => onUpdate?.(snap.size),
+    onError: () => onUpdate?.(0),
+  })
 }
 
 /** Boutique : ses dettes (elle est débitrice). */
@@ -200,7 +235,10 @@ export function subscribeMyDebts({ storeId, onUpdate, onError } = {}) {
     orderBy('createdAt', 'desc'),
     limit(INTERNAL_DEBTS_PAGE_SIZE),
   )
-  return onSnapshot(q, (snap) => onUpdate?.(mapDocs(snap)), (err) => onError?.(mapCollaborationError(err)))
+  return resilientOnSnapshot(q, {
+    onNext: (snap) => onUpdate?.(mapDocs(snap)),
+    onError: (err) => onError?.(mapCollaborationError(err)),
+  })
 }
 
 /** Boutique : ses créances (elle est créancière). */
@@ -212,7 +250,10 @@ export function subscribeMyCredits({ storeId, onUpdate, onError } = {}) {
     orderBy('createdAt', 'desc'),
     limit(INTERNAL_DEBTS_PAGE_SIZE),
   )
-  return onSnapshot(q, (snap) => onUpdate?.(mapDocs(snap)), (err) => onError?.(mapCollaborationError(err)))
+  return resilientOnSnapshot(q, {
+    onNext: (snap) => onUpdate?.(mapDocs(snap)),
+    onError: (err) => onError?.(mapCollaborationError(err)),
+  })
 }
 
 /**
@@ -231,7 +272,10 @@ export function subscribeSettlementsToConfirmCount({ storeId, onUpdate } = {}) {
     where('creditorStoreId', '==', storeId),
     where('settlementStatus', '==', 'declared'),
   )
-  return onSnapshot(q, (snap) => onUpdate?.(snap.size), () => onUpdate?.(0))
+  return resilientOnSnapshot(q, {
+    onNext: (snap) => onUpdate?.(snap.size),
+    onError: () => onUpdate?.(0),
+  })
 }
 
 /** Tranches de règlement d'une dette. */
@@ -241,5 +285,8 @@ export function subscribeDebtSettlements({ debtId, onUpdate, onError } = {}) {
     collection(db, `internalDebts/${debtId}/settlements`),
     orderBy('declaredAt', 'desc'),
   )
-  return onSnapshot(q, (snap) => onUpdate?.(mapDocs(snap)), (err) => onError?.(mapCollaborationError(err)))
+  return resilientOnSnapshot(q, {
+    onNext: (snap) => onUpdate?.(mapDocs(snap)),
+    onError: (err) => onError?.(mapCollaborationError(err)),
+  })
 }

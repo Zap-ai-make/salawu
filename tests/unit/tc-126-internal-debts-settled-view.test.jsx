@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, act } from '@testing-library/react'
 
 const ORANGE = { tableHeader: 'bg-orange-100/80 border-orange-300', text: 'text-gray-900' }
 
@@ -153,5 +153,20 @@ describe('TC-126 — l\'espace ne montre que l\'en-cours', () => {
     render(<StoreInternalDebts />)
     expect(screen.getByText((_, el) => el?.tagName === 'P' && /Déjà en attente/.test(el.textContent))).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Rembourser' })).toBeEnabled()
+  })
+
+  it('un blip de listener ne laisse pas de bandeau permanent (erreur puis snapshot l\'efface)', () => {
+    let debtsArgs
+    mocks.subscribeMyDebts.mockImplementation((args) => { debtsArgs = args; return vi.fn() })
+    mocks.subscribeMyCredits.mockImplementation(({ onUpdate }) => { onUpdate?.([]); return vi.fn() })
+    render(<StoreInternalDebts />)
+
+    // Erreur du listener → bandeau affiché.
+    act(() => debtsArgs.onError?.({ message: 'Une erreur inattendue s\'est produite.' }))
+    expect(screen.getByText('Une erreur inattendue s\'est produite.')).toBeInTheDocument()
+
+    // Snapshot réussi (réabonnement) → bandeau effacé.
+    act(() => debtsArgs.onUpdate?.([]))
+    expect(screen.queryByText('Une erreur inattendue s\'est produite.')).not.toBeInTheDocument()
   })
 })
