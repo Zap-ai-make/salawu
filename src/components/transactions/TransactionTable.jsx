@@ -8,6 +8,7 @@ import { TransactionRowSkeleton } from '../ui/LoadingSkeleton.jsx'
 import OptimisticToast from '../ui/OptimisticToast.jsx'
 import { themedTableClasses } from '../ui/themedTable.js'
 import logger from '../../utils/logger.js'
+import { toUserMessage } from '../../utils/friendlyError.js'
 import { generateIdempotencyKey } from '../../services/settlementService.js'
 
 const TransactionTable = memo(function TransactionTable() {
@@ -112,7 +113,7 @@ const TransactionTable = memo(function TransactionTable() {
 
       setRollbackToast({
         show: true,
-        message: error?.message || 'Erreur de synchronisation — opération non enregistrée',
+        message: toUserMessage(error) || 'Erreur de synchronisation — opération non enregistrée',
         type: 'rollback'
       })
 

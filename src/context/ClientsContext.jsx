@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, createContext } from 'react'
 import { STORAGE_KEYS } from '../constants'
 import { firestoreService } from '../services/firestore'
 import { parsefrenchDate } from '../utils/helpers.js'
+import { toUserMessage } from '../utils/friendlyError.js'
 import { AuthContext } from './AuthContext'
 
 export const ClientsContext = createContext()
@@ -93,7 +94,7 @@ export function ClientsProvider({ children }) {
       } catch (error) {
         console.error('Clients initialization error:', error)
         if (isMounted) {
-          setError(error.message)
+          setError(toUserMessage(error))
           setLoading(false)
           // Seulement utiliser le fallback en cas d'erreur critique
           setClients([])
@@ -129,7 +130,7 @@ export function ClientsProvider({ children }) {
       // La mise à jour de l'état se fera automatiquement via onSnapshot
     } catch (error) {
       console.error('Client creation error:', error)
-      setError(error.message)
+      setError(toUserMessage(error))
       throw error
     }
   }
@@ -141,7 +142,7 @@ export function ClientsProvider({ children }) {
       // La mise à jour de l'état se fera automatiquement via onSnapshot
     } catch (error) {
       console.error('Client deletion error:', error)
-      setError(error.message)
+      setError(toUserMessage(error))
       throw error
     }
   }
@@ -153,7 +154,7 @@ export function ClientsProvider({ children }) {
       // La mise à jour de l'état se fera automatiquement via onSnapshot
     } catch (error) {
       console.error('Client update error:', error)
-      setError(error.message)
+      setError(toUserMessage(error))
       throw error
     }
   }

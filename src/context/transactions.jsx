@@ -3,6 +3,7 @@ import { getTransactionStyles, getAvailableActions, isDraftSettling, parsefrench
 import { STORAGE_KEYS } from '../constants/index.js'
 import { firestoreService } from '../services/firestore'
 import { addTransactionPayment, addTransactionRefund } from '../services/settlementService'
+import { toUserMessage } from '../utils/friendlyError.js'
 import { AuthContext } from './AuthContext'
 
 const TransactionsContext = createContext()
@@ -115,7 +116,7 @@ export const TransactionsProvider = ({ children }) => {
       } catch (error) {
         console.error('Erreur lors de l\'initialisation des transactions:', error)
         if (isMounted) {
-          setError(error.message)
+          setError(toUserMessage(error))
           setLoading(false)
           // Fallback vers localStorage en cas d'erreur
           try {
@@ -165,7 +166,7 @@ export const TransactionsProvider = ({ children }) => {
       // La mise à jour de l'état se fera automatiquement via onSnapshot
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la transaction:', error)
-      setError(error.message)
+      setError(toUserMessage(error))
       throw error
     }
   }, [activeStore?.name, user, userProfile?.name, userProfile?.role, userProfile?.storeId, userProfile?.storeName])
@@ -177,7 +178,7 @@ export const TransactionsProvider = ({ children }) => {
       // La mise à jour de l'état se fera automatiquement via onSnapshot
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la transaction:', error)
-      setError(error.message)
+      setError(toUserMessage(error))
       throw error
     }
   }, [])
@@ -195,7 +196,7 @@ export const TransactionsProvider = ({ children }) => {
       return true
     } catch (error) {
       console.error('Erreur lors de la validation de la transaction:', error)
-      setError(error.message)
+      setError(toUserMessage(error))
       throw error
     }
   }, [])
@@ -207,7 +208,7 @@ export const TransactionsProvider = ({ children }) => {
       return true
     } catch (error) {
       console.error('Erreur de règlement (paiement):', error)
-      setError(error?.message || 'Erreur lors du paiement')
+      setError(toUserMessage(error) || 'Erreur lors du paiement')
       throw error
     }
   }, [])
@@ -219,7 +220,7 @@ export const TransactionsProvider = ({ children }) => {
       return true
     } catch (error) {
       console.error('Erreur de règlement (remboursement):', error)
-      setError(error?.message || 'Erreur lors du remboursement')
+      setError(toUserMessage(error) || 'Erreur lors du remboursement')
       throw error
     }
   }, [])
@@ -238,7 +239,7 @@ export const TransactionsProvider = ({ children }) => {
       // La mise à jour de l'état se fera automatiquement via onSnapshot
     } catch (error) {
       console.error('Erreur lors de la suppression de la transaction:', error)
-      setError(error.message)
+      setError(toUserMessage(error))
       throw error
     }
   }, [pendingTransactions])

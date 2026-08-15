@@ -8,6 +8,7 @@ export const ERROR_TYPES = {
   QUOTA: 'quota',
   TIMEOUT: 'timeout',
   VALIDATION: 'validation',
+  AUTH: 'auth',
   UNKNOWN: 'unknown'
 }
 
@@ -112,8 +113,12 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 export const classifyError = (error) => {
   const code = error.code || error.message?.toLowerCase() || ''
 
-  if (code.includes('network') || code.includes('offline')) {
+  if (code.includes('network') || code.includes('offline') || code.includes('unavailable')) {
     return ERROR_TYPES.NETWORK
+  }
+
+  if (code.includes('unauthenticated')) {
+    return ERROR_TYPES.AUTH
   }
 
   if (code.includes('permission') || code.includes('unauthorized')) {
@@ -150,6 +155,7 @@ export const getUserFriendlyMessage = (error) => {
     [ERROR_TYPES.QUOTA]: 'Limite de quota atteinte. Veuillez réessayer plus tard.',
     [ERROR_TYPES.TIMEOUT]: 'L\'opération a pris trop de temps. Veuillez réessayer.',
     [ERROR_TYPES.VALIDATION]: 'Les données fournies ne sont pas valides.',
+    [ERROR_TYPES.AUTH]: 'Session expirée, reconnectez-vous.',
     [ERROR_TYPES.UNKNOWN]: 'Une erreur inattendue s\'est produite.'
   }
 
