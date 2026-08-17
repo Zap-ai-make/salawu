@@ -33,6 +33,7 @@ const ALLOWED_METHODS = [
   'Telecel Money',
   'Coris Money',
   'Sank Money',
+  'Wave',
   'Cash',
 ]
 
@@ -188,7 +189,15 @@ export async function addTransactionPaymentHandler(request, { db, FieldValue, lo
       // ── Impact financier ──────────────────────────────────────────────────
       const currentBalances = normalizeNetworkBalances(balanceSnap.exists ? balanceSnap.data() : {})
       const affectedNetwork = mapPaymentMethodToNetwork(paymentMethod)
-      const nextBalances    = applySettlementImpact(currentBalances, { type: effectiveType, montant: amount }, paymentMethod)
+      // applySettlementImpact lève un Error simple si le solde deviendrait négatif. Sans ce
+      // try/catch, le catch final le masque en TRANSACTION_FAILED (500) et le message clair
+      // (« Stock/Liquidité insuffisant… ») est perdu. On le convertit en erreur métier explicite.
+      let nextBalances
+      try {
+        nextBalances = applySettlementImpact(currentBalances, { type: effectiveType, montant: amount }, paymentMethod)
+      } catch (e) {
+        throw new DealerRequestError('INSUFFICIENT_STORE_BALANCE', e?.message || 'Solde insuffisant pour ce règlement.')
+      }
 
       const previousBalanceEntry = currentBalances[affectedNetwork] ?? { stock: 0, liquidite: 0 }
       const newBalanceEntry      = nextBalances[affectedNetwork]    ?? { stock: 0, liquidite: 0 }

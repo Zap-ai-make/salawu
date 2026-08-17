@@ -170,6 +170,32 @@ describe('TC-060-A — addTransactionPayment : validation entrées', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TC-060-W — Wave autorisé + solde insuffisant → erreur métier claire
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('TC-060-W — Wave + solde insuffisant', () => {
+  it('accepte la méthode Wave (dépôt partiel) → succès', async () => {
+    const { db } = makeDb({ draftData: { ...BASE_DRAFT, type: 'Dépôt', montant: 10000 } })
+    const res = await addTransactionPaymentHandler(
+      makeRequest({ draftId: DRAFT_ID, amount: 5000, paymentMethod: 'Wave', idempotencyKey: 'kw' }),
+      { db, FieldValue }
+    )
+    expect(res).toMatchObject({ success: true, fullySettled: false })
+  })
+
+  it('solde insuffisant → INSUFFICIENT_STORE_BALANCE (pas TRANSACTION_FAILED)', async () => {
+    // Retrait Coris 5000 alors que Coris.stock = 2000 → applySettlementImpact lève « insuffisant ».
+    const { db } = makeDb({ draftData: { ...BASE_DRAFT, type: 'Retrait', montant: 10000, reseau: 'Coris' } })
+    await expect(
+      addTransactionPaymentHandler(
+        makeRequest({ draftId: DRAFT_ID, amount: 5000, paymentMethod: 'Coris Money', idempotencyKey: 'kc' }),
+        { db, FieldValue }
+      )
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_STORE_BALANCE', message: expect.stringContaining('insuffisant') })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TC-060-B — addTransactionPayment : paiement complet (draft → history)
 // ─────────────────────────────────────────────────────────────────────────────
 
