@@ -137,6 +137,19 @@ export const normalizeDate = (dateString) => {
 }
 
 /**
+ * Clé de jour LOCALE "YYYY-MM-DD" (mêmes composantes locales que matchesDateFilter).
+ * Évite la conversion UTC de toISOString() : le regroupement/affichage par jour et le
+ * filtre de dates restent cohérents quelle que soit la timezone.
+ */
+export const localDayKey = (date) => {
+  if (!(date instanceof Date) || isNaN(date.getTime())) return null
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/**
  * Vérifie si une transaction est du jour actuel
  */
 export const isTransactionFromToday = (transaction) => {

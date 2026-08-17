@@ -1,35 +1,26 @@
 import { useState, useMemo } from 'react'
+import { parsefrenchDate, localDayKey } from '../../utils/helpers.js'
 
 function DailyPagination({ transactions, onDateSelect }) {
   const [currentPage, setCurrentPage] = useState(0)
   const daysPerPage = 7
 
-  // Grouper les transactions par jour
+  // Grouper les transactions par jour — clé LOCALE (parsefrenchDate + localDayKey), le
+  // MÊME cadran que matchesDateFilter. Sinon le comptage/affichage (UTC via toISOString)
+  // et le filtre (local) se décalaient d'un jour → cliquer une carte n'affichait rien.
   const transactionsByDay = useMemo(() => {
     const groups = {}
-    
+
     transactions.forEach(transaction => {
-      let dateKey
-      if (transaction.date) {
-        // Format français: "15/09/2025 14:30"
-        const [datePart] = transaction.date.split(' ')
-        if (datePart.includes('/')) {
-          const [day, month, year] = datePart.split('/')
-          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-          dateKey = date.toISOString().split('T')[0] // Format YYYY-MM-DD
-        } else {
-          dateKey = new Date(transaction.date).toISOString().split('T')[0]
-        }
-      } else {
-        dateKey = new Date().toISOString().split('T')[0]
-      }
-      
+      const parsed = parsefrenchDate(transaction.date) || new Date()
+      const dateKey = localDayKey(parsed) || localDayKey(new Date())
+
       if (!groups[dateKey]) {
         groups[dateKey] = []
       }
       groups[dateKey].push(transaction)
     })
-    
+
     return groups
   }, [transactions])
 
@@ -39,7 +30,8 @@ function DailyPagination({ transactions, onDateSelect }) {
       .sort((a, b) => new Date(b) - new Date(a))
       .map(dateKey => ({
         date: dateKey,
-        displayDate: new Date(dateKey).toLocaleDateString('fr-FR'),
+        // Parse LOCAL ("T00:00:00" sans Z) pour afficher le bon jour quelle que soit la timezone.
+        displayDate: new Date(dateKey + 'T00:00:00').toLocaleDateString('fr-FR'),
         count: transactionsByDay[dateKey].length
       }))
   }, [transactionsByDay])
@@ -50,12 +42,9 @@ function DailyPagination({ transactions, onDateSelect }) {
   const currentDays = sortedDays.slice(startIndex, startIndex + daysPerPage)
 
   const handleDayClick = (dateKey) => {
-    const selectedDate = new Date(dateKey)
-    const formattedDate = selectedDate.toISOString().split('T')[0]
-    onDateSelect && onDateSelect({
-      from: formattedDate,
-      to: formattedDate
-    })
+    // dateKey est déjà "YYYY-MM-DD" en cadran local (= celui de matchesDateFilter) :
+    // on l'émet tel quel, sans re-conversion UTC.
+    onDateSelect && onDateSelect({ from: dateKey, to: dateKey })
   }
 
   const handlePreviousPage = () => {
