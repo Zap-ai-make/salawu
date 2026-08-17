@@ -439,7 +439,7 @@ function TransactionForm({ clients }) {
                   disabled={isDisabled}
                   className={isDisabled ? 'text-gray-400' : ''}
                 >
-                  {option} {isDisabled ? '(Non disponible)' : ''}
+                  {option} {isDisabled ? "(ce client n'a pas ce réseau)" : ''}
                 </option>
               )
             })}
