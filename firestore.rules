@@ -61,6 +61,16 @@ service cloud.firestore {
       return isActiveUser() && profile().role == 'dealer';
     }
 
+    // Autorisation de lecture d'une dette interne par son id (débitrice, créancière
+    // ou gérant). Passe par un get() du doc de dette : $(debtId) est FIXE pour une
+    // requête donnée, donc — contrairement à resource.data — la condition est
+    // évaluable sur une requête LIST non contrainte (« les règles ne filtrent pas »).
+    function canReadInternalDebt(debtId) {
+      return isSystemManager()
+        || isStoreAdmin(get(/databases/$(database)/documents/internalDebts/$(debtId)).data.debtorStoreId)
+        || isStoreAdmin(get(/databases/$(database)/documents/internalDebts/$(debtId)).data.creditorStoreId);
+    }
+
     // Données brutes de la boutique pour validation dealerRequests
     function storeDoc(storeId) {
       return get(/databases/$(database)/documents/stores/$(storeId)).data;
@@ -455,9 +465,12 @@ service cloud.firestore {
       allow create, update, delete: if false;
 
       match /settlements/{settlementId} {
-        allow read: if isStoreAdmin(resource.data.debtorStoreId)
-                    || isStoreAdmin(resource.data.creditorStoreId)
-                    || isSystemManager();
+        // Authz par la dette PARENTE, pas par les champs dénormalisés du doc : la page
+        // « Dettes internes » liste les tranches SANS clause where (orderBy declaredAt),
+        // et une règle en resource.data.debtorStoreId fait échouer TOUTE la requête LIST
+        // (« Property debtorStoreId is undefined » — cf. TC-130). get($debtId) est fixe
+        // pour la requête → autorise débitrice/créancière/gérant, refuse les tiers.
+        allow read: if canReadInternalDebt(debtId);
         allow write: if false;
       }
     }
