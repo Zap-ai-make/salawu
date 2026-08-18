@@ -569,7 +569,10 @@ function StoreAdminDealerRequestDetails() {
           <DealerRequestStatusBadge status={request.status} />
         </div>
 
-        {/* Champs */}
+        {/* Champs — vue épurée : on retire les données techniques (UID Confirmé/Rejeté
+            par, horodatage interne « Mise à jour », soldes) et on n'affiche les dates
+            de traitement + le motif QUE si la demande a été traitée (sinon une demande
+            en attente afficherait une pile de « — »). */}
         <dl>
           <Field label="Dealer" value={request.dealerName ?? 'Dealer inconnu'} />
           <Field label="Email Dealer" value={request.dealerEmail ?? 'Email indisponible'} />
@@ -579,14 +582,15 @@ function StoreAdminDealerRequestDetails() {
           <Field label="Réseau" value={request.network ?? '—'} />
           <Field label="Statut" value={<DealerRequestStatusBadge status={request.status} />} />
           <Field label="Créée le" value={formatFirestoreDate(request.createdAt)} />
-          <Field label="Mise à jour le" value={formatFirestoreDate(request.updatedAt)} />
-          <Field label="Ancien solde" value={request.previousBalance != null ? formatStoredAmount(request.previousBalance) : '—'} />
-          <Field label="Nouveau solde" value={request.newBalance != null ? formatStoredAmount(request.newBalance) : '—'} />
-          <Field label="Confirmé par" value={request.confirmedBy ?? '—'} />
-          <Field label="Confirmé le" value={request.confirmedAt ? formatFirestoreDate(request.confirmedAt) : '—'} />
-          <Field label="Rejeté par" value={request.rejectedBy ?? '—'} />
-          <Field label="Rejeté le" value={request.rejectedAt ? formatFirestoreDate(request.rejectedAt) : '—'} />
-          <Field label="Motif du rejet" value={request.rejectionReason ?? '—'} />
+          {request.confirmedAt && (
+            <Field label="Confirmé le" value={formatFirestoreDate(request.confirmedAt)} />
+          )}
+          {request.rejectedAt && (
+            <Field label="Rejeté le" value={formatFirestoreDate(request.rejectedAt)} />
+          )}
+          {request.rejectionReason && (
+            <Field label="Motif du rejet" value={request.rejectionReason} />
+          )}
         </dl>
 
         {/* Actions — uniquement pour les demandes en attente */}

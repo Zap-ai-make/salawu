@@ -520,13 +520,15 @@ describe('TC-033-DETAIL — StoreAdminDealerRequestDetails', () => {
     })
   })
 
-  it('[DET-06] demande confirmed → badge "Confirmée" et confirmé par visible', async () => {
+  it('[DET-06] demande confirmed → badge "Confirmée" + date de confirmation, sans UID', async () => {
+    // Vue épurée : on montre « Confirmé le » (date lisible) mais plus l'UID « Confirmé par ».
     mocks.getStoreAdminDealerRequestById.mockResolvedValue({ ...REQS[1], id: 'req-2' })
     renderDetails('req-2')
     await waitFor(() => {
       const text = screen.getByTestId('store-dealer-request-details').textContent
       expect(text).toContain('Confirmée')
-      expect(text).toContain('manager-uid')
+      expect(text).toContain('Confirmé le')
+      expect(text).not.toContain('manager-uid')
     })
   })
 
@@ -540,20 +542,24 @@ describe('TC-033-DETAIL — StoreAdminDealerRequestDetails', () => {
     })
   })
 
-  it('[DET-08] champs null → "—" affiché (pas undefined ou vide)', async () => {
-    const req = {
-      ...REQS[0], id: 'req-null',
-      confirmedBy: null, confirmedAt: null,
-      rejectedBy: null, rejectedAt: null,
-      rejectionReason: null,
-      previousBalance: null, newBalance: null,
-    }
+  it('[DET-08] demande en attente → vue épurée (champs techniques et de traitement masqués)', async () => {
+    // Nettoyage pré-prod : plus d'UID bruts (« Confirmé/Rejeté par »), plus d'horodatage
+    // interne (« Mise à jour »), plus de soldes. Les dates de traitement et le motif
+    // n'apparaissent QUE pour une demande traitée — une demande « en attente » reste
+    // compacte, sans pile de « — ». Un champ optionnel vide (Réseau) reste en « — ».
+    const req = { ...REQS[0], id: 'req-null', network: null }
     mocks.getStoreAdminDealerRequestById.mockResolvedValue(req)
     renderDetails('req-null')
-    await waitFor(() => {
-      const text = screen.getByTestId('store-dealer-request-details').textContent
-      expect(text).toContain('—')
-    })
+    await waitFor(() => screen.getByTestId('btn-back'))
+    const text = screen.getByTestId('store-dealer-request-details').textContent
+    expect(text).toContain('—')                       // Réseau vide → « — »
+    expect(text).not.toContain('Confirmé par')        // UID retiré
+    expect(text).not.toContain('Rejeté par')          // UID retiré
+    expect(text).not.toContain('Mise à jour')         // horodatage interne retiré
+    expect(text).not.toContain('Ancien solde')        // solde retiré
+    expect(text).not.toContain('Nouveau solde')       // solde retiré
+    expect(text).not.toContain('Confirmé le')         // pas encore traitée
+    expect(text).not.toContain('Motif du rejet')      // pas rejetée
   })
 
   it('[DET-09] demande confirmed → aucun bouton Confirmer/Rejeter/Modifier', async () => {
