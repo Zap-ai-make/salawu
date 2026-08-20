@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import StoreAdminDealerRequestDetails from './StoreAdminDealerRequestDetails.jsx'
 import {
   listStoreAdminDealerRequests,
   subscribeStoreAdminDealerRequests,
@@ -43,7 +43,9 @@ const TYPE_OPTIONS = [
 
 function StoreAdminDealerRequests() {
   const { currentUser, userProfile } = useAuth()
-  const navigate = useNavigate()
+
+  // Détail ouvert en MODAL (par id) au lieu d'une page dédiée. null = aucun modal.
+  const [selectedRequestId, setSelectedRequestId] = useState(null)
 
   // Première page — mise à jour temps réel via onSnapshot
   const [realtimeRequests, setRealtimeRequests] = useState([])
@@ -379,7 +381,7 @@ function StoreAdminDealerRequests() {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => navigate(`/dealer-requests/${req.id}`)}
+                        onClick={() => setSelectedRequestId(req.id)}
                         className="text-blue-600 hover:text-blue-800 text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
                         aria-label={`Voir le détail de la demande ${req.id}`}
                         data-testid={`btn-detail-${req.id}`}
@@ -408,6 +410,15 @@ function StoreAdminDealerRequests() {
             </div>
           )}
         </>
+      )}
+
+      {/* Détail en modal (overlay) — remplace la page dédiée. */}
+      {selectedRequestId && (
+        <StoreAdminDealerRequestDetails
+          asModal
+          requestId={selectedRequestId}
+          onClose={() => setSelectedRequestId(null)}
+        />
       )}
     </div>
   )

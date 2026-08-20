@@ -431,15 +431,35 @@ describe('TC-033-LIST — StoreAdminDealerRequests (liste)', () => {
     })
   })
 
-  it('[LIST-22] bouton "Voir le détail" → navigate vers /dealer-requests/:id', async () => {
+  it('[LIST-22] bouton "Voir le détail" → ouvre le détail en MODAL (plus de navigation)', async () => {
     mocks.subscribeStoreAdminDealerRequests.mockImplementation(({ onUpdate }) => {
       onUpdate(makeListResult([REQS[0]]))
       return vi.fn()
     })
+    mocks.getStoreAdminDealerRequestById.mockResolvedValue({ ...REQS[0], id: 'req-1' })
     renderList()
     await waitFor(() => screen.getByTestId('btn-detail-req-1'))
     fireEvent.click(screen.getByTestId('btn-detail-req-1'))
-    expect(mocks.navigate).toHaveBeenCalledWith('/dealer-requests/req-1')
+    // Le détail s'affiche en overlay (modal), aucune navigation de route.
+    await waitFor(() => expect(screen.getByTestId('dealer-request-detail-modal')).toBeInTheDocument())
+    expect(screen.getByTestId('store-dealer-request-details').textContent).toContain('Dealer Alpha')
+    expect(mocks.navigate).not.toHaveBeenCalledWith('/dealer-requests/req-1')
+  })
+
+  it('[LIST-22b] fermer le modal détail (✕ Fermer) → overlay retiré', async () => {
+    mocks.subscribeStoreAdminDealerRequests.mockImplementation(({ onUpdate }) => {
+      onUpdate(makeListResult([REQS[0]]))
+      return vi.fn()
+    })
+    mocks.getStoreAdminDealerRequestById.mockResolvedValue({ ...REQS[0], id: 'req-1' })
+    renderList()
+    await waitFor(() => screen.getByTestId('btn-detail-req-1'))
+    fireEvent.click(screen.getByTestId('btn-detail-req-1'))
+    await waitFor(() => screen.getByTestId('dealer-request-detail-modal'))
+    fireEvent.click(screen.getByTestId('btn-back'))  // libellé « ✕ Fermer » en mode modal
+    await waitFor(() =>
+      expect(screen.queryByTestId('dealer-request-detail-modal')).not.toBeInTheDocument(),
+    )
   })
 
   it('[LIST-23] aucun bouton Confirmer, Rejeter, Modifier, Supprimer', async () => {

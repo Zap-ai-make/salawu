@@ -292,10 +292,20 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
 // StoreAdminDealerRequestDetails
 // ---------------------------------------------------------------------------
 
-function StoreAdminDealerRequestDetails() {
+// Dual-mode : rendu en PAGE (route /dealer-requests/:requestId, deep-link conservé) ou
+// en MODAL depuis la liste (props requestId + onClose + asModal). Sans props, comportement
+// page inchangé (requestId via l'URL, fermeture = navigate vers la liste).
+function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClose = null, asModal = false } = {}) {
   const { currentUser, userProfile } = useAuth()
   const navigate = useNavigate()
-  const { requestId } = useParams()
+  const { requestId: paramRequestId } = useParams()
+  const requestId = propRequestId ?? paramRequestId
+
+  // Fermeture : callback fourni (modal) sinon retour liste (page).
+  const closeView = useCallback(() => {
+    if (onClose) onClose()
+    else navigate('/dealer-requests')
+  }, [onClose, navigate])
 
   const [request, setRequest]             = useState(null)
   const [loading, setLoading]             = useState(true)
@@ -436,13 +446,41 @@ function StoreAdminDealerRequestDetails() {
   }
 
   // ---------------------------------------------------------------------------
+  // Coquille : page (conteneur centré) ou modal (overlay). En modal : fermeture par
+  // Échap / clic sur le fond, sauf si une action est en cours ou qu'une sous-modale
+  // (confirmer / rejeter) est ouverte au-dessus.
+  // ---------------------------------------------------------------------------
+
+  const canDismissModal = !processingAction && !confirmModalOpen && !rejectModalOpen
+  const wrap = (inner) => (asModal ? (
+    <div
+      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Détail de la demande Dealer"
+      data-testid="dealer-request-detail-modal"
+      onMouseDown={() => { if (canDismissModal) closeView() }}
+      onKeyDown={(e) => { if (e.key === 'Escape' && canDismissModal) closeView() }}
+    >
+      <div
+        className="my-8 w-full max-w-2xl"
+        data-testid="store-dealer-request-details"
+        onMouseDown={e => e.stopPropagation()}
+      >
+        {inner}
+      </div>
+    </div>
+  ) : (
+    <div className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">{inner}</div>
+  ))
+
+  // ---------------------------------------------------------------------------
   // Render — chargement
   // ---------------------------------------------------------------------------
 
   if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">
-        <div className="bg-white rounded-lg shadow p-8 animate-pulse">
+    return wrap(
+      <div className="bg-white rounded-lg shadow p-8 animate-pulse">
           <div className="h-6 w-48 bg-gray-200 rounded mb-6" />
           {[1, 2, 3, 4, 5, 6].map(n => (
             <div key={n} className="flex py-3 border-b border-gray-100">
@@ -450,7 +488,6 @@ function StoreAdminDealerRequestDetails() {
               <div className="flex-1 h-4 bg-gray-200 rounded" />
             </div>
           ))}
-        </div>
       </div>
     )
   }
@@ -460,21 +497,19 @@ function StoreAdminDealerRequestDetails() {
   // ---------------------------------------------------------------------------
 
   if (error) {
-    return (
-      <div className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">
-        <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-5 text-red-700">
-          <p className="font-medium mb-1">Erreur</p>
-          <p className="text-sm">{error}</p>
-          <div className="mt-3 flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/dealer-requests')}
-              className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
-              data-testid="btn-back-error"
-            >
-              Retour à la liste
-            </button>
-          </div>
+    return wrap(
+      <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-5 text-red-700">
+        <p className="font-medium mb-1">Erreur</p>
+        <p className="text-sm">{error}</p>
+        <div className="mt-3 flex gap-3">
+          <button
+            type="button"
+            onClick={closeView}
+            className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+            data-testid="btn-back-error"
+          >
+            {asModal ? 'Fermer' : 'Retour à la liste'}
+          </button>
         </div>
       </div>
     )
@@ -488,8 +523,8 @@ function StoreAdminDealerRequestDetails() {
   const typeLabel     = DEALER_REQUEST_TYPE_LABELS[request.requestType] ?? 'Type inconnu'
   const amountDisplay = formatStoredAmount(request.amount)
 
-  return (
-    <div className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">
+  return wrap(
+    <>
       {/* Modales */}
       {confirmModalOpen && (
         <ConfirmModal
@@ -513,15 +548,15 @@ function StoreAdminDealerRequestDetails() {
         />
       )}
 
-      {/* Retour */}
+      {/* Retour / Fermeture */}
       <div className="mb-5">
         <button
           type="button"
-          onClick={() => navigate('/dealer-requests')}
+          onClick={closeView}
           className="text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
           data-testid="btn-back"
         >
-          ← Retour à la liste
+          {asModal ? '✕ Fermer' : '← Retour à la liste'}
         </button>
       </div>
 
@@ -621,7 +656,7 @@ function StoreAdminDealerRequestDetails() {
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }
 
