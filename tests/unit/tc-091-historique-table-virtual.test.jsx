@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 
 vi.mock('../../src/context/transactions.jsx', () => ({
   useTransactions: () => ({ getTransactionStyles: () => ({ bgColor: '', textColor: '' }) }),
@@ -74,5 +74,24 @@ describe('TC-091 — HistoriqueTable virtualisation', () => {
     expect(
       screen.getByText((content) => content.replace(/\s/g, ' ') === '1 000 FCFA'),
     ).toBeInTheDocument()
+  })
+
+  it('chaque ligne a un bouton « Reçu » qui ouvre le modal, refermable', () => {
+    render(<HistoriqueTable transactions={makeTxns(3)} />)
+
+    const receiptButtons = screen.getAllByRole('button', { name: 'Reçu' })
+    expect(receiptButtons).toHaveLength(3)
+
+    // Aucun modal au départ.
+    expect(screen.queryByTestId('receipt-modal')).not.toBeInTheDocument()
+
+    fireEvent.click(receiptButtons[0])
+    const modal = screen.getByTestId('receipt-modal')
+    expect(modal).toBeInTheDocument()
+    // Le reçu de la bonne ligne (Client 0) est affiché.
+    expect(within(modal).getByText('Client 0')).toBeInTheDocument()
+
+    fireEvent.click(within(modal).getByRole('button', { name: 'Fermer' }))
+    expect(screen.queryByTestId('receipt-modal')).not.toBeInTheDocument()
   })
 })

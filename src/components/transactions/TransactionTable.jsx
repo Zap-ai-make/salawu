@@ -6,6 +6,7 @@ import { PAYMENT_METHODS } from '../../utils/constants.js'
 import { getClientName, formatTransactionDateTime } from '../../utils/helpers.js'
 import { TransactionRowSkeleton } from '../ui/LoadingSkeleton.jsx'
 import OptimisticToast from '../ui/OptimisticToast.jsx'
+import ReceiptModal from '../receipt/ReceiptModal.jsx'
 import { themedTableClasses } from '../ui/themedTable.js'
 import logger from '../../utils/logger.js'
 import { toUserMessage } from '../../utils/friendlyError.js'
@@ -33,6 +34,7 @@ const TransactionTable = memo(function TransactionTable() {
   const [processingActions, setProcessingActions] = useState(new Set())
   const [rollbackToast, setRollbackToast] = useState({ show: false, message: '', type: 'info' })
   const [dropdownStep, setDropdownStep] = useState(1)
+  const [receiptTx, setReceiptTx] = useState(null)
   const [selectedMethod, setSelectedMethod] = useState(null)
   const [settlementAmount, setSettlementAmount] = useState('')
   const [amountError, setAmountError] = useState('')
@@ -329,6 +331,13 @@ const TransactionTable = memo(function TransactionTable() {
                               Rembourser
                             </button>
                           )}
+
+                          <button
+                            onClick={() => setReceiptTx(transaction)}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1 rounded text-xs font-medium transition-colors"
+                          >
+                            Reçu
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -491,6 +500,10 @@ const TransactionTable = memo(function TransactionTable() {
         onClose={() => setRollbackToast({ show: false, message: '', type: 'info' })}
         autoClose={true}
       />
+
+      {receiptTx && (
+        <ReceiptModal transaction={receiptTx} onClose={() => setReceiptTx(null)} />
+      )}
     </div>
   )
 })

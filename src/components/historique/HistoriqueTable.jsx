@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useTransactions } from '../../context/transactions.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
 import { getClientName, formatTransactionDateTime } from '../../utils/helpers.js'
 import { useWindowedRows } from '../../hooks/useWindowedRows.js'
+import ReceiptModal from '../receipt/ReceiptModal.jsx'
 
 // Au-delà de ce nombre de lignes, on active le fenêtrage (virtualisation).
 // En dessous, le rendu est strictement identique à l'historique (aucune régression).
@@ -13,6 +15,7 @@ function HistoriqueTable({ transactions = [] }) {
   const { getTransactionStyles } = useTransactions()
   const { themeClasses } = useTheme()
   const allTransactions = transactions
+  const [receiptTx, setReceiptTx] = useState(null)
 
   const headers = [
     'Date & heure',
@@ -23,7 +26,8 @@ function HistoriqueTable({ transactions = [] }) {
     'Montant',
     'Statut',
     'Utilisateur',
-    'Email utilisateur'
+    'Email utilisateur',
+    'Actions'
   ]
 
   const borderClass = themeClasses.tableHeader.split(' ')[1]
@@ -70,6 +74,14 @@ function HistoriqueTable({ transactions = [] }) {
         </td>
         <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
           {transaction.operatorEmail || transaction.userEmail || '-'}
+        </td>
+        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap text-center">
+          <button
+            onClick={() => setReceiptTx(transaction)}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1 rounded text-sm font-medium transition-colors"
+          >
+            Reçu
+          </button>
         </td>
       </tr>
     )
@@ -130,6 +142,10 @@ function HistoriqueTable({ transactions = [] }) {
           </tbody>
         </table>
       </div>
+
+      {receiptTx && (
+        <ReceiptModal transaction={receiptTx} onClose={() => setReceiptTx(null)} />
+      )}
     </div>
   )
 }
