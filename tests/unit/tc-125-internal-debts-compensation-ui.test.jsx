@@ -46,6 +46,10 @@ vi.mock('../../src/services/collaborationService', () => ({
   rejectInternalDebtCompensation: mocks.rejectInternalDebtCompensation,
   generateIdempotencyKey: () => 'key-1',
 }))
+// Stock réseau ample : la compensation ne dépend pas du stock, on neutralise le hook.
+vi.mock('../../src/hooks/useSimpleNetworkData', () => ({
+  useSimpleNetworkData: () => ({ getStock: () => 100000 }),
+}))
 
 import StoreInternalDebts from '../../src/pages/store/StoreInternalDebts'
 

@@ -8,6 +8,8 @@ import { themedTableClasses } from '../../components/ui/themedTable.js'
 import { formatDateTime } from '../../utils/formatters'
 import { parseStrictInteger } from '../../utils/parseStrictInteger'
 import { PAYMENT_METHODS } from '../../utils/constants.js'
+import { useSimpleNetworkData } from '../../hooks/useSimpleNetworkData'
+import { mapPaymentMethodToNetwork } from '../../utils/financialImpact'
 import {
   subscribeMyDebts,
   subscribeMyCredits,
@@ -44,6 +46,12 @@ const tsMillis = (ts) => {
 // des tranches historiques restent lisibles via DEBT_SETTLEMENT_METHOD_LABELS.
 const METHODS = [...PAYMENT_METHODS, 'Banque']
 
+// Un remboursement par méthode Mobile Money transfère du STOCK réseau à la confirmation
+// (débitrice −, créancière +). Ces 6 réseaux = méthodes MM (miroir du serveur). Cash/Banque
+// ne bougent pas de stock → jamais grisés. On grise une méthode MM si la boutique (payeuse)
+// n'a pas le stock : inutile de déclarer une tranche que le serveur refusera de confirmer.
+const MM_NETWORKS = new Set(['Orange', 'Moov', 'Telecel', 'Coris', 'Sank', 'Wave'])
+
 // Statut de dette → couleurs du badge partagé. Les statuts de dette (open /
 // partially_settled / settled) ne figurent pas dans les presets de StatusBadge :
 // on passe la couleur explicitement plutôt que de retomber sur le gris par défaut.
@@ -75,8 +83,16 @@ function AmountCell({ debt, tbl }) {
 // `credits` = mes créances (elles pour la compensation) ; la créance opposée du
 // même partenaire (tous réseaux) permet de solder les deux dettes d'un clic.
 function DebtRow({ debt, credits, tbl }) {
+  const { getStock } = useSimpleNetworkData()
+  // Stock (payeuse = cette boutique, la débitrice) manquant pour une méthode MM → indisponible.
+  const methodUnavailable = (m) => {
+    const net = mapPaymentMethodToNetwork(m)
+    return MM_NETWORKS.has(net) && getStock(net) <= 0
+  }
   const [amount, setAmount] = useState('')
-  const [method, setMethod] = useState(METHODS[0])
+  // Par défaut : la première méthode réellement disponible (évite de présélectionner un
+  // réseau grisé, ex. Wave à 0). Repli sur METHODS[0] si tout est indisponible.
+  const [method, setMethod] = useState(() => METHODS.find(m => !methodUnavailable(m)) ?? METHODS[0])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const [err, setErr] = useState(null)
@@ -109,6 +125,14 @@ function DebtRow({ debt, credits, tbl }) {
         ? `Le montant dépasse le reste dû (${fmt(pending)} déjà en attente).`
         : 'Le montant dépasse le reste dû.')
       return
+    }
+    // Garde-fou stock (miroir du blocage serveur à la confirmation) : ne pas déclarer un
+    // remboursement MM que cette boutique ne peut pas honorer. Cash/Banque : pas de stock.
+    const net = mapPaymentMethodToNetwork(method)
+    if (MM_NETWORKS.has(net)) {
+      const stock = getStock(net)
+      if (stock <= 0) { setErr(`Le réseau ${net} n'a pas de stock disponible pour ce remboursement.`); return }
+      if (n > stock) { setErr(`Stock ${net} insuffisant. Disponible : ${fmt(stock)}.`); return }
     }
     setBusy(true); setErr(null); setMsg(null)
     try {
@@ -154,13 +178,18 @@ function DebtRow({ debt, credits, tbl }) {
             <input type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder="Montant" className="w-28 rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Montant règlement" />
             <select value={method} onChange={e => setMethod(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Méthode">
-              {METHODS.map(m => <option key={m} value={m}>{DEBT_SETTLEMENT_METHOD_LABELS[m] ?? m}</option>)}
+              {METHODS.map(m => {
+                const off = methodUnavailable(m)
+                return (
+                  <option key={m} value={m} disabled={off}>
+                    {DEBT_SETTLEMENT_METHOD_LABELS[m] ?? m}{off ? ' — stock épuisé' : ''}
+                  </option>
+                )
+              })}
             </select>
             <button type="button" disabled={busy || available <= 0} onClick={rembourser}
               className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Rembourser</button>
-            {available <= 0
-              ? <p className="w-full text-xs text-gray-500">Déjà couvert par les règlements en attente.</p>
-              : pending > 0 && <p className="w-full text-xs text-gray-500">Déjà en attente : {fmt(pending)}</p>}
+            {pending > 0 && <p className="w-full text-xs text-gray-500">Déjà en attente : {fmt(pending)}</p>}
             {msg && <p className="w-full text-xs text-green-700">{msg}</p>}
             {err && <p className="w-full text-xs text-red-600">{err}</p>}
           </div>

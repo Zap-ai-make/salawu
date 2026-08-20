@@ -44,6 +44,10 @@ vi.mock('../../src/services/collaborationService', () => ({
   rejectInternalDebtCompensation: mocks.rejectInternalDebtCompensation,
   generateIdempotencyKey: () => 'key-1',
 }))
+// Stock réseau ample : cette vue ne teste pas le stock, on neutralise le hook.
+vi.mock('../../src/hooks/useSimpleNetworkData', () => ({
+  useSimpleNetworkData: () => ({ getStock: () => 100000 }),
+}))
 
 import StoreInternalDebts from '../../src/pages/store/StoreInternalDebts'
 
@@ -132,7 +136,9 @@ describe('TC-126 — l\'espace ne montre que l\'en-cours', () => {
     })
     render(<StoreInternalDebts />)
     expect(screen.getByRole('button', { name: 'Rembourser' })).toBeDisabled()
-    expect(screen.getByText('Déjà couvert par les règlements en attente.')).toBeInTheDocument()
+    // Message « Déjà couvert » retiré (jugé inutile) : on garde le fait factuel « Déjà en attente ».
+    expect(screen.queryByText('Déjà couvert par les règlements en attente.')).not.toBeInTheDocument()
+    expect(screen.getByText(/Déjà en attente/i)).toBeInTheDocument()
   })
 
   it('remboursement : montant supérieur au reste dû → message, aucun appel réseau', () => {

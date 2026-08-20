@@ -21,6 +21,8 @@ const mocks = vi.hoisted(() => ({
   declareInternalDebtSettlement: vi.fn(() => Promise.resolve({})),
   confirmInternalDebtSettlement: vi.fn(() => Promise.resolve({})),
   rejectInternalDebtSettlement: vi.fn(() => Promise.resolve({})),
+  // Stock réseau de la boutique (payeuse). Ample par défaut → aucune méthode grisée.
+  getStock: vi.fn(() => 100000),
 }))
 
 vi.mock('../../src/config/firebase', () => ({
@@ -38,6 +40,9 @@ vi.mock('../../src/services/collaborationService', () => ({
   confirmInternalDebtSettlement: mocks.confirmInternalDebtSettlement,
   rejectInternalDebtSettlement: mocks.rejectInternalDebtSettlement,
   generateIdempotencyKey: () => 'key-1',
+}))
+vi.mock('../../src/hooks/useSimpleNetworkData', () => ({
+  useSimpleNetworkData: () => ({ getStock: mocks.getStock }),
 }))
 
 import StoreInternalDebts from '../../src/pages/store/StoreInternalDebts'
@@ -70,6 +75,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.useAuth.mockReturnValue({ userProfile: { storeId: 'store-a', role: 'store_admin' } })
   mocks.subscribeDebtSettlements.mockImplementation(({ onUpdate }) => { onUpdate?.([]); return vi.fn() })
+  mocks.getStock.mockReturnValue(100000)  // stock ample par défaut (clearAllMocks ne réinitialise pas l'impl)
   feed()
 })
 
@@ -172,5 +178,53 @@ describe('TC-121 — caractérisation : mêmes appels de service', () => {
         expect.objectContaining({ debtId: 'debt-7', settlementId: 's1', rejectionReason: 'Non reçu' }),
       )
     })
+  })
+})
+
+describe('TC-121 — remboursement : stock réseau requis (méthodes MM)', () => {
+  // Env test = profil TAOFIC (mono-réseau) : seule méthode MM = « Orange Money » (→ Orange).
+  it('réseau à stock 0 → option grisée et non présélectionnée', () => {
+    mocks.getStock.mockImplementation((net) => (net === 'Orange' ? 0 : 100000))
+    feed({ debts: [debt('d1', { network: 'Coris', remainingAmount: 3000 })] })
+    const { container } = render(<StoreInternalDebts />)
+    const mmOption = container.querySelector('option[value="Orange Money"]')
+    expect(mmOption).toBeTruthy()
+    expect(mmOption.disabled).toBe(true)
+    expect(mmOption.textContent).toMatch(/stock épuisé/i)
+    // La méthode présélectionnée n'est jamais le réseau épuisé.
+    expect(screen.getByLabelText('Méthode').value).not.toBe('Orange Money')
+  })
+
+  it('Cash / Banque (non MM) jamais grisés, même à stock 0', () => {
+    mocks.getStock.mockReturnValue(0)
+    feed({ debts: [debt('d1', { network: 'Coris', remainingAmount: 3000 })] })
+    const { container } = render(<StoreInternalDebts />)
+    expect(container.querySelector('option[value="Cash"]').disabled).toBe(false)
+    expect(container.querySelector('option[value="Banque"]').disabled).toBe(false)
+    // Un réseau MM, lui, est bien grisé.
+    expect(container.querySelector('option[value="Orange Money"]').disabled).toBe(true)
+  })
+
+  it('montant > stock du réseau MM choisi → déclaration bloquée + message clair', () => {
+    mocks.getStock.mockImplementation((net) => (net === 'Orange' ? 1000 : 100000))
+    feed({ debts: [debt('d1', { id: 'debt-2', network: 'Coris', remainingAmount: 5000 })] })
+    render(<StoreInternalDebts />)
+    fireEvent.change(screen.getByLabelText('Montant règlement'), { target: { value: '3000' } })
+    fireEvent.change(screen.getByLabelText('Méthode'), { target: { value: 'Orange Money' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rembourser' }))
+    expect(mocks.declareInternalDebtSettlement).not.toHaveBeenCalled()
+    expect(screen.getByText(/Stock Orange insuffisant/i)).toBeInTheDocument()
+  })
+
+  it('reste dû entièrement en attente → plus de « Déjà couvert », mais « Déjà en attente »', () => {
+    mocks.subscribeDebtSettlements.mockImplementation(({ onUpdate }) => {
+      onUpdate?.([{ id: 's1', amount: 3000, method: 'Orange Money', settlementStatus: 'declared' }])
+      return vi.fn()
+    })
+    feed({ debts: [debt('d1', { network: 'Coris', remainingAmount: 3000 })] })
+    render(<StoreInternalDebts />)
+    expect(screen.queryByText(/Déjà couvert/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Déjà en attente/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Rembourser' })).toBeDisabled()
   })
 })
