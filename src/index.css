@@ -10,3 +10,27 @@ body {
   padding: 0;
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+/* Impression d'un reçu : ne sortir que le ticket (#receipt-print-root),
+   masquer tout le reste (chrome de l'app + barre d'actions du modal). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-print-root,
+  #receipt-print-root * {
+    visibility: visible;
+  }
+  #receipt-print-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-shadow: none;
+  }
+  /* Conserver les aplats de couleur (bandeau orange) à l'impression. */
+  #receipt-print-root {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
