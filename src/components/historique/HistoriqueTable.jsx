@@ -27,7 +27,7 @@ function HistoriqueTable({ transactions = [] }) {
     'Statut',
     'Utilisateur',
     'Email utilisateur',
-    'Actions'
+    'Reçu'
   ]
 
   const borderClass = themeClasses.tableHeader.split(' ')[1]

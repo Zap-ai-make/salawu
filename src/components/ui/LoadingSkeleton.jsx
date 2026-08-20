@@ -63,6 +63,11 @@ export const TransactionRowSkeleton = memo(function TransactionRowSkeleton() {
           <LoadingSkeleton width="w-16" height="h-6" variant="button" />
         </div>
       </td>
+      <td className="border border-green-300 px-4 py-3">
+        <div className="flex justify-center">
+          <LoadingSkeleton width="w-16" height="h-6" variant="button" />
+        </div>
+      </td>
     </tr>
   )
 })

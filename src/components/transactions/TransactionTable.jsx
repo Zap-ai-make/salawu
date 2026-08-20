@@ -245,6 +245,9 @@ const TransactionTable = memo(function TransactionTable() {
                 <th className={tbl.headerCellCenter}>
                   Actions
                 </th>
+                <th className={tbl.headerCellCenter}>
+                  Reçu
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -255,7 +258,7 @@ const TransactionTable = memo(function TransactionTable() {
                 ))
               ) : uniquePendingTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className={tbl.empty}>
+                  <td colSpan="7" className={tbl.empty}>
                     Aucune transaction en attente
                   </td>
                 </tr>
@@ -331,7 +334,10 @@ const TransactionTable = memo(function TransactionTable() {
                               Rembourser
                             </button>
                           )}
-
+                        </div>
+                      </td>
+                      <td className={tbl.cell}>
+                        <div className="flex justify-center">
                           <button
                             onClick={() => setReceiptTx(transaction)}
                             className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1 rounded text-xs font-medium transition-colors"

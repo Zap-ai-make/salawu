@@ -39,7 +39,6 @@ describe('TC-140 — Reçu de transaction', () => {
 
     // Marque active (ESAHAF pour salawu, marque par défaut en test taofic) — jamais codée en dur.
     expect(screen.getAllByText(APP_NAME).length).toBeGreaterThan(0)
-    expect(screen.getByText('Boutique El Hadj')).toBeInTheDocument()
 
     expect(norm(screen.getByTestId('receipt-nature').textContent)).toBe('Dépôt')
     expect(screen.getByText('Awa Traoré')).toBeInTheDocument()

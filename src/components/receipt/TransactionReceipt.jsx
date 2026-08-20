@@ -66,10 +66,6 @@ function TransactionReceipt({ transaction = {} }) {
       {/* En-tête marque */}
       <div className="rounded-t-lg bg-orange-500 px-5 py-4 text-center text-white">
         <div className="text-2xl font-extrabold tracking-widest">{APP_NAME}</div>
-        {t.storeName && <div className="mt-0.5 text-sm text-orange-50">{t.storeName}</div>}
-        <div className="mt-1 text-xs uppercase tracking-wide text-orange-100">
-          Reçu de transaction
-        </div>
       </div>
 
       <div className="px-5 py-4">
@@ -133,7 +129,6 @@ function TransactionReceipt({ transaction = {} }) {
 
         <div className="mt-4 text-center text-xs text-gray-400">
           <div>Merci de votre confiance</div>
-          <div className="mt-0.5 font-medium text-gray-500">{APP_NAME} • Mobile Money</div>
         </div>
       </div>
     </div>

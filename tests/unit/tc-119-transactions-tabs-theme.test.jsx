@@ -106,7 +106,7 @@ describe('TC-119 — onglet Transaction client', () => {
     const { container } = render(<TransactionTable />)
     assertNoHardcodedGreen(container)
     assertThemedGrid(container)
-    expect(container.querySelector('td[colspan="6"]').textContent).toContain('Aucune transaction en attente')
+    expect(container.querySelector('td[colspan="7"]').textContent).toContain('Aucune transaction en attente')
   })
 
   it('teinte aussi les cellules de données', () => {
