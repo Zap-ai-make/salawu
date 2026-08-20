@@ -454,7 +454,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
   const canDismissModal = !processingAction && !confirmModalOpen && !rejectModalOpen
   const wrap = (inner) => (asModal ? (
     <div
-      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/50 p-4"
+      className="fixed inset-0 z-[9990] flex items-start justify-center overflow-y-auto bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Détail de la demande Dealer"
