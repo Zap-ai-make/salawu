@@ -27,7 +27,11 @@ import {
   COLLAB_OPERATION_TYPE_LABELS,
   COLLAB_STATUS_LABELS,
   DEBT_STATUS_LABELS,
+  COLLABORATIONS_HISTORY_PAGE_SIZE,
 } from '../constants/dealerConstants'
+
+// Statuts terminaux d'une collaboration : ceux qui doivent figurer dans l'historique.
+const TERMINAL_COLLAB_STATUSES = ['confirmed', 'rejected']
 
 const fmtAmount = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
 const toDate = (ts) => (ts?.toDate ? ts.toDate() : ts ? new Date(ts) : null)
@@ -66,6 +70,8 @@ function Historique() {
   const [outgoing, setOutgoing] = useState([])
   const [debts, setDebts] = useState([])
   const [credits, setCredits] = useState([])
+  // Fenêtre de l'historique Collaborations, élargie par « Voir plus ».
+  const [collabLimit, setCollabLimit] = useState(COLLABORATIONS_HISTORY_PAGE_SIZE)
 
   // Les deux abonnements restent montés quel que soit l'onglet : les pastilles de
   // comptage vivent, et basculer d'onglet n'attend pas un rechargement.
@@ -74,12 +80,16 @@ function Historique() {
     return subscribeStoreTransfers({ storeId, onUpdate: setTransfers, onError: () => setTransfers([]) })
   }, [storeId])
 
+  // Filtre statut CÔTÉ SERVEUR (confirmées/rejetées) + limite : la fenêtre s'applique
+  // aux statuts terminaux, plus jamais mangée par les « en attente ». Re-souscription
+  // quand « Voir plus » élargit `collabLimit`.
   useEffect(() => {
     if (!storeId || !IS_MULTI_NETWORK) { setIncoming([]); setOutgoing([]); return undefined }
-    const u1 = subscribeIncomingCollaborations({ storeId, onUpdate: setIncoming, onError: () => setIncoming([]) })
-    const u2 = subscribeOutgoingCollaborations({ storeId, onUpdate: setOutgoing, onError: () => setOutgoing([]) })
+    const opts = { storeId, statuses: TERMINAL_COLLAB_STATUSES, limitCount: collabLimit }
+    const u1 = subscribeIncomingCollaborations({ ...opts, onUpdate: setIncoming, onError: () => setIncoming([]) })
+    const u2 = subscribeOutgoingCollaborations({ ...opts, onUpdate: setOutgoing, onError: () => setOutgoing([]) })
     return () => { u1(); u2() }
-  }, [storeId])
+  }, [storeId, collabLimit])
 
   useEffect(() => {
     if (!storeId || !IS_MULTI_NETWORK) { setDebts([]); setCredits([]); return undefined }
@@ -122,6 +132,10 @@ function Historique() {
       .sort((a, b) => (b.when?.getTime() ?? 0) - (a.when?.getTime() ?? 0))
     return filterHistoryRows(rows, filterArgs)
   }, [incoming, outgoing, filterArgs])
+
+  // Une fenêtre est pleine d'un côté → il peut rester des collaborations plus anciennes.
+  const collabCanLoadMore = incoming.length >= collabLimit || outgoing.length >= collabLimit
+  const loadMoreCollabs = () => setCollabLimit((l) => l + COLLABORATIONS_HISTORY_PAGE_SIZE)
 
   // Dettes internes : seules les RÉGLÉES vont à l'historique (même principe que le reste).
   // Un même document est une « Dette » (je suis débitrice) ou une « Créance » (je suis créancière).
@@ -285,6 +299,18 @@ function Historique() {
                   </tbody>
                 </table>
               </div>
+              {collabCanLoadMore && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={loadMoreCollabs}
+                    data-testid="btn-load-more-collab"
+                    className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    Voir plus
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

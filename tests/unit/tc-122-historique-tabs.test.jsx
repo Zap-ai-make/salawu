@@ -141,6 +141,28 @@ describe('TC-122 — sous-onglets Historique', () => {
     expect(screen.queryByText('ESAHAF EN ATTENTE')).not.toBeInTheDocument()
   })
 
+  it('abonnements collab filtrés CÔTÉ SERVEUR : statuts terminaux + limite', () => {
+    render(<Historique />)
+    expect(mocks.subscribeIncomingCollaborations).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: ['confirmed', 'rejected'], limitCount: expect.any(Number) }),
+    )
+    expect(mocks.subscribeOutgoingCollaborations).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: ['confirmed', 'rejected'], limitCount: expect.any(Number) }),
+    )
+  })
+
+  it('collab « Voir plus » : réabonnement avec une fenêtre plus grande', () => {
+    // Fenêtre pleine côté sortant → bouton « Voir plus » visible.
+    const many = Array.from({ length: 50 }, (_, i) => ({ ...OUT, id: `co-${i}`, status: 'confirmed', supplierStoreName: 'ESAHAF X' }))
+    mocks.subscribeOutgoingCollaborations.mockImplementation(({ onUpdate }) => { onUpdate?.(many); return vi.fn() })
+    render(<Historique />)
+    fireEvent.click(screen.getByRole('button', { name: /Collaborations/ }))
+    const firstLimit = mocks.subscribeOutgoingCollaborations.mock.calls.at(-1)[0].limitCount
+    fireEvent.click(screen.getByTestId('btn-load-more-collab'))
+    const nextLimit = mocks.subscribeOutgoingCollaborations.mock.calls.at(-1)[0].limitCount
+    expect(nextLimit).toBeGreaterThan(firstLimit)
+  })
+
   it('n\'affiche que le terminé : les opérations dealer « En attente » sont exclues', () => {
     const pending = { ...TRANSFER, id: 'tr9', status: 'pending' }
     mocks.subscribeStoreTransfers.mockImplementation(({ onUpdate }) => { onUpdate?.([TRANSFER, pending]); return vi.fn() })
