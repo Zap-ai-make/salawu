@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { IS_MULTI_NETWORK } from '../constants/navigation'
@@ -86,46 +86,58 @@ function Historique() {
     return () => { u1(); u2() }
   }, [storeId])
 
-  const filterArgs = { from: dateFilter.from, to: dateFilter.to, search: searchTerm, todayOnly: showTodayOnly }
+  // Mémoïsés : ces pipelines (filter+map+sort) ne se recalculent plus à chaque render ni à chaque
+  // snapshot d'un AUTRE flux — seulement quand leur source ou les filtres changent. Les pastilles
+  // de comptage restent alimentées pour TOUS les onglets (comportement inchangé).
+  const filterArgs = useMemo(
+    () => ({ from: dateFilter.from, to: dateFilter.to, search: searchTerm, todayOnly: showTodayOnly }),
+    [dateFilter.from, dateFilter.to, searchTerm, showTodayOnly]
+  )
 
-  const dealerRows = transfers
-    .filter((t) => isTerminal(t.status))
-    .map((t) => ({
-      when: toDate(t.createdAt),
-      search: `${STORE_TRANSFER_TYPE_LABELS[t.transferType] ?? t.transferType ?? ''} ${t.network ?? ''} ${t.amount ?? ''}`,
-      data: t,
-    }))
-  const dealerFiltered = filterHistoryRows(dealerRows, filterArgs)
+  const dealerFiltered = useMemo(() => {
+    const rows = transfers
+      .filter((t) => isTerminal(t.status))
+      .map((t) => ({
+        when: toDate(t.createdAt),
+        search: `${STORE_TRANSFER_TYPE_LABELS[t.transferType] ?? t.transferType ?? ''} ${t.network ?? ''} ${t.amount ?? ''}`,
+        data: t,
+      }))
+    return filterHistoryRows(rows, filterArgs)
+  }, [transfers, filterArgs])
 
-  const collabRows = [
-    ...incoming.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Reçue', partner: c.requestingStoreName || 'Boutique inconnue', c })),
-    ...outgoing.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Envoyée', partner: c.supplierStoreName || 'Boutique inconnue', c })),
-  ]
-    .map(({ sens, partner, c }) => ({
-      when: toDate(c.createdAt),
-      search: `${sens} ${partner ?? ''} ${collabClient(c)} ${c.network ?? ''} ${COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? ''} ${c.amount ?? ''}`,
-      sens,
-      partner,
-      data: c,
-    }))
-    .sort((a, b) => (b.when?.getTime() ?? 0) - (a.when?.getTime() ?? 0))
-  const collabFiltered = filterHistoryRows(collabRows, filterArgs)
+  const collabFiltered = useMemo(() => {
+    const rows = [
+      ...incoming.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Reçue', partner: c.requestingStoreName || 'Boutique inconnue', c })),
+      ...outgoing.filter((c) => isTerminal(c.status)).map((c) => ({ sens: 'Envoyée', partner: c.supplierStoreName || 'Boutique inconnue', c })),
+    ]
+      .map(({ sens, partner, c }) => ({
+        when: toDate(c.createdAt),
+        search: `${sens} ${partner ?? ''} ${collabClient(c)} ${c.network ?? ''} ${COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? ''} ${c.amount ?? ''}`,
+        sens,
+        partner,
+        data: c,
+      }))
+      .sort((a, b) => (b.when?.getTime() ?? 0) - (a.when?.getTime() ?? 0))
+    return filterHistoryRows(rows, filterArgs)
+  }, [incoming, outgoing, filterArgs])
 
   // Dettes internes : seules les RÉGLÉES vont à l'historique (même principe que le reste).
   // Un même document est une « Dette » (je suis débitrice) ou une « Créance » (je suis créancière).
-  const internalDebtRows = [
-    ...debts.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Dette', partner: d.creditorStoreName || 'Boutique inconnue', d })),
-    ...credits.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Créance', partner: d.debtorStoreName || 'Boutique inconnue', d })),
-  ]
-    .map(({ sens, partner, d }) => ({
-      when: toDate(d.updatedAt ?? d.createdAt),
-      search: `${sens} ${partner ?? ''} ${d.network ?? ''} ${COLLAB_OPERATION_TYPE_LABELS[d.operationType] ?? ''} ${d.originalAmount ?? ''}`,
-      sens,
-      partner,
-      data: d,
-    }))
-    .sort((a, b) => (b.when?.getTime() ?? 0) - (a.when?.getTime() ?? 0))
-  const internalDebtFiltered = filterHistoryRows(internalDebtRows, filterArgs)
+  const internalDebtFiltered = useMemo(() => {
+    const rows = [
+      ...debts.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Dette', partner: d.creditorStoreName || 'Boutique inconnue', d })),
+      ...credits.filter((d) => d.status === 'settled').map((d) => ({ sens: 'Créance', partner: d.debtorStoreName || 'Boutique inconnue', d })),
+    ]
+      .map(({ sens, partner, d }) => ({
+        when: toDate(d.updatedAt ?? d.createdAt),
+        search: `${sens} ${partner ?? ''} ${d.network ?? ''} ${COLLAB_OPERATION_TYPE_LABELS[d.operationType] ?? ''} ${d.originalAmount ?? ''}`,
+        sens,
+        partner,
+        data: d,
+      }))
+      .sort((a, b) => (b.when?.getTime() ?? 0) - (a.when?.getTime() ?? 0))
+    return filterHistoryRows(rows, filterArgs)
+  }, [debts, credits, filterArgs])
 
   return (
     <div className="min-h-screen bg-gray-100">
