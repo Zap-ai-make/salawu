@@ -60,6 +60,22 @@ export default defineConfig(({ mode }) => {
   const themeColor = resolveThemeColor(branding.theme)
 
   return {
+  build: {
+    rollupOptions: {
+      output: {
+        // Découpe les grosses dépendances en chunks vendor séparés : cache stable entre
+        // déploiements et sortie du chemin critique. Recharts (+ d3/victory) ne charge
+        // qu'avec le Dashboard (route lazy), Firebase reste au boot (auth) mais isolé.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return 'vendor-recharts'
+          if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'vendor-firebase'
+          if (id.includes('/react-router') || id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/')) return 'vendor-react'
+          return undefined
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
