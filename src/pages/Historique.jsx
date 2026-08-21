@@ -8,6 +8,7 @@ import HistoriqueTable from '../components/historique/HistoriqueTable'
 import ActionButtons from '../components/historique/ActionButtons'
 import DailyPagination from '../components/historique/DailyPagination'
 import { useHistoriqueFilters } from '../hooks/useHistoriqueFilters'
+import { useTransactions } from '../context/transactions.jsx'
 import { tabButtonClass, TabBadge } from '../components/ui/Tabs.jsx'
 import { themedTableClasses } from '../components/ui/themedTable.js'
 import StatusBadge from '../components/ui/StatusBadge'
@@ -57,6 +58,7 @@ function Historique() {
     resetToToday,
     resetFilters,
   } = useHistoriqueFilters()
+  const { loadMoreHistory, canLoadMore } = useTransactions()
 
   const [tab, setTab] = useState('clients')
   const [transfers, setTransfers] = useState([])
@@ -189,6 +191,18 @@ function Historique() {
               <DailyPagination transactions={allTransactions} onDateSelect={applyDateFilter} />
               <div className="bg-white rounded-lg shadow-md p-6">
                 <HistoriqueTable transactions={filteredTransactions} />
+                {canLoadMore && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={loadMoreHistory}
+                      data-testid="btn-load-more-history"
+                      className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    >
+                      Voir plus
+                    </button>
+                  </div>
+                )}
                 <ActionButtons filteredTransactions={filteredTransactions} resetFilters={resetFilters} />
               </div>
             </>

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
 import { getTransactionStyles, getAvailableActions, isDraftSettling, parsefrenchDate, dedupById } from '../utils/helpers.js'
 import { STORAGE_KEYS } from '../constants/index.js'
+import { HISTORY_PAGE_SIZE } from '../utils/constants.js'
 import { firestoreService } from '../services/firestore'
 import { addTransactionPayment, addTransactionRefund } from '../services/settlementService'
 import { toUserMessage } from '../utils/friendlyError.js'
@@ -45,6 +46,9 @@ export const TransactionsProvider = ({ children }) => {
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // Fenêtre de chargement de l'historique. null = illimité (comportement historique,
+  // ex. TAOFIC). Un nombre (ex. salawu = 200) = plafond ; « voir plus » l'élargit.
+  const [historyLimit, setHistoryLimit] = useState(HISTORY_PAGE_SIZE)
 
   // Synchronisation temps réel avec Firestore pour les deux collections - seulement si authentifié
   useEffect(() => {
@@ -62,7 +66,7 @@ export const TransactionsProvider = ({ children }) => {
     }
 
     let isMounted = true
-    let unsubscribeDrafts, unsubscribeHistory
+    let unsubscribeDrafts
 
     const initializeTransactions = async () => {
       try {
@@ -95,13 +99,8 @@ export const TransactionsProvider = ({ children }) => {
           }
         })
 
-        // Écouter l'historique (transactions terminées)
-        unsubscribeHistory = firestoreService.subscribeToHistory((historyData) => {
-          if (isMounted) {
-            // Déduplication de l'historique (O(n)), puis tri décroissant : le dernier en haut.
-            setCompletedTransactions(sortHistoryDesc(dedupById(historyData)))
-          }
-        })
+        // (L'historique a son propre abonnement — voir l'effet dédié plus bas —
+        //  car il doit se réabonner quand la fenêtre « voir plus » change.)
 
         if (isMounted) {
           setLoading(false)
@@ -133,11 +132,41 @@ export const TransactionsProvider = ({ children }) => {
       if (unsubscribeDrafts && typeof unsubscribeDrafts === 'function') {
         unsubscribeDrafts()
       }
+    }
+  }, [user, userProfile?.storeId, activeStore?.id, authLoading])
+
+  // Abonnement HISTORIQUE dédié : se réabonne quand la fenêtre change (« voir plus »).
+  // Plafonné par `historyLimit` (profil client) ; null = illimité (inchangé, ex. TAOFIC).
+  // setActiveStore() est posé sur le service AVANT que l'état React activeStore change
+  // (AuthContext) → _requireActiveStore() est déjà valide ici.
+  useEffect(() => {
+    if (authLoading) return undefined
+    if (!user || !userProfile?.storeId || activeStore?.id !== userProfile.storeId) {
+      setCompletedTransactions([])
+      return undefined
+    }
+
+    let isMounted = true
+    let unsubscribeHistory
+    try {
+      const filters = historyLimit ? { limit: historyLimit } : {}
+      unsubscribeHistory = firestoreService.subscribeToHistory((historyData) => {
+        if (isMounted) {
+          // Déduplication O(n) puis tri décroissant : le dernier enregistré en haut.
+          setCompletedTransactions(sortHistoryDesc(dedupById(historyData)))
+        }
+      }, filters)
+    } catch (err) {
+      console.error('Erreur abonnement historique:', err)
+    }
+
+    return () => {
+      isMounted = false
       if (unsubscribeHistory && typeof unsubscribeHistory === 'function') {
         unsubscribeHistory()
       }
     }
-  }, [user, userProfile?.storeId, activeStore?.id, authLoading])
+  }, [user, userProfile?.storeId, activeStore?.id, authLoading, historyLimit])
 
   const addTransaction = useCallback(async (transactionData) => {
     try {
@@ -260,6 +289,15 @@ export const TransactionsProvider = ({ children }) => {
     return getTransactionStyles(type)
   }, [])
 
+  // « Voir plus » : élargit la fenêtre de l'historique (no-op si illimité).
+  const loadMoreHistory = useCallback(() => {
+    setHistoryLimit((cur) => (cur == null ? cur : cur + HISTORY_PAGE_SIZE))
+  }, [])
+
+  // Reste-t-il potentiellement des transactions plus anciennes à charger ?
+  // Heuristique : la fenêtre est pleine (autant chargé que la limite demandée).
+  const canLoadMore = historyLimit != null && completedTransactions.length >= historyLimit
+
   // Mémoïsé : sans cela, un nouvel objet `value` à chaque render re-rendrait TOUS les
   // consommateurs du contexte à chaque snapshot Firestore (les fonctions sont déjà useCallback).
   const value = useMemo(() => ({
@@ -277,7 +315,9 @@ export const TransactionsProvider = ({ children }) => {
     startEditTransaction,
     clearEditTransaction,
     getActionButtons,
-    getTransactionStyles: getTransactionStylesFunc
+    getTransactionStyles: getTransactionStylesFunc,
+    loadMoreHistory,
+    canLoadMore
   }), [
     pendingTransactions,
     completedTransactions,
@@ -293,7 +333,9 @@ export const TransactionsProvider = ({ children }) => {
     startEditTransaction,
     clearEditTransaction,
     getActionButtons,
-    getTransactionStylesFunc
+    getTransactionStylesFunc,
+    loadMoreHistory,
+    canLoadMore
   ])
 
   return (
