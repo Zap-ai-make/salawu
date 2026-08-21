@@ -198,28 +198,37 @@ function resilientOnSnapshot(q, { onNext, onError, delayMs = RESUBSCRIBE_DELAY_M
   }
 }
 
-/** Boutique demandeuse : ses collaborations sortantes. */
-export function subscribeOutgoingCollaborations({ storeId, onUpdate, onError } = {}) {
+/**
+ * Boutique demandeuse : ses collaborations sortantes.
+ * `statuses` (tableau) → filtre serveur `where('status','in',statuses)` afin que la
+ * limite s'applique AUX BONS statuts (sinon les « en attente » consomment la fenêtre et
+ * les confirmées anciennes disparaissent — bug historique « limiter puis filtrer »).
+ */
+export function subscribeOutgoingCollaborations({ storeId, statuses = null, limitCount = COLLABORATIONS_PAGE_SIZE, onUpdate, onError } = {}) {
   if (!storeId) { onUpdate?.([]); return () => {} }
-  const q = query(
-    collection(db, 'storeCollaborations'),
-    where('requestingStoreId', '==', storeId),
-    orderBy('createdAt', 'desc'),
-    limit(COLLABORATIONS_PAGE_SIZE),
-  )
+  const constraints = [where('requestingStoreId', '==', storeId)]
+  if (statuses && statuses.length) constraints.push(where('status', 'in', statuses))
+  constraints.push(orderBy('createdAt', 'desc'))
+  constraints.push(limit(limitCount))
+  const q = query(collection(db, 'storeCollaborations'), ...constraints)
   return resilientOnSnapshot(q, {
     onNext: (snap) => onUpdate?.(mapDocs(snap)),
     onError: (err) => onError?.(mapCollaborationError(err)),
   })
 }
 
-/** Boutique fournisseuse : collaborations entrantes (optionnellement par statut). */
-export function subscribeIncomingCollaborations({ storeId, statusFilter = null, onUpdate, onError } = {}) {
+/**
+ * Boutique fournisseuse : collaborations entrantes.
+ * `statusFilter` (== un statut) : chemin opérationnel (« en attente »).
+ * `statuses` (in plusieurs statuts) : chemin historique (confirmées/rejetées).
+ */
+export function subscribeIncomingCollaborations({ storeId, statusFilter = null, statuses = null, limitCount = COLLABORATIONS_PAGE_SIZE, onUpdate, onError } = {}) {
   if (!storeId) { onUpdate?.([]); return () => {} }
   const constraints = [where('supplierStoreId', '==', storeId)]
-  if (statusFilter) constraints.push(where('status', '==', statusFilter))
+  if (statuses && statuses.length) constraints.push(where('status', 'in', statuses))
+  else if (statusFilter) constraints.push(where('status', '==', statusFilter))
   constraints.push(orderBy('createdAt', 'desc'))
-  constraints.push(limit(COLLABORATIONS_PAGE_SIZE))
+  constraints.push(limit(limitCount))
   const q = query(collection(db, 'storeCollaborations'), ...constraints)
   return resilientOnSnapshot(q, {
     onNext: (snap) => onUpdate?.(mapDocs(snap)),

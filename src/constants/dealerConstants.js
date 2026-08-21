@@ -101,3 +101,7 @@ export const DEBT_SETTLEMENT_STATUS_LABELS = Object.freeze({
 
 export const COLLABORATIONS_PAGE_SIZE = 20
 export const INTERNAL_DEBTS_PAGE_SIZE = 20
+
+// Fenêtre de l'onglet Historique › Collaborations (confirmées/rejetées), élargie
+// par « Voir plus ». Distincte de la page opérationnelle (qui liste les en attente).
+export const COLLABORATIONS_HISTORY_PAGE_SIZE = 50

@@ -157,6 +157,15 @@
       "collectionGroup": "storeCollaborations",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "requestingStoreId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "storeCollaborations",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "supplierStoreId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]

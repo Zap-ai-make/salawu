@@ -19,11 +19,13 @@ import {
   confirmStoreCollaboration,
   declareInternalDebtSettlement,
   subscribeMyDebts,
+  subscribeIncomingCollaborations,
+  subscribeOutgoingCollaborations,
   generateIdempotencyKey,
   mapCollaborationError,
 } from '../../src/services/collaborationService.js'
 import { httpsCallable } from 'firebase/functions'
-import { onSnapshot } from 'firebase/firestore'
+import { onSnapshot, where, limit } from 'firebase/firestore'
 
 beforeEach(() => { vi.clearAllMocks() })
 
@@ -139,5 +141,32 @@ describe('TC-111 — abonnement résilient (temps réel qui se rétablit)', () =
     onSnapshot.mock.calls[2][2]({ code: 'unavailable' })
     vi.advanceTimersByTime(4000)
     expect(onSnapshot).toHaveBeenCalledTimes(4) // réabonné après 4000, pas 16000
+  })
+})
+
+describe('TC-111 — historique collab : filtre statut serveur + limite', () => {
+  beforeEach(() => { vi.clearAllMocks(); onSnapshot.mockImplementation(() => vi.fn()) })
+
+  it('sortantes avec statuses → where(status,in,[...]) + limit(limitCount)', () => {
+    subscribeOutgoingCollaborations({ storeId: 'store-a', statuses: ['confirmed', 'rejected'], limitCount: 50, onUpdate: vi.fn() })
+    expect(where).toHaveBeenCalledWith('status', 'in', ['confirmed', 'rejected'])
+    expect(limit).toHaveBeenCalledWith(50)
+  })
+
+  it('entrantes avec statuses → where(status,in,[...]) + limit(limitCount)', () => {
+    subscribeIncomingCollaborations({ storeId: 'store-b', statuses: ['confirmed', 'rejected'], limitCount: 50, onUpdate: vi.fn() })
+    expect(where).toHaveBeenCalledWith('status', 'in', ['confirmed', 'rejected'])
+    expect(limit).toHaveBeenCalledWith(50)
+  })
+
+  it('sans statuses → aucun where(status,in) (non-régression opérationnel)', () => {
+    subscribeOutgoingCollaborations({ storeId: 'store-a', onUpdate: vi.fn() })
+    expect(where.mock.calls.find((c) => c[1] === 'in')).toBeUndefined()
+  })
+
+  it('entrantes avec statusFilter (opérationnel « en attente ») → where(status,==,pending)', () => {
+    subscribeIncomingCollaborations({ storeId: 'store-b', statusFilter: 'pending', onUpdate: vi.fn() })
+    expect(where).toHaveBeenCalledWith('status', '==', 'pending')
+    expect(where.mock.calls.find((c) => c[1] === 'in')).toBeUndefined()
   })
 })
