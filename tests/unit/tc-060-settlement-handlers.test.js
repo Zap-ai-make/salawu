@@ -256,6 +256,9 @@ describe('TC-060-C — addTransactionPayment : paiement partiel', () => {
     expect(draftUpdate.data.paidAmount).toBe(4000)
     expect(draftUpdate.data.remainingAmount).toBe(6000)
     expect(draftUpdate.data.settlementStatus).toBe('partial')
+    // Métadonnée : le brouillon partiel garde le dernier moyen de paiement (pour le reçu).
+    expect(draftUpdate.data.paymentMethod).toBe('Cash')
+    expect(draftUpdate.data.effectiveNetwork).toBe('Liquidite')
 
     const historyWrite = written.find(w => w.op === 'set' && w.path.includes('/history/'))
     expect(historyWrite).toBeUndefined()
@@ -367,6 +370,9 @@ describe('TC-060-E — addTransactionRefund : validation', () => {
     expect(draftUpdate.data.refundedAmount).toBe(2000)
     expect(draftUpdate.data.remainingAmount).toBe(6000)
     expect(draftUpdate.data.settlementStatus).toBe('partial')
+    // Métadonnée : dernier moyen (remboursement) conservé sur le brouillon.
+    expect(draftUpdate.data.paymentMethod).toBe('Cash')
+    expect(draftUpdate.data.effectiveNetwork).toBe('Liquidite')
 
     // Pas de suppression ni de création history
     const historyWrite = written.find(w => w.op === 'set' && w.path.includes('/history/'))

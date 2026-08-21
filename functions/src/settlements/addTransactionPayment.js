@@ -304,6 +304,10 @@ export async function addTransactionPaymentHandler(request, { db, FieldValue, lo
           settlementType:      effectiveType,
           settlementSummary:   newSummary,
           settlementUpdatedAt: now,
+          // Dernier moyen de paiement utilisé (métadonnée, aucun impact financier) :
+          // permet au reçu d'un non terminé d'afficher la méthode, comme l'historique.
+          paymentMethod,
+          effectiveNetwork:    affectedNetwork,
         })
 
         return { idempotent: false, fullySettled: false }

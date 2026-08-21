@@ -241,6 +241,9 @@ export async function addTransactionRefundHandler(request, { db, FieldValue, log
         settlementType:      effectiveType,
         settlementSummary:   newSummary,
         settlementUpdatedAt: now,
+        // Dernier moyen (remboursement) utilisé (métadonnée, aucun impact financier).
+        paymentMethod,
+        effectiveNetwork:    affectedNetwork,
       })
 
       return { idempotent: false }
