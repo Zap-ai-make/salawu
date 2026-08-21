@@ -79,12 +79,70 @@ describe('TC-140 — Reçu de transaction', () => {
     expect(text).toContain('6 000 FCFA')
     expect(text).toContain('Remboursé')
     expect(text).toContain('4 000 FCFA')
-    expect(text).toContain('Restant')
+    expect(text).toContain('Reste')
   })
 
   it('un Crédit non remboursé reste « Crédit » (pas de dérivation)', () => {
     render(<TransactionReceipt transaction={baseTx({ type: 'Crédit', refundedAmount: 0 })} />)
     expect(norm(screen.getByTestId('receipt-nature').textContent)).toBe('Crédit')
+  })
+
+  // ── Non terminé partiellement payé (Dépôt/Retrait) — le cas signalé ──────────
+  it('Retrait partiellement payé → détaille payé / reste (quel que soit le type)', () => {
+    render(
+      <TransactionReceipt
+        transaction={baseTx({
+          type: 'Retrait',
+          montant: 50000,
+          paidAmount: 15000,
+          remainingAmount: 35000,
+          settlementStatus: 'partial',
+          statut: 'Non Terminées',
+        })}
+      />
+    )
+    const text = norm(screen.getByTestId('receipt-settlement').textContent)
+    expect(text).toContain('Montant total')
+    expect(text).toContain('Déjà payé')
+    expect(text).toContain('15 000 FCFA')
+    expect(text).toContain('Reste')
+    expect(text).toContain('35 000 FCFA')
+    // Remboursé = 0 → non affiché.
+    expect(text).not.toContain('Remboursé')
+  })
+
+  it('non terminé SANS méthode → « Statut : Partiellement payé » (plus « Non Terminées »)', () => {
+    render(
+      <TransactionReceipt
+        transaction={baseTx({ type: 'Retrait', settlementStatus: 'partial', statut: 'Non Terminées', paidAmount: 15000, remainingAmount: 35000 })}
+      />
+    )
+    const receipt = norm(screen.getByTestId('transaction-receipt').textContent)
+    expect(receipt).toContain('Partiellement payé')
+    expect(receipt).not.toContain('Non Terminées')
+  })
+
+  it('avec paymentMethod → « Moyen de paiement : {méthode} » (comme l’historique)', () => {
+    render(
+      <TransactionReceipt
+        transaction={baseTx({ type: 'Retrait', settlementStatus: 'partial', paymentMethod: 'Orange Money', paidAmount: 15000, remainingAmount: 35000 })}
+      />
+    )
+    const receipt = norm(screen.getByTestId('transaction-receipt').textContent)
+    expect(receipt).toContain('Moyen de paiement')
+    expect(receipt).toContain('Orange Money')
+  })
+
+  it('transaction réglée (historique, paymentMethod présent) → pas de bloc détail', () => {
+    render(
+      <TransactionReceipt
+        transaction={baseTx({ type: 'Dépôt', montant: 40000, paymentMethod: 'Cash', settlementStatus: 'settled', remainingAmount: 0 })}
+      />
+    )
+    expect(screen.queryByTestId('receipt-settlement')).not.toBeInTheDocument()
+    const receipt = norm(screen.getByTestId('transaction-receipt').textContent)
+    expect(receipt).toContain('Moyen de paiement')
+    expect(receipt).toContain('Cash')
   })
 })
 

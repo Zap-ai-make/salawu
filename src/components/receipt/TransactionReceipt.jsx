@@ -52,10 +52,26 @@ function TransactionReceipt({ transaction = {} }) {
   const reseau = t.reseau || t.network || '—'
   const operator = t.operatorName || t.userName || '—'
 
-  // Détail de règlement : montré pour un crédit porteur de données de règlement.
-  const isCredit = isCreditType(t.type)
-  const hasSettlement =
-    isCredit && (t.paidAmount != null || t.refundedAmount != null || t.remainingAmount != null)
+  // Détail de règlement : montré dès qu'il y a un règlement PARTIEL (non terminé,
+  // ex. Dépôt/Retrait payé en partie) ou un remboursement — quel que soit le type.
+  const refunded = Number(t.refundedAmount) || 0
+  const isPartial = t.settlementStatus === 'partial'
+  const hasSettlement = isPartial || refunded > 0
+
+  // Ligne « moyen de paiement », comme l'historique (statut = « Payé par {méthode} »).
+  // Priorité à la méthode si connue (transactions réglées, et brouillons partiels une
+  // fois la fonction déployée) ; sinon statut lisible.
+  const rawStatut = t.statut || 'Validée'
+  let payLabel = 'Statut'
+  let payValue = rawStatut
+  if (t.paymentMethod) {
+    payLabel = 'Moyen de paiement'
+    payValue = t.paymentMethod
+  } else if (isPartial) {
+    payValue = 'Partiellement payé'
+  } else if (/non\s*termin/i.test(rawStatut)) {
+    payValue = 'En attente'
+  }
 
   return (
     <div
@@ -112,10 +128,10 @@ function TransactionReceipt({ transaction = {} }) {
             data-testid="receipt-settlement"
             className="mt-3 space-y-1.5 rounded-lg border border-orange-100 bg-orange-50/60 px-4 py-3"
           >
-            <Line label="Montant crédit" value={fmtFCFA(t.montant ?? t.amount)} />
+            <Line label="Montant total" value={fmtFCFA(t.montant ?? t.amount)} />
             {t.paidAmount != null && <Line label="Déjà payé" value={fmtFCFA(t.paidAmount)} />}
-            {t.refundedAmount != null && <Line label="Remboursé" value={fmtFCFA(t.refundedAmount)} />}
-            {t.remainingAmount != null && <Line label="Restant" value={fmtFCFA(t.remainingAmount)} />}
+            {refunded > 0 && <Line label="Remboursé" value={fmtFCFA(t.refundedAmount)} />}
+            {t.remainingAmount != null && <Line label="Reste" value={fmtFCFA(t.remainingAmount)} />}
           </div>
         )}
 
@@ -123,7 +139,7 @@ function TransactionReceipt({ transaction = {} }) {
 
         {/* Pied */}
         <div className="space-y-1.5">
-          <Line label="Statut" value={t.statut || 'Validée'} />
+          <Line label={payLabel} value={payValue} />
           <Line label="Opérateur" value={operator} />
         </div>
 
