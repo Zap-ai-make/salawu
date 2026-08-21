@@ -35,6 +35,8 @@ const TransactionTable = memo(function TransactionTable() {
   const [rollbackToast, setRollbackToast] = useState({ show: false, message: '', type: 'info' })
   const [dropdownStep, setDropdownStep] = useState(1)
   const [receiptTx, setReceiptTx] = useState(null)
+  // Aplati une seule fois par render (au lieu d'un spread `[...set]` par ligne).
+  const processingKeys = useMemo(() => [...processingActions], [processingActions])
   const [selectedMethod, setSelectedMethod] = useState(null)
   const [settlementAmount, setSettlementAmount] = useState('')
   const [amountError, setAmountError] = useState('')
@@ -266,7 +268,7 @@ const TransactionTable = memo(function TransactionTable() {
                 uniquePendingTransactions.map((transaction) => {
                   const actions = getActionButtons(transaction)
                   const styles = getTransactionStyles(transaction.type)
-                  const isProcessingTransaction = [...processingActions].some(key => key.startsWith(`${transaction.id}-`))
+                  const isProcessingTransaction = processingKeys.some(key => key.startsWith(`${transaction.id}-`))
 
                   return (
                     <tr 
@@ -486,10 +488,10 @@ const TransactionTable = memo(function TransactionTable() {
 
                 <button
                   onClick={handleConfirmPayment}
-                  disabled={[...processingActions].some(k => k.startsWith(`${activeDropdown}-`))}
+                  disabled={processingKeys.some(k => k.startsWith(`${activeDropdown}-`))}
                   className="mt-3 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 rounded transition-colors"
                 >
-                  {[...processingActions].some(k => k.startsWith(`${activeDropdown}-`)) ? 'Traitement...' : 'Confirmer'}
+                  {processingKeys.some(k => k.startsWith(`${activeDropdown}-`)) ? 'Traitement...' : 'Confirmer'}
                 </button>
               </div>
             </>
