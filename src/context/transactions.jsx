@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { getTransactionStyles, getAvailableActions, isDraftSettling, parsefrenchDate } from '../utils/helpers.js'
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
+import { getTransactionStyles, getAvailableActions, isDraftSettling, parsefrenchDate, dedupById } from '../utils/helpers.js'
 import { STORAGE_KEYS } from '../constants/index.js'
 import { firestoreService } from '../services/firestore'
 import { addTransactionPayment, addTransactionRefund } from '../services/settlementService'
@@ -90,23 +90,16 @@ export const TransactionsProvider = ({ children }) => {
         // Écouter les drafts (transactions non terminées)
         unsubscribeDrafts = firestoreService.subscribeToDrafts((draftsData) => {
           if (isMounted) {
-            // Déduplication des drafts
-            const uniqueDrafts = draftsData.filter((draft, index, array) =>
-              array.findIndex(d => d.id === draft.id) === index
-            )
-            setPendingTransactions(uniqueDrafts)
+            // Déduplication des drafts (O(n))
+            setPendingTransactions(dedupById(draftsData))
           }
         })
 
         // Écouter l'historique (transactions terminées)
         unsubscribeHistory = firestoreService.subscribeToHistory((historyData) => {
           if (isMounted) {
-            // Déduplication de l'historique
-            const uniqueHistory = historyData.filter((history, index, array) =>
-              array.findIndex(h => h.id === history.id) === index
-            )
-            // Tri décroissant par date d'enregistrement : le dernier en haut.
-            setCompletedTransactions(sortHistoryDesc(uniqueHistory))
+            // Déduplication de l'historique (O(n)), puis tri décroissant : le dernier en haut.
+            setCompletedTransactions(sortHistoryDesc(dedupById(historyData)))
           }
         })
 
@@ -267,7 +260,9 @@ export const TransactionsProvider = ({ children }) => {
     return getTransactionStyles(type)
   }, [])
 
-  const value = {
+  // Mémoïsé : sans cela, un nouvel objet `value` à chaque render re-rendrait TOUS les
+  // consommateurs du contexte à chaque snapshot Firestore (les fonctions sont déjà useCallback).
+  const value = useMemo(() => ({
     pendingTransactions,
     completedTransactions,
     editingTransaction,
@@ -283,7 +278,23 @@ export const TransactionsProvider = ({ children }) => {
     clearEditTransaction,
     getActionButtons,
     getTransactionStyles: getTransactionStylesFunc
-  }
+  }), [
+    pendingTransactions,
+    completedTransactions,
+    editingTransaction,
+    loading,
+    error,
+    addTransaction,
+    updateTransaction,
+    validateTransaction,
+    addPaymentTranche,
+    addRefundTranche,
+    deleteTransaction,
+    startEditTransaction,
+    clearEditTransaction,
+    getActionButtons,
+    getTransactionStylesFunc
+  ])
 
   return (
     <TransactionsContext.Provider value={value}>

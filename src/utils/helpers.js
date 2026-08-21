@@ -14,6 +14,22 @@ export const getClientName = (client) => {
 }
 
 /**
+ * Déduplication par `id` en O(n) (conserve la PREMIÈRE occurrence et l'ordre) —
+ * remplace le motif `filter((x, i, a) => a.findIndex(...) === i)` qui est en O(n²)
+ * et devient coûteux à chaque snapshot sur de grandes listes (historique/clients).
+ */
+export const dedupById = (list) => {
+  const seen = new Set()
+  const out = []
+  for (const item of list) {
+    if (seen.has(item.id)) continue
+    seen.add(item.id)
+    out.push(item)
+  }
+  return out
+}
+
+/**
  * Obtient le code réseau pour un réseau donné
  */
 export const getNetworkCode = (network) => {

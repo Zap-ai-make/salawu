@@ -1,7 +1,7 @@
-import { useState, useEffect, useContext, createContext } from 'react'
+import { useState, useEffect, useContext, createContext, useMemo, useCallback } from 'react'
 import { STORAGE_KEYS } from '../constants'
 import { firestoreService } from '../services/firestore'
-import { parsefrenchDate } from '../utils/helpers.js'
+import { parsefrenchDate, dedupById } from '../utils/helpers.js'
 import { toUserMessage } from '../utils/friendlyError.js'
 import { AuthContext } from './AuthContext'
 
@@ -79,13 +79,8 @@ export function ClientsProvider({ children }) {
           if (isMounted) {
             clearTimeout(loadingTimeout)
 
-            // Déduplication des clients pour éviter les erreurs de clés React
-            const uniqueClients = clientsData.filter((client, index, array) =>
-              array.findIndex(c => c.id === client.id) === index
-            )
-
-            // Tri décroissant : le dernier client enregistré apparaît en haut.
-            setClients(sortClientsByRegistrationDesc(uniqueClients))
+            // Déduplication (O(n)) puis tri décroissant : le dernier enregistré en haut.
+            setClients(sortClientsByRegistrationDesc(dedupById(clientsData)))
             setLoading(false)
             setError(null)
           }
@@ -117,7 +112,7 @@ export function ClientsProvider({ children }) {
   }, [user, userProfile?.storeId, activeStore?.id, authLoading])
 
 
-  const addClient = async (newClient) => {
+  const addClient = useCallback(async (newClient) => {
     try {
       setError(null)
       await firestoreService.addClient({
@@ -133,9 +128,9 @@ export function ClientsProvider({ children }) {
       setError(toUserMessage(error))
       throw error
     }
-  }
+  }, [user?.uid, user?.email, userProfile?.storeId, userProfile?.storeName, activeStore?.name])
 
-  const deleteClient = async (clientId) => {
+  const deleteClient = useCallback(async (clientId) => {
     try {
       setError(null)
       await firestoreService.deleteClient(clientId)
@@ -145,9 +140,9 @@ export function ClientsProvider({ children }) {
       setError(toUserMessage(error))
       throw error
     }
-  }
+  }, [])
 
-  const editClient = async (clientId, updatedClient) => {
+  const editClient = useCallback(async (clientId, updatedClient) => {
     try {
       setError(null)
       await firestoreService.updateClient(clientId, updatedClient)
@@ -157,16 +152,17 @@ export function ClientsProvider({ children }) {
       setError(toUserMessage(error))
       throw error
     }
-  }
+  }, [])
 
-  const value = {
+  // Mémoïsé : évite de re-rendre tous les consommateurs à chaque snapshot clients.
+  const value = useMemo(() => ({
     clients,
     loading,
     error,
     addClient,
     deleteClient,
     editClient
-  }
+  }), [clients, loading, error, addClient, deleteClient, editClient])
 
   return (
     <ClientsContext.Provider value={value}>
