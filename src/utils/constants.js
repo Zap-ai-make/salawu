@@ -23,6 +23,11 @@ export const TRANSACTION_TYPES = activeProfile.transactions.types.map(
 // Méthodes de paiement — dérivées du profil (transactions.paymentMethods).
 export const PAYMENT_METHODS = [...activeProfile.transactions.paymentMethods]
 
+// Taille de fenêtre de chargement de l'historique (perf). Nombre = plafond des
+// transactions récentes chargées en direct (élargi par « voir plus »).
+// null/absent (ex. TAOFIC) → illimité, comportement historique inchangé.
+export const HISTORY_PAGE_SIZE = activeProfile.history?.pageSize ?? null
+
 // Styles pour les types de transactions
 export const TRANSACTION_STYLES = {
   'Retrait': {

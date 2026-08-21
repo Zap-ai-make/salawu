@@ -58,6 +58,15 @@ describe('TC-093 — Profil ESAHAF (« salawu ») : constantes figées', () => {
     expect(profile.cashier.canEditBalances).toBe(false)
   })
 
+  it('historique : plafond de chargement live = 200 (perf)', () => {
+    expect(profile.history.pageSize).toBe(200)
+  })
+
+  it('TAOFIC (référence) : aucun plafond d’historique → illimité (inchangé)', () => {
+    const taofic = resolveProfile('taofic_ajagbe')
+    expect(taofic.history?.pageSize ?? null).toBeNull()
+  })
+
   it('fuseau horaire d’affichage', () => {
     expect(profile.regional.timezone).toBe('Africa/Ouagadougou')
   })

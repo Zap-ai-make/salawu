@@ -43,6 +43,12 @@ export const salawuProfile = Object.freeze({
     paymentMethods: [...METHODES_PAIEMENT_SUPPORTEES],
   }),
 
+  // ── Historique : plafond de chargement live (perf) ──────────────────────────
+  // L'onglet « Transactions clients » ne charge en direct que les N transactions
+  // les plus récentes (tri par createdAt desc) ; « voir plus » élargit la fenêtre.
+  // Absent d'un profil (ex. TAOFIC) → illimité = comportement historique inchangé.
+  history: Object.freeze({ pageSize: 200 }),
+
   // ── Édition des soldes par la boutique : DÉSACTIVÉE (masquage UI) ───────────
   cashier: Object.freeze({
     canEditBalances: false,

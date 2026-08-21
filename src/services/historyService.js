@@ -163,10 +163,22 @@ export class HistoryService {
       }
     }
 
+    const options = { where: whereClause }
+
+    // Plafonnement optionnel (profil client) : ne charger en direct que les N plus
+    // récentes (tri par createdAt desc + limit). Sans `limit` → AUCUN tri ni limite,
+    // comportement historique STRICTEMENT inchangé (TAOFIC et tout profil sans plafond).
+    // Nécessite l'index composite (storeId, createdAt desc) — cf. firestore.indexes.json.
+    if (filters.limit) {
+      options.orderByField = 'createdAt'
+      options.orderDirection = 'desc'
+      options.limitCount = filters.limit
+    }
+
     return this._subscribeToCollection(
       FIRESTORE_CONFIG.COLLECTIONS.HISTORY,
       callback,
-      { where: whereClause }
+      options
     )
   }
 }
