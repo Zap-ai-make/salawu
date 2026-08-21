@@ -75,10 +75,15 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
   // bascule. La navigation interne (setTab) reste locale entre deux changements.
   useEffect(() => { setTab(initialTab) }, [initialTab])
 
+  // « Mes demandes » et « Reçues » sont deux files OPÉRATIONNELLES : elles ne
+  // listent que les collaborations « en attente ». Une fois confirmée ou rejetée,
+  // la collaboration est terminée : elle quitte cette page et se retrouve dans
+  // l'Historique (onglet Collaborations). Sans le filtre serveur sur les sortantes,
+  // les confirmées restaient éternellement dans « Mes demandes » (bug signalé).
   useEffect(() => {
     if (!storeId) return undefined
     const u1 = subscribeIncomingCollaborations({ storeId, statusFilter: 'pending', onUpdate: setIncoming, onError: (e) => setError(e.message) })
-    const u2 = subscribeOutgoingCollaborations({ storeId, onUpdate: setOutgoing, onError: (e) => setError(e.message) })
+    const u2 = subscribeOutgoingCollaborations({ storeId, statuses: ['pending'], onUpdate: setOutgoing, onError: (e) => setError(e.message) })
     return () => { u1(); u2() }
   }, [storeId])
 
@@ -202,7 +207,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
               <tbody>
                 {outgoing.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className={tbl.empty}>Aucune demande envoyée.</td>
+                    <td colSpan="7" className={tbl.empty}>Aucune demande en attente.</td>
                   </tr>
                 ) : (
                   outgoing.map(c => (

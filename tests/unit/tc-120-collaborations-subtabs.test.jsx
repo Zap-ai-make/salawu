@@ -139,6 +139,21 @@ describe('TC-120 — sous-onglets des collaborations', () => {
     expect(screen.queryByText('Fournisseur')).not.toBeInTheDocument()
   })
 
+  it('« Mes demandes » ne demande au serveur que les collaborations en attente', () => {
+    // Règle métier : une collaboration confirmée/rejetée est terminée et passe à
+    // l'Historique ; elle ne doit plus figurer dans la file opérationnelle. Le tri
+    // se fait côté serveur (statuses:['pending']) pour ne pas rejouer le piège
+    // « limiter puis filtrer ».
+    render(<StoreCollaborations embedded />)
+    expect(mocks.subscribeOutgoingCollaborations).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: ['pending'] }),
+    )
+    // Symétrie : les reçues restent elles aussi filtrées « en attente ».
+    expect(mocks.subscribeIncomingCollaborations).toHaveBeenCalledWith(
+      expect.objectContaining({ statusFilter: 'pending' }),
+    )
+  })
+
   it('plafonne l\'affichage à 99+ sans mentir sur le libellé', () => {
     feed({ incoming: Array.from({ length: 120 }, (_, i) => collab(`c${i}`)) })
     render(<StoreCollaborations embedded />)
