@@ -164,17 +164,31 @@ const mapDocs = (snap) => snap.docs.map(d => ({ id: d.id, ...d.data() }))
 // court délai ; au prochain snapshot réussi l'appelant efface son erreur. L'unsubscribe rendu
 // annule le minuteur ET le listener courant.
 const RESUBSCRIBE_DELAY_MS = 4000
+const RESUBSCRIBE_MAX_DELAY_MS = 60000
+// Erreurs qui ne se résolvent PAS d'elles-mêmes dans la session : réabonner en boucle ne fait
+// que marteler le backend (hot-loop silencieux). `permission-denied` (règle refusée) et
+// `failed-precondition` (index composite manquant) exigent un déploiement/rechargement.
+const PERMANENT_ERROR_CODES = new Set(['permission-denied', 'failed-precondition'])
 function resilientOnSnapshot(q, { onNext, onError, delayMs = RESUBSCRIBE_DELAY_MS } = {}) {
   let stopped = false
   let unsub = null
   let timer = null
+  let currentDelay = delayMs
   const attach = () => {
     if (stopped) return
-    unsub = onSnapshot(q, onNext, (err) => {
-      onError?.(err)
-      if (stopped) return
-      timer = setTimeout(() => { timer = null; attach() }, delayMs)
-    })
+    unsub = onSnapshot(
+      q,
+      (snap) => { currentDelay = delayMs; onNext?.(snap) }, // succès → réinitialise le backoff
+      (err) => {
+        onError?.(err)
+        if (stopped) return
+        // Erreur permanente : ne pas réabonner (évite la boucle 4 s infinie).
+        if (err?.code && PERMANENT_ERROR_CODES.has(err.code)) return
+        const wait = currentDelay
+        currentDelay = Math.min(currentDelay * 2, RESUBSCRIBE_MAX_DELAY_MS) // backoff exponentiel
+        timer = setTimeout(() => { timer = null; attach() }, wait)
+      }
+    )
   }
   attach()
   return () => {

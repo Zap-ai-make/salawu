@@ -92,4 +92,52 @@ describe('TC-111 — abonnement résilient (temps réel qui se rétablit)', () =
     vi.advanceTimersByTime(10000)
     expect(onSnapshot).toHaveBeenCalledTimes(1)          // pas de réabonnement
   })
+
+  it('erreur PERMANENTE (permission-denied) → aucun réabonnement (pas de hot-loop)', () => {
+    onSnapshot.mockImplementation(() => vi.fn())
+    const onError = vi.fn()
+    subscribeMyDebts({ storeId: 'store-a', onUpdate: vi.fn(), onError })
+    onSnapshot.mock.calls[0][2]({ code: 'permission-denied' })
+    expect(onError).toHaveBeenCalledTimes(1)
+    vi.advanceTimersByTime(60000)
+    expect(onSnapshot).toHaveBeenCalledTimes(1) // jamais réabonné
+  })
+
+  it('erreur PERMANENTE (failed-precondition, index manquant) → aucun réabonnement', () => {
+    onSnapshot.mockImplementation(() => vi.fn())
+    subscribeMyDebts({ storeId: 'store-a', onUpdate: vi.fn(), onError: vi.fn() })
+    onSnapshot.mock.calls[0][2]({ code: 'failed-precondition' })
+    vi.advanceTimersByTime(60000)
+    expect(onSnapshot).toHaveBeenCalledTimes(1)
+  })
+
+  it('backoff exponentiel : les délais de réabonnement doublent (4s puis 8s)', () => {
+    onSnapshot.mockImplementation(() => vi.fn())
+    subscribeMyDebts({ storeId: 'store-a', onUpdate: vi.fn(), onError: vi.fn() })
+    // 1re erreur transitoire → réabonnement à 4000 ms
+    onSnapshot.mock.calls[0][2]({ code: 'unavailable' })
+    vi.advanceTimersByTime(4000)
+    expect(onSnapshot).toHaveBeenCalledTimes(2)
+    // 2e erreur → réabonnement à 8000 ms (pas encore à 4000)
+    onSnapshot.mock.calls[1][2]({ code: 'unavailable' })
+    vi.advanceTimersByTime(4000)
+    expect(onSnapshot).toHaveBeenCalledTimes(2)
+    vi.advanceTimersByTime(4000) // total 8000
+    expect(onSnapshot).toHaveBeenCalledTimes(3)
+  })
+
+  it('un snapshot réussi réinitialise le backoff', () => {
+    onSnapshot.mockImplementation(() => vi.fn())
+    subscribeMyDebts({ storeId: 'store-a', onUpdate: vi.fn(), onError: vi.fn() })
+    onSnapshot.mock.calls[0][2]({ code: 'unavailable' }) // → prochain essai 4000
+    vi.advanceTimersByTime(4000)
+    onSnapshot.mock.calls[1][2]({ code: 'unavailable' }) // → prochain essai 8000
+    vi.advanceTimersByTime(8000)
+    expect(onSnapshot).toHaveBeenCalledTimes(3)
+    // Snapshot réussi (2e argument d'onSnapshot) → backoff réinitialisé à 4000
+    onSnapshot.mock.calls[2][1]({ docs: [] })
+    onSnapshot.mock.calls[2][2]({ code: 'unavailable' })
+    vi.advanceTimersByTime(4000)
+    expect(onSnapshot).toHaveBeenCalledTimes(4) // réabonné après 4000, pas 16000
+  })
 })
