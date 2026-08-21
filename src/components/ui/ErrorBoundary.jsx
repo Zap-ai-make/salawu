@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { isChunkLoadError, reloadForStaleChunk } from '../../utils/chunkReload.js'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -12,6 +13,11 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Fragment lazy périmé après un déploiement (nouveau hash absent → MIME
+    // text/html) : recharger (borné) plutôt que d'afficher l'écran d'erreur.
+    // Filet en plus du gestionnaire global vite:preloadError.
+    if (isChunkLoadError(error) && reloadForStaleChunk()) return
+
     // Log l'erreur pour le debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo)
 
