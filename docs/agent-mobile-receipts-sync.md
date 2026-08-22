@@ -1,6 +1,6 @@
 # Synchronisation des reçus/fiche vers l'app mobile agents
 
-> Statut : **Lot 1 posé** (fondations sûres, aucune exposition). Lots 2→5 à venir.
+> Statut : **Lots 1→5 faits** (feature complète côté web). Contrat figé : [`agent-mobile-app-contract.md`](agent-mobile-app-contract.md).
 > Client : **salawu** uniquement (opt-in). TAOFIC non concerné (projet Firebase séparé + `mobileApp.enabled = false`).
 
 ## Besoin
@@ -87,4 +87,11 @@ projet Firebase séparé **et** `mobileAppEnabled() = false`.
   **Déploiement : index D'ABORD (`firebase deploy --only firestore:indexes`, attendre Enabled)
   PUIS règles (`firebase deploy --only firestore:rules`), sur config salawu régénérée ; restaurer
   baseline TAOFIC après.**
-- **Lot 5** : figer le contrat consommé par l'app mobile + vérif end-to-end émulateur.
+- **Lot 5 (fait)** : contrat d'intégration **figé** dans
+  [`docs/agent-mobile-app-contract.md`](agent-mobile-app-contract.md) (endpoint `agentSignIn`,
+  claims `uid==clientId`, forme des lectures `globalClients`/`history`, contrat d'erreurs,
+  invariants). Vérif **bout-en-bout** tc-151 : `generateAgentAccessCode` → `agentSignIn` →
+  les **claims réellement émis** sont rejoués dans les **vraies règles salawu**
+  (`mobileAppEnabled=true` chargé en test), l'agent lit sa fiche + ses reçus et **rien d'autre**
+  (couture handlers ↔ règles, sans déployer salawu ni muter l'arbre). **Aucun déploiement requis**
+  (doc + test seuls).
