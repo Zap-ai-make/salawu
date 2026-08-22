@@ -12,6 +12,8 @@ import { useTransactions } from '../context/transactions.jsx'
 import { tabButtonClass, TabBadge } from '../components/ui/Tabs.jsx'
 import { themedTableClasses } from '../components/ui/themedTable.js'
 import StatusBadge from '../components/ui/StatusBadge'
+import DirectionBadge from '../components/ui/DirectionBadge'
+import { directionFromSens, directionStyles } from '../utils/transactionDirection.js'
 import { formatDateTime } from '../utils/formatters'
 import { filterHistoryRows } from '../utils/historyFilter.js'
 import { subscribeStoreTransfers } from '../services/storeTransferService'
@@ -281,10 +283,13 @@ function Historique() {
                     {collabFiltered.length === 0 ? (
                       <tr><td colSpan="8" className={tbl.empty}>Aucune collaboration.</td></tr>
                     ) : (
-                      collabFiltered.map(({ data: c, sens, partner }) => (
-                        <tr key={c.id}>
-                          <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(c.createdAt)}</td>
-                          <td className={`${tbl.cell} text-gray-700`}>{sens}</td>
+                      collabFiltered.map(({ data: c, sens, partner }) => {
+                        const dir = directionFromSens(sens)
+                        const ds = directionStyles(dir)
+                        return (
+                        <tr key={c.id} className={ds.rowBg}>
+                          <td className={`${tbl.cell} ${ds.accent} whitespace-nowrap text-gray-700`}>{formatDateTime(c.createdAt)}</td>
+                          <td className={`${tbl.cell}`}><DirectionBadge direction={dir} label={sens} /></td>
                           <td className={`${tbl.cell} font-medium text-gray-800`}>{partner ?? '—'}</td>
                           <td className={`${tbl.cell} text-gray-700`}>{collabClient(c)}</td>
                           <td className={`${tbl.cell} text-gray-700`}>{COLLAB_OPERATION_TYPE_LABELS[c.operationType] ?? c.operationType}</td>
@@ -294,7 +299,8 @@ function Historique() {
                             <StatusBadge status={c.status} label={COLLAB_STATUS_LABELS[c.status] ?? c.status} />
                           </td>
                         </tr>
-                      ))
+                        )
+                      })
                     )}
                   </tbody>
                 </table>
@@ -334,10 +340,13 @@ function Historique() {
                     {internalDebtFiltered.length === 0 ? (
                       <tr><td colSpan="7" className={tbl.empty}>Aucune dette réglée.</td></tr>
                     ) : (
-                      internalDebtFiltered.map(({ data: d, sens, partner }) => (
-                        <tr key={d.id}>
-                          <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(d.updatedAt ?? d.createdAt)}</td>
-                          <td className={`${tbl.cell} text-gray-700`}>{sens}</td>
+                      internalDebtFiltered.map(({ data: d, sens, partner }) => {
+                        const dir = directionFromSens(sens)
+                        const ds = directionStyles(dir)
+                        return (
+                        <tr key={d.id} className={ds.rowBg}>
+                          <td className={`${tbl.cell} ${ds.accent} whitespace-nowrap text-gray-700`}>{formatDateTime(d.updatedAt ?? d.createdAt)}</td>
+                          <td className={`${tbl.cell}`}><DirectionBadge direction={dir} label={sens} /></td>
                           <td className={`${tbl.cell} font-medium text-gray-800`}>{partner ?? '—'}</td>
                           <td className={`${tbl.cell} text-gray-700`}>{COLLAB_OPERATION_TYPE_LABELS[d.operationType] ?? d.operationType}</td>
                           <td className={`${tbl.cell} text-gray-700`}>{d.network}</td>
@@ -346,7 +355,8 @@ function Historique() {
                             <StatusBadge status={d.status} label={DEBT_STATUS_LABELS[d.status] ?? d.status} />
                           </td>
                         </tr>
-                      ))
+                        )
+                      })
                     )}
                   </tbody>
                 </table>

@@ -157,7 +157,7 @@ describe('TC-119 — onglet Collaborations', () => {
     assertNoHardcodedGreen(container)
     assertThemedGrid(container)
     expect(container.querySelectorAll('table')).toHaveLength(1)
-    expect(container.querySelector('td[colspan="7"]').textContent).toBe('Aucune demande envoyée.')
+    expect(container.querySelector('td[colspan="7"]').textContent).toBe('Aucune demande en attente.')
 
     showIncoming()
     assertNoHardcodedGreen(container)

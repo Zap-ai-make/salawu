@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useTransactions } from '../../context/transactions.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
 import { getClientName, formatTransactionDateTime } from '../../utils/helpers.js'
+import { directionFromType, directionStyles } from '../../utils/transactionDirection.js'
+import DirectionBadge from '../ui/DirectionBadge.jsx'
 import { useWindowedRows } from '../../hooks/useWindowedRows.js'
 import ReceiptModal from '../receipt/ReceiptModal.jsx'
 
@@ -12,7 +13,6 @@ const VIRTUALIZE_THRESHOLD = 60
 const DEFAULT_ROW_HEIGHT = 49
 
 function HistoriqueTable({ transactions = [] }) {
-  const { getTransactionStyles } = useTransactions()
   const { themeClasses } = useTheme()
   const allTransactions = transactions
   const [receiptTx, setReceiptTx] = useState(null)
@@ -38,44 +38,45 @@ function HistoriqueTable({ transactions = [] }) {
 
   // Une seule définition du markup de ligne, partagée par les deux branches.
   const renderRow = (transaction, index, ref) => {
-    const styles = getTransactionStyles(transaction.type)
+    const direction = directionFromType(transaction.type)
+    const ds = directionStyles(direction)
     return (
       <tr
         ref={ref}
         key={transaction.id || `${transaction.clientId || 'transaction'}-${transaction.date || index}-${index}`}
-        className={`border-b border-gray-100 ${styles.bgColor} ${styles.textColor}`}
+        className={`border-b border-gray-100 ${ds.rowBg} text-gray-800`}
       >
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
+        <td className={`border border-gray-200 ${ds.accent} px-4 py-3 text-base whitespace-nowrap`}>
           {formatTransactionDateTime(transaction)}
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           {getClientName(transaction.client)}
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base font-medium whitespace-nowrap">
-          {transaction.type || '-'}
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
+          <DirectionBadge direction={direction} label={transaction.type || '-'} />
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           {transaction.reseau || transaction.network || '-'}
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           {transaction.code || '-'}
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base font-medium whitespace-nowrap">
+        <td className="border border-gray-200 px-4 py-3 text-base font-medium whitespace-nowrap">
           {transaction.montant ? `${(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA` :
            transaction.amount ? `${transaction.amount} FCFA` : '-'}
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
             {transaction.statut || 'Validée'}
           </span>
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           {transaction.operatorName || transaction.userName || '-'}
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap">
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           {transaction.operatorEmail || transaction.userEmail || '-'}
         </td>
-        <td className="border border-green-300 px-4 py-3 text-base whitespace-nowrap text-center">
+        <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap text-center">
           <button
             onClick={() => setReceiptTx(transaction)}
             className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1 rounded text-sm font-medium transition-colors"
@@ -117,7 +118,7 @@ function HistoriqueTable({ transactions = [] }) {
               <tr>
                 <td
                   colSpan={headers.length}
-                  className="border border-green-300 px-4 py-8 text-center text-gray-500"
+                  className="border border-gray-200 px-4 py-8 text-center text-gray-500"
                 >
                   Aucune transaction dans l'historique
                 </td>
