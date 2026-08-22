@@ -71,7 +71,13 @@ projet Firebase séparé **et** `mobileAppEnabled() = false`.
   régénéré (TAOFIC baseline = `false`) ; bloc `agentCredentials` réservé (`if false`) ; tests de
   caractérisation (tc-083b, tc-084c, `agentCredentials.rules.test.js`). **Aucune exposition activée.**
 - **Lot 2** : Cloud Function `enrollAgentPin` (gérant) + UI boutique (bouton PIN sur la fiche).
-- **Lot 3** : Cloud Function `agentSignIn` (custom token + anti-bruteforce).
+- **Lot 3 (fait)** : Cloud Function `agentSignIn({ identifier, code, storeId? })` — `identifier`
+  = un **numéro OU code agent** de la fiche (résolu via `loginIdentifiers array-contains`), `code`
+  = le code d'accès (vérifié par hash scrypt timing-safe). Anti-bruteforce : verrouillage après
+  `MAX_FAILED_ATTEMPTS` échecs (`LOCK_DURATION_MS`), erreurs **génériques** (anti-énumération).
+  Succès → `createCustomToken(clientId, { role:'agent', clientId, storeId })`. `createCustomToken`
+  injecté (test sans émulateur Auth). Endpoint public (`enforceAppCheck:false`), gardé par
+  `MOBILE_APP.enabled`. **Aucune lecture encore autorisée.**
 - **Lot 4** : activation des clauses de lecture agent (`history` + `globalClients`) gardées par
   `mobileAppEnabled()` + index composite `history (storeId, clientId, createdAt)` — **index avant règles**.
 - **Lot 5** : figer le contrat consommé par l'app mobile + vérif end-to-end émulateur.

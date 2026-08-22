@@ -88,6 +88,10 @@ export const HTTP_CODES = {
   INVALID_CLIENT_ID:            'invalid-argument',
   CLIENT_STORE_MISMATCH:        'permission-denied',
   AGENT_IDENTIFIER_REQUIRED:    'failed-precondition',
+  // App mobile agents — connexion (agentSignIn)
+  INVALID_LOGIN_INPUT:          'invalid-argument',
+  INVALID_CREDENTIALS:          'permission-denied',
+  ACCOUNT_LOCKED:               'resource-exhausted',
 }
 
 export class DealerRequestError extends Error {

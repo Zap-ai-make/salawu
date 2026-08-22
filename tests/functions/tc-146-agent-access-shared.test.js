@@ -16,6 +16,13 @@ import {
   normalizeIdentifier,
   extractAgentIdentifiers,
   validateClientId,
+  normalizeCode,
+  validateLoginIdentifier,
+  validateLoginCode,
+  nextFailureState,
+  isLocked,
+  MAX_FAILED_ATTEMPTS,
+  LOCK_DURATION_MS,
 } from '../../functions/src/agents/shared.js'
 import { DealerRequestError } from '../../functions/src/errors.js'
 
@@ -99,5 +106,31 @@ describe('TC-146 — validateClientId', () => {
   it('rejette vide/non-string', () => {
     expect(() => validateClientId('')).toThrow(DealerRequestError)
     expect(() => validateClientId(null)).toThrow(DealerRequestError)
+  })
+})
+
+describe('TC-146 — connexion : entrées + verrouillage', () => {
+  it('normalizeCode : trim + majuscule + espaces retirés, tiret conservé', () => {
+    expect(normalizeCode('  esahaf-abcd2345 ')).toBe('ESAHAF-ABCD2345')
+    expect(normalizeCode('ESAHAF ABCD2345')).toBe('ESAHAFABCD2345')
+  })
+
+  it('validateLoginIdentifier/Code : normalisent, rejettent vide/trop long', () => {
+    expect(validateLoginIdentifier('  70 11 22 33 ')).toBe('70112233')
+    expect(validateLoginCode(' esahaf-abcd2345 ')).toBe('ESAHAF-ABCD2345')
+    expect(() => validateLoginIdentifier('')).toThrow(DealerRequestError)
+    expect(() => validateLoginCode('x'.repeat(65))).toThrow(DealerRequestError)
+  })
+
+  it('nextFailureState : incrémente, puis verrouille au seuil (compteur remis à zéro)', () => {
+    expect(nextFailureState(0, 1000)).toEqual({ failedAttempts: 1, lockedUntil: 0 })
+    expect(nextFailureState(MAX_FAILED_ATTEMPTS - 2, 1000)).toEqual({ failedAttempts: MAX_FAILED_ATTEMPTS - 1, lockedUntil: 0 })
+    expect(nextFailureState(MAX_FAILED_ATTEMPTS - 1, 1000)).toEqual({ failedAttempts: 0, lockedUntil: 1000 + LOCK_DURATION_MS })
+  })
+
+  it('isLocked : vrai tant que lockedUntil > now', () => {
+    expect(isLocked({ lockedUntil: 5000 }, 4000)).toBe(true)
+    expect(isLocked({ lockedUntil: 5000 }, 6000)).toBe(false)
+    expect(isLocked({}, 6000)).toBe(false)
   })
 })

@@ -75,6 +75,54 @@ export function normalizeIdentifier(value) {
   return String(value ?? '').trim().toUpperCase().replace(/\s+/g, '')
 }
 
+// ---------------------------------------------------------------------------
+// Connexion agent (Lot 3) — validation entrées + anti-bruteforce
+// ---------------------------------------------------------------------------
+
+// Le code affiché est en MAJUSCULES avec un tiret (ex. ESAHAF-ABCD2345). On tolère
+// la casse et les espaces à la saisie, mais on conserve le tiret (le hash porte dessus).
+export function normalizeCode(value) {
+  return String(value ?? '').trim().toUpperCase().replace(/\s+/g, '')
+}
+
+export function validateLoginIdentifier(identifier) {
+  const norm = normalizeIdentifier(identifier)
+  if (norm.length === 0 || norm.length > 64) {
+    throw new DealerRequestError('INVALID_LOGIN_INPUT', 'Identifiant de connexion invalide.')
+  }
+  return norm
+}
+
+export function validateLoginCode(code) {
+  const norm = normalizeCode(code)
+  if (norm.length === 0 || norm.length > 64) {
+    throw new DealerRequestError('INVALID_LOGIN_INPUT', "Code d'accès invalide.")
+  }
+  return norm
+}
+
+// Politique de verrouillage : au bout de MAX_FAILED_ATTEMPTS échecs consécutifs,
+// on verrouille LOCK_DURATION_MS et on remet le compteur à zéro (fenêtre glissante).
+export const MAX_FAILED_ATTEMPTS = 5
+export const LOCK_DURATION_MS = 5 * 60 * 1000
+
+/**
+ * État suivant après un échec de code. Pur (now injecté).
+ * @returns {{ failedAttempts: number, lockedUntil: number }}
+ */
+export function nextFailureState(currentAttempts, now) {
+  const attempts = (Number(currentAttempts) || 0) + 1
+  if (attempts >= MAX_FAILED_ATTEMPTS) {
+    return { failedAttempts: 0, lockedUntil: now + LOCK_DURATION_MS }
+  }
+  return { failedAttempts: attempts, lockedUntil: 0 }
+}
+
+/** Le credential est-il verrouillé à l'instant `now` ? */
+export function isLocked(credData, now) {
+  return Number(credData?.lockedUntil || 0) > now
+}
+
 export function extractAgentIdentifiers(clientData, networkKeys = []) {
   if (!clientData || typeof clientData !== 'object') return []
   const numeros = clientData.numerosAgent && typeof clientData.numerosAgent === 'object'

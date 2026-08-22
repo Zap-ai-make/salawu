@@ -14,6 +14,7 @@
 
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
+import { getAuth } from 'firebase-admin/auth'
 import { onCall } from 'firebase-functions/v2/https'
 import { wrapCallable } from './callable.js'
 import { confirmDealerRequestHandler } from './dealerRequests/confirmDealerRequest.js'
@@ -41,6 +42,7 @@ import { confirmInternalDebtCompensationHandler } from './collaborations/confirm
 import { rejectInternalDebtCompensationHandler } from './collaborations/rejectInternalDebtCompensation.js'
 import { listStoreCollaborationProvidersHandler } from './collaborations/listStoreCollaborationProviders.js'
 import { generateAgentAccessCodeHandler } from './agents/generateAgentAccessCode.js'
+import { agentSignInHandler } from './agents/agentSignIn.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
 // dans les tests d'intégration (TC-036) qui s'exécutent après TC-035 dans le même processus.
@@ -171,4 +173,12 @@ export const listStoreCollaborationProviders = onCall(
 export const generateAgentAccessCode = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
   wrapCallable(generateAgentAccessCodeHandler, deps)
+)
+
+export const agentSignIn = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(agentSignInHandler, {
+    ...deps,
+    createCustomToken: (uid, claims) => getAuth().createCustomToken(uid, claims),
+  })
 )
