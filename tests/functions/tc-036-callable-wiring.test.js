@@ -104,6 +104,7 @@ describe('TC-036-WRA — exports callable de index.js', () => {
       'confirmInternalDebtCompensation',
       'rejectInternalDebtCompensation',
       'listStoreCollaborationProviders',
+      'generateAgentAccessCode',
     ])
     for (const key of Object.keys(indexModule)) {
       expect(
@@ -111,6 +112,11 @@ describe('TC-036-WRA — exports callable de index.js', () => {
         `Export inattendu dans index.js : "${key}"`
       ).toBe(true)
     }
+  })
+
+  it('[WRA-05b] generateAgentAccessCode est exporté (callable) en europe-west1', () => {
+    expect(typeof indexModule.generateAgentAccessCode).toBe('function')
+    expect(indexModule.generateAgentAccessCode.__endpoint?.region).toContain('europe-west1')
   })
 
   it('[WRA-06] région europe-west1 déclarée dans confirmDealerRequest', () => {

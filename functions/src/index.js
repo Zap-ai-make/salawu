@@ -40,6 +40,7 @@ import { declareInternalDebtCompensationHandler } from './collaborations/declare
 import { confirmInternalDebtCompensationHandler } from './collaborations/confirmInternalDebtCompensation.js'
 import { rejectInternalDebtCompensationHandler } from './collaborations/rejectInternalDebtCompensation.js'
 import { listStoreCollaborationProvidersHandler } from './collaborations/listStoreCollaborationProviders.js'
+import { generateAgentAccessCodeHandler } from './agents/generateAgentAccessCode.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
 // dans les tests d'intégration (TC-036) qui s'exécutent après TC-035 dans le même processus.
@@ -165,4 +166,9 @@ export const rejectInternalDebtCompensation = onCall(
 export const listStoreCollaborationProviders = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
   wrapCallable(listStoreCollaborationProvidersHandler, deps)
+)
+
+export const generateAgentAccessCode = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(generateAgentAccessCodeHandler, deps)
 )

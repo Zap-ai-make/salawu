@@ -17,10 +17,12 @@ import { fileURLToPath } from 'node:url'
 import { resolveProfile } from '../../config/clients/index.js'
 import { generateProfileRulesBlock } from '../../scripts/lib/generateRulesBlock.mjs'
 import { generateDealerProfileFile } from '../../scripts/lib/generateDealerProfile.mjs'
+import { generateMobileAppProfileFile } from '../../scripts/lib/generateMobileAppProfile.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const rulesPath = resolve(__dirname, '../../firestore.rules')
 const dealerProfilePath = resolve(__dirname, '../../functions/src/config/dealerProfile.js')
+const mobileAppProfilePath = resolve(__dirname, '../../functions/src/config/mobileAppProfile.js')
 
 describe('TC-084 — Génération des règles depuis le profil (axe dealer)', () => {
   it('TAOFIC → un seul réseau dealer (Orange), équivalent au comportement historique', () => {
@@ -89,6 +91,29 @@ describe('TC-084b — Génération du config functions (dealerProfile) depuis le
   it('ANTI-DÉRIVE : functions/src/config/dealerProfile.js == généré pour TAOFIC', () => {
     const committed = readFileSync(dealerProfilePath, 'utf8').replace(/\r\n/g, '\n')
     const generated = generateDealerProfileFile(resolveProfile('taofic_ajagbe'))
+    expect(committed).toBe(generated)
+  })
+})
+
+describe('TC-084d — Génération du config functions mobileApp (app mobile agents)', () => {
+  it('salawu → activée + préfixe dérivé de la marque (ESAHAF)', () => {
+    const file = generateMobileAppProfileFile(resolveProfile('salawu'))
+    expect(file).toContain("export const MOBILE_APP = { enabled: true, accessCodePrefix: 'ESAHAF' }")
+  })
+
+  it('TAOFIC → désactivée (défaut hérité), préfixe marque AKAYIS', () => {
+    const file = generateMobileAppProfileFile(resolveProfile('taofic_ajagbe'))
+    expect(file).toContain("export const MOBILE_APP = { enabled: false, accessCodePrefix: 'AKAYIS' }")
+  })
+
+  it('profil sans axe mobileApp → défaut sûr désactivé', () => {
+    const file = generateMobileAppProfileFile({ branding: { appName: 'X' } })
+    expect(file).toContain('enabled: false')
+  })
+
+  it('ANTI-DÉRIVE : functions/src/config/mobileAppProfile.js == généré pour TAOFIC', () => {
+    const committed = readFileSync(mobileAppProfilePath, 'utf8').replace(/\r\n/g, '\n')
+    const generated = generateMobileAppProfileFile(resolveProfile('taofic_ajagbe'))
     expect(committed).toBe(generated)
   })
 })

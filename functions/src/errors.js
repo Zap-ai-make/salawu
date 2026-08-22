@@ -83,6 +83,11 @@ export const HTTP_CODES = {
   SETTLEMENT_NOT_DECLARED:      'failed-precondition',
   SETTLEMENT_NOT_FOUND:         'not-found',
   SETTLEMENT_INSUFFICIENT_BALANCE: 'failed-precondition',
+  // App mobile agents — génération du code d'accès
+  MOBILE_APP_DISABLED:          'failed-precondition',
+  INVALID_CLIENT_ID:            'invalid-argument',
+  CLIENT_STORE_MISMATCH:        'permission-denied',
+  AGENT_IDENTIFIER_REQUIRED:    'failed-precondition',
 }
 
 export class DealerRequestError extends Error {
