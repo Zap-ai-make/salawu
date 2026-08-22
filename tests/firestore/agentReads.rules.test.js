@@ -111,6 +111,32 @@ describe('TC-150 — app mobile ACTIVÉE : l\'agent lit seulement le sien', () =
     expect(snap.size).toBe(2)
     await assertSucceeds(getDoc(doc(fs, 'globalClients', AGENT_A)))
   })
+
+  it('[AR-10] garde-fou schéma : le reçu exposé ne porte que des champs transactionnels (pas de solde boutique)', async () => {
+    // Reçu représentatif du schéma history (cf. docs/agent-mobile-app-contract.md §4.3 et
+    // draftService historyData). Les règles ne filtrent PAS les champs : l'agent reçoit le doc
+    // entier. TRIPWIRE (F4) — si le schéma history accueille un nouveau champ, ce test casse :
+    // réauditer l'exposition agent AVANT d'ajouter le champ ici (basculer sur une CF de projection
+    // si un champ de niveau boutique — solde/liquidité — devait apparaître).
+    await seedDocument(testEnv, 'clients/store-A/history', 'h-full', {
+      clientId: AGENT_A, storeId: 'store-A', type: 'Dépôt', montant: 1000,
+      paymentMethod: 'Cash', effectiveNetwork: 'Orange',
+      originalAmount: 1000, paidAmount: 1000, refundedAmount: 0, remainingAmount: 0,
+      settlementStatus: 'settled', createdAt: new Date('2026-08-05'), validatedAt: new Date('2026-08-05'),
+    })
+
+    const snap = await assertSucceeds(getDoc(doc(agentCtx(testEnv).firestore(), 'clients/store-A/history', 'h-full')))
+    const keys = Object.keys(snap.data())
+
+    // Invariant de sécurité : aucun champ de niveau boutique (solde/liquidité) ne transite.
+    expect(keys.filter((k) => /solde|balance|liquidit/i.test(k))).toEqual([])
+    // Snapshot de la surface exposée : toute évolution force une réévaluation consciente.
+    expect(keys.sort()).toEqual([
+      'clientId', 'createdAt', 'effectiveNetwork', 'montant', 'originalAmount',
+      'paidAmount', 'paymentMethod', 'refundedAmount', 'remainingAmount',
+      'settlementStatus', 'storeId', 'type', 'validatedAt',
+    ].sort())
+  })
 })
 
 describe('TC-150 — app mobile DÉSACTIVÉE : toute lecture agent refusée', () => {

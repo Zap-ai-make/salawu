@@ -13,6 +13,7 @@ import {
   generateAccessCode,
   hashAccessCode,
   verifyAccessCode,
+  dummyVerify,
   normalizeIdentifier,
   extractAgentIdentifiers,
   validateClientId,
@@ -62,6 +63,12 @@ describe('TC-146 — hachage / vérification', () => {
   it('entrées invalides → false sans lever', () => {
     expect(verifyAccessCode('x', null, null)).toBe(false)
     expect(verifyAccessCode('x', '', '')).toBe(false)
+  })
+
+  it('dummyVerify (leurre anti-timing, F1) : renvoie toujours false sans lever', () => {
+    // Garde-fou d'existence : agentSignIn l'appelle sur le chemin « identifiant inconnu »
+    // pour égaliser le temps de réponse. Ne compare aucun secret.
+    expect(dummyVerify()).toBe(false)
   })
 })
 

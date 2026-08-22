@@ -65,6 +65,21 @@ export function verifyAccessCode(code, hashHex, saltHex) {
   }
 }
 
+// Sel factice constant (16 octets) pour le leurre anti-timing (F1). Ne protège AUCUN secret :
+// il sert uniquement à faire exécuter un scrypt de coût équivalent à un verifyAccessCode réel.
+const DUMMY_SALT = Buffer.alloc(16, 7)
+
+/**
+ * Leurre anti-timing (F1). Exécute UN scryptSync de coût équivalent à verifyAccessCode puis
+ * renvoie toujours false. Appelé sur le chemin « aucun credential » de agentSignIn pour égaliser
+ * le temps de réponse avec le chemin « candidat + mauvais code » (anti-énumération d'identifiants).
+ * Ne compare aucun secret, ne lève jamais.
+ */
+export function dummyVerify() {
+  scryptSync('x', DUMMY_SALT, SCRYPT_KEYLEN)
+  return false
+}
+
 // ---------------------------------------------------------------------------
 // Identifiants de connexion agent = numéros agent + codes agent (tous réseaux),
 // normalisés (majuscules, sans espace) et dédoublonnés. Servent au login (Lot 3)

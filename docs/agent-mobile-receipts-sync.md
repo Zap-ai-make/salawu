@@ -51,8 +51,11 @@ plusieurs identités (non requis).
 
 - **PIN** : jamais en clair, jamais dans `globalClients`, jamais journalisé. Stocké haché (scrypt + sel,
   `node:crypto`) dans `agentCredentials/{clientId}` — collection **Admin SDK only** (`read, write: if false`).
-- **Login** : anti-bruteforce (lockout + backoff), comparaison timing-safe, erreurs génériques. App Check
-  désactivé aujourd'hui → à activer pour l'app mobile en lot ultérieur.
+- **Login** : anti-bruteforce (lockout + backoff), comparaison timing-safe, erreurs génériques + leurre
+  anti-timing sur identifiant inconnu (F1). App Check désactivé aujourd'hui → **condition de mise en
+  service à l'échelle (audit M1)** : activer App Check (ou un rate-limit global) pour l'app mobile avant
+  exposition publique réelle de `agentSignIn`. Verrou partagé entre boutiques homonymes = compromis
+  documenté (F2), cloisonné par `storeId`.
 - **Reçus = lecture seule** : aucun risque pour la piste d'audit (garde-fous sur les chemins d'écriture
   Admin-SDK). Avant d'activer la lecture (Lot 4), **auditer le schéma `history`** pour confirmer l'absence
   de champ sensible (solde boutique) ; sinon exposer via une Cloud Function de projection à champs

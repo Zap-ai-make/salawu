@@ -90,6 +90,11 @@ l'identifiant existe.
 (le bon code renvoie alors `ACCOUNT_LOCKED`). Le compteur repart à zéro à la première connexion
 réussie. L'app doit présenter un message neutre et, idéalement, un léger backoff visuel.
 
+**Identifiant partagé entre boutiques (F2)** : si le même numéro/code agent existe dans deux
+boutiques, un mauvais code incrémente le compteur d'échecs des **deux** credentials. Fournir
+`storeId` dès qu'il est connu **cloisonne** le verrou à la bonne boutique. Compromis accepté
+(inhérent au lockout) ; l'app est invitée à toujours transmettre `storeId` en cas d'ambiguïté.
+
 ---
 
 ## 4. Lecture des données (Firestore direct, lecture seule)
@@ -162,8 +167,12 @@ reçu : `clientId`, `storeId`, `type`, `montant`, `paymentMethod`, `effectiveNet
   l'ancien code.
 - **Révocation** : `active:false` sur le credential bloque les futures connexions ; pour couper
   une session vivante, révoquer les refresh tokens de l'`uid` (fenêtre ID token ≈ 1 h).
-- **App Check** : à activer pour l'app mobile en phase ultérieure (endpoint actuellement ouvert,
-  protégé par lockout + backoff + messages génériques).
+- **App Check** : **condition de mise en service à l'échelle (M1)**. `agentSignIn` est un endpoint
+  public qui exécute un hachage scrypt (coûteux) par tentative ; sans App Check ni rate-limit global,
+  il est exposé à un abus CPU/coût. Le verrou est par compte, pas global. **Activer App Check pour
+  l'app mobile (ou un rate-limit global par IP/identifiant) AVANT toute exposition publique réelle.**
+  Un leurre anti-timing (scrypt factice sur identifiant inconnu) réduit l'énumération, mais ne
+  remplace pas App Check.
 - **Opt-in** : toute la surface est gardée par `mobileAppEnabled()` (règles) et `MOBILE_APP.enabled`
   (functions), générés depuis le profil client. Désactivés → surface inerte.
 

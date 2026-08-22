@@ -131,4 +131,34 @@ describe('TC-147 — generateAgentAccessCode', () => {
     await seedBase()
     await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1', extra: 'x' }), { db, FieldValue }), 'INVALID_REQUEST_ID')
   })
+
+  it('[AC-09] appel non authentifié → UNAUTHENTICATED, aucun credential écrit (F5)', async () => {
+    await seedBase()
+    await expectError(generateAgentAccessCodeHandler(makeRequest(null, { clientId: 'cli-1' }), { db, FieldValue }), 'UNAUTHENTICATED')
+    expect((await db.doc('agentCredentials/cli-1').get()).exists).toBe(false)
+  })
+
+  it('[AC-10] régénération : préserve lastLoginAt, déverrouille, trace wasLocked (F3)', async () => {
+    await seedBase()
+    // Credential préexistant : une connexion a déjà eu lieu (lastLoginAt) et le compte est verrouillé.
+    const lastLogin = new Date('2026-08-10T08:00:00Z')
+    await db.doc('agentCredentials/cli-1').set({
+      clientId: 'cli-1', storeId: 'store-A', loginIdentifiers: ['OR123'],
+      codeHash: 'h', codeSalt: 's', codeVersion: 1, active: true,
+      failedAttempts: 3, lockedUntil: Date.now() + 60000, lastLoginAt: lastLogin,
+    })
+
+    const res = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue })
+    expect(res.codeVersion).toBe(2)
+
+    const cred = (await db.doc('agentCredentials/cli-1').get()).data()
+    expect(cred.lastLoginAt.toMillis()).toBe(lastLogin.getTime()) // métadonnée d'audit préservée
+    expect(cred.failedAttempts).toBe(0)                           // déverrouillage volontaire
+    expect(cred.lockedUntil).toBeNull()
+
+    // L'audit trace que la régénération a déverrouillé un compte.
+    const audit = await db.collection('clients/store-A/auditLogs').get()
+    expect(audit.size).toBe(1)
+    expect(audit.docs[0].data()).toMatchObject({ codeVersion: 2, wasLocked: true })
+  })
 })

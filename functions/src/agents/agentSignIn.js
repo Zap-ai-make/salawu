@@ -20,6 +20,7 @@ import {
   validateLoginIdentifier,
   validateLoginCode,
   verifyAccessCode,
+  dummyVerify,
   nextFailureState,
   isLocked,
 } from './shared.js'
@@ -50,7 +51,9 @@ export async function agentSignInHandler(request, { db, FieldValue, createCustom
   if (storeId) candidates = candidates.filter((c) => c.data.storeId === storeId)
 
   if (candidates.length === 0) {
-    // Aucun credential : rien à verrouiller, erreur générique (anti-énumération).
+    // Aucun credential : leurre anti-timing (F1) pour égaliser le temps avec le chemin
+    // « candidat + mauvais code », puis erreur générique (anti-énumération).
+    dummyVerify()
     throw new DealerRequestError('INVALID_CREDENTIALS', GENERIC_INVALID)
   }
 

@@ -18,7 +18,7 @@ import { DealerRequestError } from '../errors.js'
 import { validateAuthUid, validateInputPayload, validateProfileData } from '../dealerRequests/shared.js'
 import { SUPPORTED_NETWORKS } from '../storeNetworkConfig/shared.js'
 import { MOBILE_APP } from '../config/mobileAppProfile.js'
-import { validateClientId, generateAccessCode, hashAccessCode, extractAgentIdentifiers } from './shared.js'
+import { validateClientId, generateAccessCode, hashAccessCode, extractAgentIdentifiers, isLocked } from './shared.js'
 
 const NETWORK_KEYS = SUPPORTED_NETWORKS.map((n) => n.toLowerCase())
 
@@ -70,13 +70,16 @@ export async function generateAgentAccessCodeHandler(request, { db, FieldValue }
 
       const credRef = db.doc(`agentCredentials/${clientId}`)
       const existingSnap = await t.get(credRef)
-      const codeVersion = existingSnap.exists ? (Number(existingSnap.data().codeVersion) || 0) + 1 : 1
+      const existingData = existingSnap.exists ? existingSnap.data() : {}
+      const codeVersion = existingSnap.exists ? (Number(existingData.codeVersion) || 0) + 1 : 1
 
       // Génération + hachage côté serveur : le clair ne quitte que la réponse callable.
       const accessCode = generateAccessCode(MOBILE_APP.accessCodePrefix)
       const { hash, salt } = hashAccessCode(accessCode)
       const now = FieldValue.serverTimestamp()
 
+      // Régénération = déverrouillage volontaire (action gérant) : failedAttempts/lockedUntil
+      // remis à zéro. Mais `set` écrase tout : on PRÉSERVE lastLoginAt (métadonnée d'audit, F3).
       t.set(credRef, {
         clientId,
         storeId,
@@ -87,6 +90,7 @@ export async function generateAgentAccessCodeHandler(request, { db, FieldValue }
         active: true,
         failedAttempts: 0,
         lockedUntil: null,
+        lastLoginAt: existingData.lastLoginAt ?? null,
         generatedBy: actorUid,
         generatedByEmail: txProfile.email ?? null,
         generatedAt: now,
@@ -103,6 +107,7 @@ export async function generateAgentAccessCodeHandler(request, { db, FieldValue }
         actorStoreId: storeId,
         clientId,
         codeVersion,
+        wasLocked: isLocked(existingData, Date.now()), // trace un éventuel déverrouillage (F3)
         createdAt: now,
       })
 
