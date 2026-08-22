@@ -83,6 +83,16 @@ export const pilotProfile = Object.freeze({
     shareReceipts: false,
   }),
 
+  // Mode hors-ligne (offline-first + déverrouillage local). OFF par défaut : un client réel
+  // l'active explicitement (voir salawu.js). `unlock: 'password'` → vérification locale du
+  // mot de passe du compte (PBKDF2 WebCrypto) ; `maxOfflineDays` borne la fenêtre hors-ligne
+  // avant re-authentification en ligne obligatoire.
+  offlineMode: Object.freeze({
+    enabled: false,
+    unlock: 'password',
+    maxOfflineDays: 7,
+  }),
+
   // ── Règles métier différenciées par réseau (déclaratif) ─────────────────────
   // Défaut = le PLUS permissif / générique (opt-out) → n'altère AUCUN client
   // existant. Aucun câblage comportemental ne lit encore ce champ (fondation posée

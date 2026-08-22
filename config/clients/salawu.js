@@ -72,6 +72,15 @@ export const salawuProfile = Object.freeze({
     shareReceipts: true,
   }),
 
+  // Mode hors-ligne activé : agents sur mobile, terrain à connexion instable. Déverrouillage
+  // par mot de passe du compte (vérifié localement, PBKDF2 WebCrypto) ; fenêtre hors-ligne
+  // bornée à 7 jours avant re-authentification en ligne obligatoire.
+  offlineMode: Object.freeze({
+    enabled: true,
+    unlock: 'password',
+    maxOfflineDays: 7,
+  }),
+
   // ── Règles métier par réseau (cahier des charges ESAHAF) ────────────────────
   // Le spread écrase le champ ENTIER (pas de merge profond) → les 6 réseaux sont
   // redéclarés explicitement. Déclaratif : aucun enforcement en Vague 1.

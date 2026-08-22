@@ -55,3 +55,17 @@ describe('TC-083b — Axe mobileApp (app mobile agents) : opt-in par profil', ()
     expect(resolveProfile('taofic_ajagbe').mobileApp?.enabled).not.toBe(true)
   })
 })
+
+describe('TC-083c — Axe offlineMode (offline-first + déverrouillage local) : opt-in par profil', () => {
+  it('pilote → OFF par défaut (pas d\'activation par héritage)', () => {
+    expect(resolveProfile('_pilot').offlineMode).toEqual({ enabled: false, unlock: 'password', maxOfflineDays: 7 })
+  })
+
+  it('salawu (ESAHAF) → ACTIVÉ (déverrouillage par mot de passe, fenêtre 7 jours)', () => {
+    expect(resolveProfile('salawu').offlineMode).toEqual({ enabled: true, unlock: 'password', maxOfflineDays: 7 })
+  })
+
+  it('TAOFIC (prod) → PAS activé (hérite le défaut OFF du pilote)', () => {
+    expect(resolveProfile('taofic_ajagbe').offlineMode?.enabled).not.toBe(true)
+  })
+})

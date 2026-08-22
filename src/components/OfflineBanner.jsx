@@ -1,18 +1,7 @@
-import { useState, useEffect } from 'react'
+import useOnlineStatus from '../hooks/useOnlineStatus'
 
 export default function OfflineBanner() {
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
-
-  useEffect(() => {
-    const goOnline  = () => setIsOnline(true)
-    const goOffline = () => setIsOnline(false)
-    window.addEventListener('online',  goOnline)
-    window.addEventListener('offline', goOffline)
-    return () => {
-      window.removeEventListener('online',  goOnline)
-      window.removeEventListener('offline', goOffline)
-    }
-  }, [])
+  const isOnline = useOnlineStatus()
 
   if (isOnline) return null
 
