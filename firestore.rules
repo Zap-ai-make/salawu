@@ -5,6 +5,8 @@ service cloud.firestore {
     // <<< PROFIL-GÉNÉRÉ — DÉBUT (généré par scripts/generate-rules.mjs, ne pas éditer à la main) >>>
     // Réseaux du circuit dealer autorisés pour ce client (depuis profil.dealer.networks).
     function profileDealerNetworks() { return ['Orange']; }
+    // App mobile agents activée pour ce client (depuis profil.mobileApp.enabled).
+    function mobileAppEnabled() { return false; }
     // <<< PROFIL-GÉNÉRÉ — FIN >>>
 
     // ─────────────────────────────────────────────────────────────
@@ -347,6 +349,22 @@ service cloud.firestore {
       allow delete: if hasProfile() &&
         resource.data.registeredStoreId is string &&
         resource.data.registeredStoreId == profile().storeId;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Credentials agent (app mobile) — RÉSERVÉ, écriture/lecture Admin SDK uniquement
+    //
+    // Namespace réservé pour l'app mobile agents (id doc = clientId = uid du jeton
+    // agent). Contiendra le PIN HACHÉ (jamais en clair, jamais dans globalClients) et
+    // l'état anti-bruteforce. Aucun acteur client ne lit ni n'écrit ce doc — même
+    // l'agent : le hash ne transite jamais. Les Cloud Functions (Admin SDK) contournent
+    // les règles. Ce bloc explicite est un no-op prouvable vs le refus par défaut ci-
+    // dessous, posé dès maintenant pour réserver le namespace et documenter l'intention.
+    // (L'enrôlement et le login viendront dans des lots ultérieurs.)
+    // ─────────────────────────────────────────────────────────────
+
+    match /agentCredentials/{clientId} {
+      allow read, write: if false;
     }
 
     // ─────────────────────────────────────────────────────────────

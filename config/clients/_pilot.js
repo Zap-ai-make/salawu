@@ -71,6 +71,18 @@ export const pilotProfile = Object.freeze({
     networks: [...RESEAUX_SUPPORTES],
   }),
 
+  // ── App mobile agents (partage des reçus/fiche vers l'app mobile) ──────────
+  // Surface de SÉCURITÉ nouvelle → défaut OFF (contrairement à l'opt-out habituel :
+  // exposer des données à un acteur externe ne doit JAMAIS être activé par héritage).
+  //   enabled       : l'agent peut ouvrir un compte mobile et lire SES reçus + sa fiche.
+  //   shareReceipts : les reçus finalisés sont exposés en lecture à l'agent concerné.
+  // Un client réel l'active explicitement (voir salawu.js). Aucun câblage runtime ne
+  // lit encore ce champ — il pilote la génération des règles (mobileAppEnabled()).
+  mobileApp: Object.freeze({
+    enabled: false,
+    shareReceipts: false,
+  }),
+
   // ── Règles métier différenciées par réseau (déclaratif) ─────────────────────
   // Défaut = le PLUS permissif / générique (opt-out) → n'altère AUCUN client
   // existant. Aucun câblage comportemental ne lit encore ce champ (fondation posée

@@ -15,6 +15,7 @@ import { describe, it, expect } from 'vitest'
 import { NETWORK_OPTIONS, TRANSACTION_TYPES, PAYMENT_METHODS } from '../../src/utils/constants.js'
 import { DEALER_NETWORK } from '../../src/constants/dealerConstants.js'
 import { activeProfile } from '../../src/config/activeClientProfile.js'
+import { resolveProfile } from '../../config/clients/index.js'
 
 describe('TC-083 — Constantes dérivées du profil client actif', () => {
   it('le profil actif en test est bien TAOFIC (VITE_CLIENT_ID via .env)', () => {
@@ -38,5 +39,19 @@ describe('TC-083 — Constantes dérivées du profil client actif', () => {
 
   it('DEALER_NETWORK = valeur historique TAOFIC (Orange, mono-réseau)', () => {
     expect(DEALER_NETWORK).toBe('Orange')
+  })
+})
+
+describe('TC-083b — Axe mobileApp (app mobile agents) : opt-in par profil', () => {
+  it('pilote → OFF par défaut (surface de sécurité, pas d\'activation par héritage)', () => {
+    expect(resolveProfile('_pilot').mobileApp).toEqual({ enabled: false, shareReceipts: false })
+  })
+
+  it('salawu (ESAHAF) → ACTIVÉE (enabled + shareReceipts)', () => {
+    expect(resolveProfile('salawu').mobileApp).toEqual({ enabled: true, shareReceipts: true })
+  })
+
+  it('TAOFIC (prod) → PAS activée (hérite le défaut OFF du pilote)', () => {
+    expect(resolveProfile('taofic_ajagbe').mobileApp?.enabled).not.toBe(true)
   })
 })

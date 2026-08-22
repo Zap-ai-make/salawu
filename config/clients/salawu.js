@@ -63,6 +63,15 @@ export const salawuProfile = Object.freeze({
     networks: ['Moov', 'Telecel', 'Coris', 'Sank', 'Wave'],
   }),
 
+  // ── App mobile agents : ACTIVÉE pour ESAHAF (partage des reçus/fiche) ───────
+  // L'agent se connecte à l'app mobile (téléphone + PIN remis en boutique) et lit
+  // SES reçus + sa fiche. Active la génération des règles de lecture agent
+  // (mobileAppEnabled() → true dans firestore.rules régénéré pour salawu).
+  mobileApp: Object.freeze({
+    enabled: true,
+    shareReceipts: true,
+  }),
+
   // ── Règles métier par réseau (cahier des charges ESAHAF) ────────────────────
   // Le spread écrase le champ ENTIER (pas de merge profond) → les 6 réseaux sont
   // redéclarés explicitement. Déclaratif : aucun enforcement en Vague 1.

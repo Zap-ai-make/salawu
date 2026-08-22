@@ -49,6 +49,28 @@ describe('TC-084 — Génération des règles depuis le profil (axe dealer)', ()
   })
 })
 
+describe('TC-084c — Génération du toggle mobileApp (mobileAppEnabled)', () => {
+  it('salawu (mobileApp activée) → mobileAppEnabled() = true', () => {
+    const block = generateProfileRulesBlock(resolveProfile('salawu'))
+    expect(block).toContain('function mobileAppEnabled() { return true; }')
+  })
+
+  it('TAOFIC (défaut hérité) → mobileAppEnabled() = false', () => {
+    const block = generateProfileRulesBlock(resolveProfile('taofic_ajagbe'))
+    expect(block).toContain('function mobileAppEnabled() { return false; }')
+  })
+
+  it('profil sans axe mobileApp → défaut sûr false', () => {
+    const block = generateProfileRulesBlock({ dealer: { networks: ['Orange'] } })
+    expect(block).toContain('function mobileAppEnabled() { return false; }')
+  })
+
+  it('ANTI-DÉRIVE : firestore.rules commité porte le toggle TAOFIC (false)', () => {
+    const rules = readFileSync(rulesPath, 'utf8').replace(/\r\n/g, '\n')
+    expect(rules).toContain('function mobileAppEnabled() { return false; }')
+  })
+})
+
 describe('TC-084b — Génération du config functions (dealerProfile) depuis le profil', () => {
   it('TAOFIC → DEALER_NETWORKS = [\'Orange\']', () => {
     expect(generateDealerProfileFile(resolveProfile('taofic_ajagbe')))
