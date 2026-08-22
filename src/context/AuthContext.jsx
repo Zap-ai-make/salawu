@@ -297,11 +297,15 @@ export const AuthProvider = ({ children }) => {
         setUserProfile(profile)
         setError('')
 
-        await setDoc(
+        // Écriture NON bloquante (fire-and-forget) : hors-ligne, la promesse d'écriture
+        // Firestore ne se résout jamais (bug SDK connu firebase-js-sdk#6515) ; l'attendre
+        // figerait l'app sur l'écran de chargement. lastLogin est non critique → la
+        // persistence l'enverra à la reconnexion.
+        void setDoc(
           doc(db, FIRESTORE_CONFIG.COLLECTIONS.USERS, user.uid),
           { lastLogin: serverTimestamp() },
           { merge: true }
-        )
+        ).catch((e) => console.warn('lastLogin non enregistré (hors-ligne ?):', e?.message))
       } catch (err) {
         if (resolutionId !== authResolutionIdRef.current) return
         setError(err.message || 'Accès non autorisé')

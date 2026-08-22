@@ -320,4 +320,45 @@ describe('TC-021 — AuthContext : suppression de l\'écriture redondante de las
     const callsWithLastLogin = lastLoginCalls()
     expect(callsWithLastLogin).toHaveLength(0)
   })
+
+  // -------------------------------------------------------------------------
+  // Test 5 — Hors-ligne : l'écriture lastLogin ne doit pas figer le chargement
+  // -------------------------------------------------------------------------
+  it('Test 5 — hors-ligne : setDoc(lastLogin) qui ne résout jamais → l\'app se charge quand même (fire-and-forget)', async () => {
+    const mockUser = { uid: 'uid789', email: 'offline@example.com' }
+    const mockProfile = {
+      active: true,
+      storeId: 'store-abc',
+      storeName: 'Boutique Test',
+      role: 'store_admin',
+    }
+    const mockStoreData = { name: 'Boutique Test', active: true }
+
+    getDoc.mockImplementation((docRef) => {
+      if (docRef._path && docRef._path.startsWith('users/')) {
+        return Promise.resolve({ exists: () => true, data: () => mockProfile })
+      }
+      if (docRef._path && docRef._path.startsWith('stores/')) {
+        return Promise.resolve({ exists: () => true, data: () => mockStoreData })
+      }
+      return Promise.resolve({ exists: () => false, data: () => null })
+    })
+
+    // Simule une écriture Firestore hors-ligne : la promesse ne se résout JAMAIS
+    // (bug SDK connu #6515). L'attendre figerait l'app sur l'écran de chargement.
+    setDoc.mockImplementation(() => new Promise(() => {}))
+
+    onAuthStateChanged.mockImplementation((_auth, callback) => {
+      callback(mockUser)
+      return vi.fn()
+    })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // Malgré l'écriture bloquée, le chargement se termine et le profil est prêt.
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.userProfile).toEqual(mockProfile)
+    // L'écriture lastLogin a bien été tentée (fire-and-forget, non bloquante).
+    expect(lastLoginCalls()).toHaveLength(1)
+  })
 })
