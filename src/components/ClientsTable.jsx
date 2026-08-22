@@ -10,7 +10,7 @@ import TableRow from './TableRow'
 import Pagination from './Pagination'
 import Toast from './Toast'
 
-function ClientsTable({ clients, onDelete, onEdit, onImportClients }) {
+function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode }) {
   const { toasts, showToast, removeToast } = useToast()
   const { activeStore } = useContext(AuthContext)
   const { searchTerm, setSearchTerm, selectedMonth, setSelectedMonth, filteredClients } = useClientsFilter(clients)
@@ -103,6 +103,7 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients }) {
                 index={index}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onAccessCode={onAccessCode}
               />
             ))}
           </tbody>

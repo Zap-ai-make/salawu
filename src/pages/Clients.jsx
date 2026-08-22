@@ -50,47 +50,40 @@ function Clients() {
   if (editingClient) {
     return (
       <div>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-4">
           <button
             onClick={handleCancelEdit}
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
           >
             ← Retour à la liste
           </button>
-          {MOBILE_APP_ENABLED && (
-            <button
-              type="button"
-              onClick={() => setAccessCodeClient(editingClient)}
-              data-testid="btn-open-access-code"
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
-            >
-              Code d'accès mobile
-            </button>
-          )}
         </div>
         <ClientForm
           onSubmit={handleEditSubmit}
           initialData={editingClient}
           title="Modifier le client"
         />
-        {accessCodeClient && (
-          <AgentAccessCodeModal
-            clientId={accessCodeClient.id}
-            clientName={getClientName(accessCodeClient)}
-            onClose={() => setAccessCodeClient(null)}
-          />
-        )}
       </div>
     )
   }
 
   return (
-    <ClientsTable
-      clients={clients}
-      onDelete={handleDelete}
-      onEdit={handleEdit}
-      onImportClients={handleImportClients}
-    />
+    <>
+      <ClientsTable
+        clients={clients}
+        onDelete={handleDelete}
+        onEdit={handleEdit}
+        onImportClients={handleImportClients}
+        onAccessCode={MOBILE_APP_ENABLED ? setAccessCodeClient : undefined}
+      />
+      {accessCodeClient && (
+        <AgentAccessCodeModal
+          clientId={accessCodeClient.id}
+          clientName={getClientName(accessCodeClient)}
+          onClose={() => setAccessCodeClient(null)}
+        />
+      )}
+    </>
   )
 }
 

@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { NETWORK_OPTIONS } from '../utils/constants'
 
-const TableRow = memo(({ client, index, onEdit }) => {
+const TableRow = memo(({ client, index, onEdit, onAccessCode }) => {
   return (
     <tr className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
       <td className="border border-green-300 px-4 py-3 text-base">
@@ -38,6 +38,16 @@ const TableRow = memo(({ client, index, onEdit }) => {
           >
             Modifier
           </button>
+          {onAccessCode && (
+            <button
+              type="button"
+              onClick={() => onAccessCode(client)}
+              data-testid="btn-access-code"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+            >
+              Code d'accès
+            </button>
+          )}
           <button
             type="button"
             disabled
