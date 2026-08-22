@@ -2,10 +2,17 @@ import { useState } from 'react'
 import { useClients } from '../hooks/useClients'
 import ClientsTable from '../components/ClientsTable'
 import ClientForm from '../components/ClientForm'
+import AgentAccessCodeModal from '../components/agents/AgentAccessCodeModal'
+import { activeProfile } from '../config/activeClientProfile'
+import { getClientName } from '../utils/helpers'
+
+// App mobile agents activée pour ce client (profil) → affiche l'action « code d'accès ».
+const MOBILE_APP_ENABLED = activeProfile?.mobileApp?.enabled === true
 
 function Clients() {
   const { clients, deleteClient, editClient, addClient } = useClients()
   const [editingClient, setEditingClient] = useState(null)
+  const [accessCodeClient, setAccessCodeClient] = useState(null)
 
   const handleDelete = (clientId) => {
     const client = clients.find(c => c.id === clientId)
@@ -43,25 +50,42 @@ function Clients() {
   if (editingClient) {
     return (
       <div>
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <button
             onClick={handleCancelEdit}
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
           >
             ← Retour à la liste
           </button>
+          {MOBILE_APP_ENABLED && (
+            <button
+              type="button"
+              onClick={() => setAccessCodeClient(editingClient)}
+              data-testid="btn-open-access-code"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium"
+            >
+              Code d'accès mobile
+            </button>
+          )}
         </div>
-        <ClientForm 
+        <ClientForm
           onSubmit={handleEditSubmit}
           initialData={editingClient}
           title="Modifier le client"
         />
+        {accessCodeClient && (
+          <AgentAccessCodeModal
+            clientId={accessCodeClient.id}
+            clientName={getClientName(accessCodeClient)}
+            onClose={() => setAccessCodeClient(null)}
+          />
+        )}
       </div>
     )
   }
 
   return (
-    <ClientsTable 
+    <ClientsTable
       clients={clients}
       onDelete={handleDelete}
       onEdit={handleEdit}
