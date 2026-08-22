@@ -78,6 +78,13 @@ projet Firebase séparé **et** `mobileAppEnabled() = false`.
   Succès → `createCustomToken(clientId, { role:'agent', clientId, storeId })`. `createCustomToken`
   injecté (test sans émulateur Auth). Endpoint public (`enforceAppCheck:false`), gardé par
   `MOBILE_APP.enabled`. **Aucune lecture encore autorisée.**
-- **Lot 4** : activation des clauses de lecture agent (`history` + `globalClients`) gardées par
-  `mobileAppEnabled()` + index composite `history (storeId, clientId, createdAt)` — **index avant règles**.
+- **Lot 4 (fait)** : clauses de lecture agent activées, gardées par `mobileAppEnabled()` :
+  `globalClients` GET `clientId == request.auth.uid` ; `history` read `isAgentToken() &&
+  request.auth.token.storeId == storeId && resource.data.clientId == request.auth.uid` (LIST
+  contrainte par clientId → fail-safe). Drafts/settlements/agentCredentials NON exposés. Helper
+  `isAgentToken()` (claims du jeton, jamais `resource.data`). Index composite
+  `history (clientId ASC, createdAt DESC)`. Tests tc-150 (2 profils, 2 boutiques) + tc-114.
+  **Déploiement : index D'ABORD (`firebase deploy --only firestore:indexes`, attendre Enabled)
+  PUIS règles (`firebase deploy --only firestore:rules`), sur config salawu régénérée ; restaurer
+  baseline TAOFIC après.**
 - **Lot 5** : figer le contrat consommé par l'app mobile + vérif end-to-end émulateur.

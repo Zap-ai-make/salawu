@@ -41,6 +41,10 @@ describe('TC-114 — index composites collaborations et dettes internes', () => 
     expect(hasIndex('storeCollaborations', [['supplierStoreId', ASC], ['status', ASC], ['createdAt', DESC]])).toBe(true)
   })
 
+  it('couvre la lecture des reçus par l\'agent (app mobile) : history clientId + createdAt', () => {
+    expect(hasIndex('history', [['clientId', ASC], ['createdAt', DESC]])).toBe(true)
+  })
+
   it('couvre subscribeMyDebts (debtorStoreId + createdAt)', () => {
     expect(hasIndex('internalDebts', [['debtorStoreId', ASC], ['createdAt', DESC]])).toBe(true)
   })

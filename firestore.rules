@@ -63,6 +63,14 @@ service cloud.firestore {
       return isActiveUser() && profile().role == 'dealer';
     }
 
+    // Agent (app mobile) : identité par JETON PERSONNALISÉ émis par agentSignIn
+    // (Admin SDK). Pas de doc users/{uid} — l'autorité vient des CLAIMS du token
+    // (role/clientId/storeId), jamais de request.resource.data. uid == clientId.
+    // Un compte boutique/dealer n'a jamais le claim role='agent' → pas de confusion.
+    function isAgentToken() {
+      return request.auth != null && request.auth.token.role == 'agent';
+    }
+
     // Autorisation de lecture d'une dette interne par son id (débitrice, créancière
     // ou gérant). Passe par un get() du doc de dette : $(debtId) est FIXE pour une
     // requête donnée, donc — contrairement à resource.data — la condition est
@@ -334,7 +342,11 @@ service cloud.firestore {
     // ─────────────────────────────────────────────────────────────
 
     match /globalClients/{clientId} {
-      allow read: if hasProfile() || isSystemManager();
+      // Lecture : membres boutique + supervision system_manager ; + l'AGENT sur SA
+      // propre fiche (GET par id : clientId == uid, jamais de LIST). Gardé par le
+      // profil (mobileAppEnabled) → inerte chez un client sans app mobile.
+      allow read: if hasProfile() || isSystemManager() ||
+        (mobileAppEnabled() && isAgentToken() && clientId == request.auth.uid);
 
       allow create: if hasProfile() &&
         validClient(request.resource.data) &&
@@ -539,7 +551,16 @@ service cloud.firestore {
       }
 
       match /history/{historyId} {
-        allow read: if isStoreMember(storeId) || isSystemManager();
+        // Lecture : membres boutique + supervision ; + l'AGENT sur SES propres reçus.
+        // La condition resource.data.clientId oblige la requête LIST à contraindre
+        // clientId == uid (sinon échec = fail-safe, cf. piège LIST). token.storeId ==
+        // storeId (variable de chemin) cloisonne l'agent à SA boutique. Gardé par
+        // mobileAppEnabled (inerte chez un client sans app mobile). Reçus finalisés
+        // seulement — les drafts et les settlements ne sont PAS exposés (moindre privilège).
+        allow read: if isStoreMember(storeId) || isSystemManager() ||
+          (mobileAppEnabled() && isAgentToken() &&
+           request.auth.token.storeId == storeId &&
+           resource.data.clientId == request.auth.uid);
         allow create: if isStoreMember(storeId) &&
           validStoreScopedTransaction(request.resource.data, storeId) &&
           validStatus(request.resource.data.statut) &&
