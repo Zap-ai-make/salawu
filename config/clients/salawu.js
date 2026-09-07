@@ -24,12 +24,24 @@ export const salawuProfile = Object.freeze({
   firebaseProject: 'salawu-fa726',
 
   // ── Marque ──────────────────────────────────────────────────────────────────
-  // theme = étiquette déclarative uniquement (le rendu couleur reste piloté par le
-  // système de thème existant, cf. src/constants/branding.js) — aucun dev CSS induit.
+  // `theme` ne pilote PLUS l'apparence de l'interface : cette table a été retirée
+  // au Lot 4 (deux mécanismes décidaient de la même chose). L'apparence dérive du
+  // seul champ `design.system` ci-dessous. `theme` ne sert plus qu'à la couleur du
+  // manifeste PWA pour un client resté en 'legacy' — et ESAHAF n'en est pas un :
+  // sa couleur de manifeste vient de --color-encre (cf. vite.config.js).
+  // Conservé car `branding` est un contrat de profil partagé, pas pour son effet.
   branding: Object.freeze({
     appName: 'ESAHAF',
     pwaName: 'ESAHAF',
     theme: 'orange',
+  }),
+
+  // ── Système de design : l'identité « registre », propre à ESAHAF ────────────
+  // Seul profil à la porter. TAOFIC n'ayant pas ce champ hérite de 'legacy' du
+  // pilote : son rendu ne bouge pas, et c'est la garantie mécanique — pas une
+  // discipline à tenir — qu'une refonte ESAHAF ne l'atteindra jamais.
+  design: Object.freeze({
+    system: 'registre',
   }),
 
   // ── Réseaux boutique : les 6 (superset complet, comme le pilote) ────────────

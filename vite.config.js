@@ -32,8 +32,28 @@ function resolveBuildBranding(clientId) {
 // marques explicitement mappées changent ; tout le reste (dont TAOFIC 'green') garde le
 // bleu historique #3b82f6 — comportement PWA inchangé pour les clients non mappés.
 const BRAND_THEME_COLOR = { orange: '#ea580c' }
-function resolveThemeColor(theme) {
+function resolveThemeColor(theme, designSystem) {
+  // Un client portant une identité dessinée impose sa couleur de chrome : sur
+  // Android, theme_color peint la barre d'état et la vignette du sélecteur
+  // d'applications. La laisser sur l'orange de marque alors que la barre de
+  // navigation est passée à l'encre donnerait un bandeau discordant AU-DESSUS
+  // de l'application — précisément sur l'appareil visé.
+  // #15202b est le jeton --color-encre de src/index.css, pas une valeur libre.
+  if (designSystem === 'registre') return '#15202b'
   return BRAND_THEME_COLOR[theme] ?? '#3b82f6'
+}
+
+// Système visuel du client ciblé — même axe de profil que le runtime
+// (src/constants/designSystem.js). Sert à ne précacher les polices que pour les
+// clients qui les utilisent : sans ça, un client resté en 'legacy' embarquerait
+// ~104 Ko de woff2 jamais affichés, dans une PWA destinée à des connexions
+// instables. Repli 'legacy' comme partout ailleurs.
+function resolveDesignSystem(clientId) {
+  try {
+    return resolveProfile(clientId).design?.system ?? 'legacy'
+  } catch {
+    return pilotProfile.design?.system ?? 'legacy'
+  }
 }
 
 // Injecte la marque dans index.html (titre + meta) au build/dev. On utilise des
@@ -57,7 +77,8 @@ export default defineConfig(({ mode }) => {
   const branding = resolveBuildBranding(env.VITE_CLIENT_ID)
   const appFullName = branding.pwaName
   const description = `Application CRM pour la gestion des clients et transactions de ${branding.appName}`
-  const themeColor = resolveThemeColor(branding.theme)
+  const designSystem = resolveDesignSystem(env.VITE_CLIENT_ID)
+  const themeColor = resolveThemeColor(branding.theme, designSystem)
 
   return {
   build: {
@@ -93,8 +114,40 @@ export default defineConfig(({ mode }) => {
 
       // Configuration du Service Worker (Workbox)
       workbox: {
-        // Fichiers à mettre en cache automatiquement
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
+        // Fichiers à mettre en cache automatiquement.
+        // Les polices ne sont précachées QUE pour les clients qui les affichent.
+        //  • identité « registre » (ESAHAF) : `woff2` est indispensable — ce profil
+        //    active `offlineMode`, et une police non précachée retomberait sur la
+        //    police système au premier usage hors connexion, changeant l'aspect de
+        //    l'application au moment précis où l'agent est sur le terrain.
+        //  • 'legacy' (TAOFIC) : elles ne sont jamais affichées, les précacher
+        //    imposerait ~104 Ko inutiles à une PWA sur connexion instable.
+        globPatterns: designSystem === 'registre'
+          ? ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff2}']
+          : ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
+        // Deux mécanismes alimentent le manifeste, et il faut les traiter TOUS LES
+        // DEUX — constaté au build, en trois essais :
+        //   • `globPatterns` ratisse dist/ ; `globIgnores` (ici) en retire.
+        //   • `includeAssets` (plus bas) AJOUTE par-dessus et ignore `globIgnores` :
+        //     un fichier listé ici mais couvert par un motif d'includeAssets
+        //     revient quand même dans le précache.
+        // Chaque motif est écrit SANS `**/` : ces fichiers sont copiés à la racine
+        // de dist/, et `**/` exige au moins un segment de répertoire.
+        //
+        // ⚠ `bg-noir.png` N'EST PLUS exclu : le client a demandé le rétablissement
+        // du bandeau photo (2026-09-04). Il DOIT être précaché — le profil salawu
+        // active `offlineMode`, et un fond servi en ligne mais absent du cache
+        // donnerait un écran différent selon la connexion. Cette ligne suit donc
+        // `THEMES.registre.backgroundImage` : si l'image redevient nulle un jour,
+        // remettre 'bg-noir.png' ici.
+        //
+        // Restent écartés sous l'identité « registre » :
+        //   • akayis-bg.* et akayis-logo.* (~175 Ko) — zéro référence dans le
+        //     code (vérifié), et marque d'un autre client. Les fichiers restent
+        //     dans public/ : on ne les précache plus, on ne les supprime pas.
+        globIgnores: designSystem === 'registre'
+          ? ['akayis-bg.png', 'akayis-bg.svg', 'akayis-logo.png', 'akayis-logo.svg']
+          : [],
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^\/(?!__).*/],
 
@@ -162,7 +215,22 @@ export default defineConfig(({ mode }) => {
         ]
       },
       // Assets à inclure dans le cache
-      includeAssets: ['*.ico', '*.svg', '*.png', '*.jpg', 'akayis-*.png', 'akayis-*.svg'],
+      // `includeAssets` ajoute EXPLICITEMENT ces fichiers au manifeste de précache
+      // et court-circuite `globIgnores` — c'est par ce `*.png` que bg-noir.png
+      // revenait malgré son exclusion (constaté, pas supposé).
+      //
+      // Sous l'identité « registre », on ÉNUMÈRE au lieu de ratisser : `*.svg`
+      // réintroduisait akayis-bg.svg et akayis-logo.svg — la marque d'un autre
+      // client — malgré leur présence dans `globIgnores`. L'énumération reste le
+      // bon mécanisme ; seule sa liste change.
+      //
+      // `bg-noir.png` y figure de nouveau : le bandeau photo est rétabli à la
+      // demande du client, et il doit être disponible hors connexion.
+      // Restent écartés : akayis-bg.png et akayis-logo.png (~175 Ko, zéro
+      // référence dans le code, marque d'un autre client).
+      includeAssets: designSystem === 'registre'
+        ? ['favicon.ico', 'brand-mark.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'bg-noir.png']
+        : ['*.ico', '*.svg', '*.png', '*.jpg'],
 
       // Manifest PWA - métadonnées de l'application
       manifest: {

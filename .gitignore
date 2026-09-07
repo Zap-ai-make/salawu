@@ -61,3 +61,10 @@ firestore.rules.prod-*.txt
 
 # Backups locaux de remise à zéro (données financières client, ne jamais committer)
 backups/
+
+# Sorties de la boucle QA Playwright — regenerables, et volumineuses.
+# Les CAPTURES (docs/audit/qa-captures) sont versionnees, elles : ce sont les
+# preuves visuelles du bilan, et leur interet est justement de pouvoir etre
+# comparees d'un lot a l'autre.
+docs/audit/qa-report
+docs/audit/qa-artefacts

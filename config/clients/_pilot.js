@@ -38,6 +38,28 @@ export const pilotProfile = Object.freeze({
     theme: 'green',
   }),
 
+  // ── Système de design ──────────────────────────────────────────────────────
+  // Axe de variation VISUELLE. Il existe parce que la refonte d'un client ne doit
+  // pas pouvoir atteindre les autres : le code est partagé, l'apparence ne l'est pas.
+  //
+  //   'legacy'   — l'apparence historique : le thème 'dark' de
+  //                src/constants/themes.js, la police système, la palette
+  //                Tailwind par défaut. C'est le DÉFAUT, donc tout profil qui ne
+  //                déclare rien reste identique à ce qu'il a toujours été
+  //                (TAOFIC compris). Un seul thème, et non plus huit : les six
+  //                autres étaient inatteignables et ont été retirés au Lot 4.
+  //   'registre' — l'identité dessinée pour ESAHAF : jetons @theme de src/index.css
+  //                (encre / papier / registre / filet / entrée / sortie),
+  //                typographie IBM Plex auto-hébergée, montants tabulaires.
+  //                Ancrée dans le cahier de caisse que ces boutiques tenaient
+  //                avant ce CRM. Cf. docs/audit/BILAN-DESIGN.md §4.
+  //
+  // Ajouter une identité = ajouter une valeur ici et la brancher dans
+  // src/constants/designSystem.js — jamais une lecture de client ailleurs.
+  design: Object.freeze({
+    system: 'legacy',
+  }),
+
   // ── Réseaux boutique (cartes réseau + choix dans le formulaire) ────────────
   // Superset = les 5 réseaux. Un client mono-réseau met p. ex. ['Orange'].
   networks: Object.freeze({

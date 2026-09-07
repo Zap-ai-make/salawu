@@ -1,5 +1,122 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Polices — IBM Plex, auto-hébergées (Lot 0)
+   ───────────────────────────────────────────────────────────────────────────
+   Auto-hébergées et NON servies par un CDN : le profil salawu active
+   `offlineMode`, et une police distante casserait l'application hors connexion.
+   Sous-ensemble latin uniquement (SIL OFL 1.1, cf. public/fonts/LICENSE.txt).
+
+   Sans = corps et interface. Mono = montants, codes, numéros : leurs chiffres
+   sont tabulaires et leurs 0/O et 1/l non confondables, ce qui compte quand un
+   caissier relit un montant à voix haute.
+
+   `font-display: swap` : le texte reste lisible pendant le chargement — sur un
+   Android d'entrée de gamme, un texte invisible pendant 3 s est un défaut d'usage.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ibm-plex-sans-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/ibm-plex-sans-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/ibm-plex-sans-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Jetons de design — « le registre » (Lot 0)
+   ───────────────────────────────────────────────────────────────────────────
+   SOURCE UNIQUE DE VÉRITÉ pour la couleur et la typographie. Tout ce qui suit
+   est dérivé du sujet, pas de la palette par défaut du framework :
+
+   Ces boutiques tenaient un cahier de caisse à deux colonnes avant ce CRM, et
+   l'application le remplace. D'où l'encre, le papier, la réglure — et le fait
+   que la couleur ne serve qu'à dire le sens d'un mouvement d'argent.
+
+   Les quatre fichiers de constantes historiques (constants/themes.js,
+   constants/dashboardTheme.js, constants/workspaceTheme.js,
+   constants/authStyles.js) dérivent désormais de ces jetons quand le profil
+   déclare design.system = 'registre', et conservent leurs valeurs d'origine
+   sinon. Le cinquième, styles/themes.css, était du code mort (13 sélecteurs,
+   zéro usage) et a été supprimé.
+
+   ⚠ Ne PAS ajouter de couleur ailleurs qu'ici : c'est la dispersion qui avait
+   produit cinq sources concurrentes.
+
+   ⚠ Les couleurs OPÉRATEUR ne sont volontairement pas ici : elles vivent dans
+   src/constants/networkConfig.js et y restent. Les dupliquer recréerait
+   exactement la double source de vérité qu'on est en train de supprimer.
+
+   Chaque contraste ci-dessous est mesuré sur --papier, pas estimé.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Encre et papier ───────────────────────────────────────────────────── */
+  /* --encre reprend le noir bleuté du logo ESAHAF (#15202B) : la marque donne
+     sa teinte à l'interface par son noir. Ses couleurs, elles, restent dans le
+     logo — l'orange de marque (#EA6A21) et le bleu (#2E86E0) sont à distance 29
+     et 17 des couleurs Orange et Moov : en accent d'interface, ils se liraient
+     comme un réseau. La marque n'entre pas en concurrence avec l'information. */
+  --color-encre: #15202b;        /* 16,49:1 — texte principal, wordmark        */
+  --color-encre-doux: #5b6470;   /*  6,00:1 — texte secondaire (remplace       */
+                                 /*           text-gray-400, qui est à 2,54:1) */
+  --color-papier: #ffffff;       /* fond — blanc franc, pas crème : le contexte
+                                    d'usage est le plein soleil, on veut la
+                                    luminance maximale                          */
+
+  /* ── Filets du registre ────────────────────────────────────────────────── */
+  /* Deux jetons et non un seul, et c'est une contrainte, pas un raffinement :
+     --registre est à 1,21:1, il ne peut porter AUCUNE limite de composant —
+     WCAG 1.4.11 exige 3:1. Les champs de saisie et les anneaux de focus
+     prennent donc --filet. Se tromper de jeton = formulaire non conforme.     */
+  --color-registre: #ece9e3;     /*  1,21:1 — zébrage, séparateurs, réglure.
+                                    JAMAIS un aplat de fond : c'est ce qui
+                                    évite de retomber sur le fond crème        */
+  --color-filet: #8f897d;        /*  3,48:1 — bordures d'entrée, focus         */
+
+  /* ── Sens du mouvement d'argent ────────────────────────────────────────── */
+  /* Le code entrée/sortie existe déjà dans le produit (commit 55812b4) ;
+     ces jetons le formalisent. La couleur ne porte JAMAIS l'information seule :
+     elle double toujours un signe (+/−), un mot et une icône.                 */
+  --color-entree: #0f6e3f;       /*  6,32:1 — entrée d'argent                  */
+  --color-sortie: #b3400f;       /*  5,74:1 — sortie d'argent                  */
+
+  /* ── Typographie ───────────────────────────────────────────────────────── */
+  /* Nommées --font-plex / --font-plex-mono et NON --font-sans : redéfinir
+     --font-sans changerait immédiatement le rendu de toute l'application, ce
+     qui n'appartient pas à ce lot. Le Lot 2 fera la bascule en une ligne.     */
+  --font-plex: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-plex-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+}
+
 /* Reset basique pour assurer la compatibilité */
 * {
   box-sizing: border-box;
@@ -9,6 +126,159 @@ body {
   margin: 0;
   padding: 0;
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Identité « registre » — portée au seul client qui la déclare
+   ───────────────────────────────────────────────────────────────────────────
+   La classe .design-registre est posée sur <html> par src/main.jsx, à partir de
+   `profil.design.system`. Tout ce qui appartient à l'identité ESAHAF vit SOUS
+   cette classe. Conséquence : un client resté en 'legacy' (TAOFIC) ne peut pas
+   en hériter, même si cette feuille lui est servie. La dissociation est
+   mécanique, pas une discipline à tenir.
+
+   La typographie bascule ici, et nulle part ailleurs : redéfinir --font-sans
+   globalement aurait changé le rendu de TOUS les clients d'un coup.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre body {
+  font-family: var(--font-plex);
+  /* Ligatures et alternatives contextuelles coupées : sur des noms propres et
+     des références de transaction, elles font plus de mal que de bien. */
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+  color: var(--color-encre);
+}
+
+/* Les montants sont le contenu de cette application : ils passent en chasse fixe
+   tabulaire dès que l'identité est active, sans avoir à toucher chaque tableau.
+   `.montant` reste disponible pour un ciblage explicite. */
+.design-registre .tabular,
+.design-registre [data-montant] {
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE FILET DU REGISTRE — signature de l'identité (DESIGN.md §2)
+   ───────────────────────────────────────────────────────────────────────────
+   Un trait continu longeant la colonne des montants, d'une ligne à l'autre.
+   C'est le geste que les caissiers traçaient à la règle dans leur cahier de
+   caisse pour séparer les libellés des sommes : la colonne de droite se lit
+   seule, sans relire le reste de la ligne.
+
+   Trois décisions, et aucune n'est décorative :
+
+   • ALIGNEMENT À DROITE. Avec des chiffres tabulaires, les unités, dizaines et
+     centaines tombent sur la même verticale d'une ligne à l'autre. C'est ce qui
+     permet de repérer un ordre de grandeur sans lire les chiffres — 12 300 et
+     1 250 000 ne se confondent plus au premier coup d'œil.
+
+   • LE TRAIT EST EN --filet (3,48:1) ET NON EN --registre (1,21:1), contrairement
+     à ce que la direction annonçait. Motif : le contexte d'usage est le plein
+     soleil sur un écran d'entrée de gamme, et un trait à 1,21:1 y est
+     simplement invisible. Une signature qu'on ne voit pas n'en est pas une.
+
+   • LA DÉCLARATION EST DANS LE COMPOSANT, L'APPARENCE ICI. Une cellule dit
+     `data-montant` — un fait — et c'est l'identité qui décide du rendu. TAOFIC,
+     qui ne porte pas la classe de portée, n'est pas concerné : aucun `if` dans
+     le JSX, donc aucune occasion d'en oublier un.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-montant] {
+  text-align: right;
+  /* `border-left` et non un pseudo-élément : sur une cellule de tableau, la
+     bordure se répète mécaniquement à chaque ligne et forme le trait continu.
+     Un ::before aurait exigé un positionnement relatif sur chaque <td>. */
+  border-left: 2px solid var(--color-filet);
+  /* Respirer autour du trait : sans cela le montant colle au filet et le trait
+     se lit comme une bordure de cellule ordinaire au lieu d'une réglure. */
+  padding-left: 1rem;
+}
+
+/* L'en-tête de la colonne porte le même trait, sinon la réglure démarre à la
+   première ligne de données et paraît tronquée en haut. */
+.design-registre th[data-montant] {
+  text-align: right;
+}
+
+/* ── Écran de connexion ─────────────────────────────────────────────────────
+   Le rendu 'legacy' sert un dégradé `from-blue-50 to-indigo-100` — le tic que
+   DESIGN.md §1 désigne nommément, sur le premier écran que voit l'utilisateur.
+   L'identité lui substitue le papier du registre : un fond blanc franc (on
+   travaille en plein soleil, on veut la luminance maximale) et une seule réglure
+   horizontale, celle du haut de page d'un cahier de caisse. Rien d'autre.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.design-registre .auth-page {
+  background-image: none;
+  background-color: var(--color-papier);
+}
+
+.design-registre .auth-card {
+  /* Le filet remplace l'ombre portée : `shadow-2xl` est une ombre molle et
+     omniprésente (§1), et elle ne dit rien. Un trait dit « ceci est une feuille ». */
+  border: 1px solid var(--color-registre);
+  border-top: 3px solid var(--color-encre);
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+/* Les deux ronds blancs flous de la colonne latérale sont des « blobs » décoratifs
+   (§1). Ils ne portent aucune information : l'identité les retire. */
+.design-registre .auth-decor {
+  display: none;
+}
+
+/* Le panneau latéral servait un dégradé `from-[#f08a00] to-[#2d5ea5]` codé en dur
+   dans AuthSidebar.jsx. Deux raisons de le remplacer, et la seconde prime :
+
+   1. C'est un dégradé décoratif sur le premier écran de l'application (§1).
+   2. Surtout, ces deux teintes sont à distance 29 de l'orange d'Orange et 17 du
+      bleu de Moov (mesuré, cf. bilan §4). Le premier écran que voit un caissier
+      était donc peint dans deux couleurs qui se lisent comme des identités
+      d'opérateur — exactement la collision que l'identité s'interdit ailleurs.
+
+   L'encre reprend la barre de navigation : la couleur reste réservée à l'argent
+   et aux réseaux. Le texte blanc du panneau conserve un contraste de 16,49:1. */
+.design-registre .auth-sidebar {
+  background-image: none;
+  background-color: var(--color-encre);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Montants — chiffres tabulaires
+   ───────────────────────────────────────────────────────────────────────────
+   Cette application est financière : ses montants s'alignent en colonne et se
+   comparent d'un coup d'œil. Sans chasse fixe, les chiffres dansent d'une ligne
+   à l'autre et la colonne devient illisible. Utilitaire posé ici, appliqué aux
+   tableaux et aux cartes au Lot 2.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.montant {
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mouvement réduit — respect de la préférence système
+   ───────────────────────────────────────────────────────────────────────────
+   Une animation ne doit jamais gêner l'usage. On neutralise sans casser : les
+   durées passent à ~0 plutôt que d'être supprimées, pour que les transitions
+   qui déclenchent un `transitionend` continuent de le faire.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Impression d'un reçu : ne sortir que le ticket (#receipt-print-root),
