@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { STORE_NAV_ITEMS, IS_MULTI_NETWORK } from '../constants/navigation'
 import { useTheme } from '../context/ThemeContext.jsx'
@@ -62,21 +62,56 @@ function NavBar() {
   const location = useLocation()
   const { themeClasses } = useTheme()
   const { currentUser, userProfile } = useAuth()
+  const navRef = useRef(null)
   const [isSticky, setIsSticky] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [incomingCollabCount, setIncomingCollabCount] = useState(0)
   const [settlementsToConfirmCount, setSettlementsToConfirmCount] = useState(0)
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY
-      const headerHeight = 200 // hauteur approximative du header
+  // Seuil de bascule en barre fixe : la hauteur RÉELLE du bandeau qui précède,
+  // mesurée, et non une constante.
+  //
+  // Elle valait 200 en dur — la hauteur du bandeau photo historique. L'identité
+  // « registre » rend un bandeau de marque compact (~53 px) : entre 53 px et
+  // 200 px de défilement, la navigation sortait de l'écran sans être remplacée,
+  // puis réapparaissait d'un coup. Un menu qui disparaît pendant 150 px de
+  // défilement est un défaut d'usage, pas un détail d'animation.
+  //
+  // `offsetTop` du <nav> EST la hauteur de ce qui le précède : la mesure vaut
+  // pour les deux identités, et rend ~200 pour un client resté en 'legacy' —
+  // donc comportement inchangé pour TAOFIC, sans avoir à le coder.
+  const seuilStickyRef = useRef(0)
 
-      setIsSticky(scrollTop >= headerHeight)
+  useEffect(() => {
+    const nav = navRef.current
+
+    // Ne mesurer que lorsque le <nav> est dans le flux : une fois `fixed`, son
+    // offsetTop vaut 0 et le seuil s'effondrerait à chaque défilement.
+    const mesurer = () => {
+      if (nav && !nav.classList.contains('fixed')) {
+        seuilStickyRef.current = nav.offsetTop
+      }
+    }
+    mesurer()
+
+    const handleScroll = () => {
+      setIsSticky(window.scrollY >= seuilStickyRef.current)
+    }
+
+    // Le bandeau peut changer de hauteur au redimensionnement (titre qui passe
+    // sur deux lignes en étroit) : on remesure, sinon le seuil se fige sur la
+    // première orientation de l'appareil.
+    const handleResize = () => {
+      mesurer()
+      handleScroll()
     }
 
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   useEffect(() => {
@@ -117,6 +152,7 @@ function NavBar() {
 
   return (
     <nav
+      ref={navRef}
       className={`${themeClasses.navbar} shadow-md w-full transition-all duration-300 z-50 ${
         isSticky
           ? 'fixed top-0 left-0 right-0 shadow-lg'
@@ -127,7 +163,16 @@ function NavBar() {
         {/* Navigation desktop */}
         <div className="hidden md:flex justify-between items-center">
           <div className="flex-1"></div>
-          <div className="flex justify-center space-x-1">
+          {/* `flex-wrap` : a 768 px pile — la largeur du point de rupture `md` — les
+              huit entrees ne tiennent pas sur une ligne et faisaient deborder la PAGE
+              de 68 px (constat Q5). On les laisse passer a la ligne plutot que de
+              masquer des entrees ou d'imposer un defilement lateral.
+              `gap-1` et non `space-x-1` : `space-x` n'espace que l'axe horizontal,
+              donc les deux rangees se toucheraient.
+              La hauteur de la barre change avec le repli — c'est sans consequence :
+              le seuil de bascule en position fixe est MESURE depuis TC-159, il suit
+              tout seul. Une constante en dur aurait ete a rectifier ici. */}
+          <div className="flex flex-wrap justify-center gap-1">
             {STORE_NAV_ITEMS.map((item) => {
               const badge = badgeFor(item.path, counts)
               return (
@@ -154,7 +199,10 @@ function NavBar() {
         {/* Navigation mobile */}
         <div className="md:hidden flex items-center gap-2 py-2">
           <select
-            className={`min-w-0 flex-1 py-3 px-4 ${themeClasses.navbar} text-white border border-white/20 rounded focus:outline-none`}
+            // Anneau blanc et non coloré : ce select vit DANS la navbar, dont la
+            // couleur suit le thème. Un anneau teinté disparaîtrait sur le thème
+            // de même teinte ; le blanc tranche sur les sept.
+            className={`min-w-0 flex-1 py-3 px-4 ${themeClasses.navbar} text-white border border-white/20 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 focus-visible:ring-offset-black/20`}
             onChange={(e) => navigate(e.target.value)}
             value={location.pathname}
             aria-label="Navigation principale"

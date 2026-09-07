@@ -87,7 +87,7 @@ function AdminClients() {
             aria-label="Rechercher dans la page courante"
             title="Recherche dans la page courante (25 résultats max)"
           />
-          <p className="mt-0.5 text-[11px] text-gray-400">Recherche dans la page courante</p>
+          <p className="mt-0.5 text-[11px] text-encre-doux">Recherche dans la page courante</p>
         </div>
         <select
           value={storeId}

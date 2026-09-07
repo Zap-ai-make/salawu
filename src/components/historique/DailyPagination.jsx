@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { parsefrenchDate, localDayKey } from '../../utils/helpers.js'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 function DailyPagination({ transactions, onDateSelect }) {
   const [currentPage, setCurrentPage] = useState(0)
@@ -61,7 +62,13 @@ function DailyPagination({ transactions, onDateSelect }) {
 
   if (sortedDays.length === 0) {
     return (
-      <div className="text-center text-gray-500 py-4">
+      // `text-gray-600` (7,56:1 sur blanc, 6,24:1 sur --registre) et non
+      // `text-gray-500` : ce dernier tient sur du blanc (4,83:1) mais tombe a
+      // 3,99:1 sur le fond `--registre` de l'identite, sous le seuil AA de 4,5.
+      // Cas typique d'une couleur de texte restee correcte tant que le fond n'a
+      // pas bouge — le balayage du Lot 1 ne visait que gray-400 et gray-300, qui
+      // echouaient DEJA sur blanc. Trouve par la boucle QA navigateur.
+      <div className="text-center text-gray-600 py-4">
         Aucune transaction disponible
       </div>
     )
@@ -69,15 +76,19 @@ function DailyPagination({ transactions, onDateSelect }) {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center mb-4">
+      {/* `flex-wrap` + `gap-3` : le titre et les deux boutons tenaient sur une
+          rangee unique et depassaient de 40 px a 375 px. `justify-between` seul
+          ne replie pas — il repartit l'espace, y compris negatif. */}
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h3 className="text-lg font-semibold text-gray-700">Navigation par jour</h3>
         <div className="flex gap-2">
           <button
             onClick={handlePreviousPage}
             disabled={currentPage === 0}
-            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded text-sm transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded text-sm transition-colors"
           >
-            ← Précédent
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            Précédent
           </button>
           <span className="px-3 py-1 text-sm text-gray-600">
             Page {currentPage + 1} sur {totalPages}
@@ -85,9 +96,10 @@ function DailyPagination({ transactions, onDateSelect }) {
           <button
             onClick={handleNextPage}
             disabled={currentPage >= totalPages - 1}
-            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded text-sm transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded text-sm transition-colors"
           >
-            Suivant →
+            Suivant
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </div>

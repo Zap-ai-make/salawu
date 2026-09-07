@@ -165,7 +165,7 @@ function AdminHistory() {
                 <option key={o.id} value={o.id}>{o.name}</option>
               ))}
             </select>
-            <p className="mt-1 text-[11px] text-gray-400">
+            <p className="mt-1 text-[11px] text-encre-doux">
               {storeFilter
                 ? 'Historique complet de la boutique sélectionnée'
                 : 'Toutes boutiques — chargées par pages de 25'}
@@ -180,7 +180,7 @@ function AdminHistory() {
               className="w-full max-w-md rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
               aria-label="Rechercher"
             />
-            <p className="mt-1 text-[11px] text-gray-400">
+            <p className="mt-1 text-[11px] text-encre-doux">
               {storeFilter
                 ? 'Affine la liste de la boutique'
                 : 'Recherche dans la page courante (25 résultats max)'}
@@ -209,7 +209,7 @@ function AdminHistory() {
             <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
               <table className="min-w-full divide-y divide-gray-100 text-sm">
                 <thead className="bg-green-50/70">
-                  <tr className="text-left text-xs font-semibold uppercase tracking-widest text-gray-400">
+                  <tr className="text-left text-xs font-semibold uppercase tracking-widest text-encre-doux">
                     <th className="px-5 py-3.5">Boutique</th>
                     <th className="px-5 py-3.5">Type</th>
                     <th className="px-5 py-3.5">Montant</th>
@@ -236,7 +236,7 @@ function AdminHistory() {
                       </td>
                       <td className="px-5 py-3.5 text-gray-700 whitespace-nowrap text-xs">{clientName(r)}</td>
                       <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap font-mono text-xs">{agentCode(r)}</td>
-                      <td className="px-5 py-3.5 text-gray-400 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                      <td className="px-5 py-3.5 text-encre-doux text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -245,7 +245,7 @@ function AdminHistory() {
             )}
 
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-400">{visibleRecords.length} résultat{visibleRecords.length > 1 ? 's' : ''} affiché{visibleRecords.length > 1 ? 's' : ''}</p>
+              <p className="text-xs text-encre-doux">{visibleRecords.length} résultat{visibleRecords.length > 1 ? 's' : ''} affiché{visibleRecords.length > 1 ? 's' : ''}</p>
               {hasMore && (
                 <button
                   type="button"

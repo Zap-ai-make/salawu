@@ -46,7 +46,14 @@ function LastClientsTable({ clients = [] }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Focalisable : sur telephone ce tableau defile lateralement, et sans
+          cela ses colonnes de droite sont hors d'atteinte au clavier (Q3). */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="Derniers clients, defilement horizontal"
+        className="overflow-x-auto"
+      >
         <table className="w-full border-collapse min-w-max">
           <thead>
             <tr className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100">

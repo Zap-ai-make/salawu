@@ -13,7 +13,11 @@ const VISIBLE_NETWORK_CARDS = [...activeProfile.networks.enabled, 'Liquidite']
 // strictement inchangée (comportement historique préservé « au bit près »).
 const IS_MULTI_NETWORK = activeProfile.networks.enabled.length > 1
 
-function useVisibleCards() {
+// Exporte : le rail de soldes collant (StickyBalanceRail) doit afficher
+// EXACTEMENT les mêmes réseaux que le rideau. Dupliquer la dérivation ailleurs
+// recréerait une seconde source de vérité sur « quels réseaux ce client voit »,
+// et les deux divergeraient au premier client ajouté.
+export function useVisibleCards() {
   const { networkData } = useSimpleNetworkData()
   return VISIBLE_NETWORK_CARDS
     .map(network => [network, networkData[network]])
@@ -92,7 +96,15 @@ function ExpandableCardsDrawer() {
         }`}
       >
         <div className="px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 justify-center">
+          {/* Meme exigence que le tableau des clients : cette bande de cartes defile
+              horizontalement sur telephone, et sans focalisation les derniers reseaux
+              sont inatteignables au clavier (constat Q3, releve a 375 px). */}
+          <div
+            tabIndex={0}
+            role="region"
+            aria-label="Soldes par reseau, defilement horizontal"
+            className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 justify-center"
+          >
             {visibleCards.map(([network, data]) => (
               <NetworkBalanceCard
                 key={network}

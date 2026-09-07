@@ -61,7 +61,15 @@ function HistoriqueTable({ transactions = [] }) {
         <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           {transaction.code || '-'}
         </td>
-        <td className="border border-gray-200 px-4 py-3 text-base font-medium whitespace-nowrap">
+        {/* `data-montant` declare un FAIT — cette cellule porte une somme — et non
+            une apparence. Le filet du registre, l'alignement a droite et les
+            chiffres tabulaires sont appliques par src/index.css sous la portee
+            `.design-registre`. TAOFIC ne porte pas cette portee et reste
+            inchange, sans qu'aucune condition n'apparaisse ici. */}
+        <td
+          data-montant
+          className="border border-gray-200 px-4 py-3 text-base font-medium whitespace-nowrap"
+        >
           {transaction.montant ? `${(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA` :
            transaction.amount ? `${transaction.amount} FCFA` : '-'}
         </td>
@@ -98,6 +106,9 @@ function HistoriqueTable({ transactions = [] }) {
       <div
         ref={containerRef}
         onScroll={isVirtualized ? onScroll : undefined}
+        tabIndex={0}
+        role="region"
+        aria-label="Historique des transactions, defilement horizontal"
         className={`overflow-x-auto ${isVirtualized ? 'overflow-y-auto max-h-[70vh]' : ''} border ${borderClass} rounded`}
       >
         <table className="w-full border-collapse min-w-max">
@@ -106,6 +117,10 @@ function HistoriqueTable({ transactions = [] }) {
               {headers.map((header, index) => (
                 <th
                   key={index}
+                  // Meme declaration que la cellule : sans elle, la reglure
+                  // demarrerait a la premiere ligne de donnees et paraitrait
+                  // tronquee sous l'en-tete.
+                  data-montant={header === 'Montant' ? '' : undefined}
                   className={`border ${borderClass} px-4 py-3 text-left text-base font-medium ${themeClasses.text} whitespace-nowrap`}
                 >
                   {header}

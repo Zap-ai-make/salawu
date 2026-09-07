@@ -11,6 +11,7 @@ import { themedTableClasses } from '../ui/themedTable.js'
 import logger from '../../utils/logger.js'
 import { toUserMessage } from '../../utils/friendlyError.js'
 import { generateIdempotencyKey } from '../../services/settlementService.js'
+import { ArrowLeft } from 'lucide-react'
 
 const TransactionTable = memo(function TransactionTable() {
   const { pendingTransactions, getActionButtons, getTransactionStyles, addPaymentTranche, addRefundTranche, startEditTransaction, loading } = useTransactions()
@@ -241,7 +242,7 @@ const TransactionTable = memo(function TransactionTable() {
                 <th className={tbl.headerCell}>
                   Réseau
                 </th>
-                <th className={tbl.headerCell}>
+                <th data-montant className={tbl.headerCell}>
                   Montant
                 </th>
                 <th className={tbl.headerCellCenter}>
@@ -287,7 +288,10 @@ const TransactionTable = memo(function TransactionTable() {
                       <td className={`${tbl.cell} ${styles.textColor}`}>
                         {transaction.reseau} ({transaction.code})
                       </td>
-                      <td className={`${tbl.cell} font-medium ${styles.textColor}`}>
+                      {/* Voir HistoriqueTable : `data-montant` est une declaration,
+                          pas un style. Le filet et l'alignement viennent de
+                          src/index.css, sous la seule portee `.design-registre`. */}
+                      <td data-montant className={`${tbl.cell} font-medium ${styles.textColor}`}>
                         <span>{(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA</span>
                         {transaction.settlementStatus === 'partial' && transaction.remainingAmount != null && (
                           <div className="text-xs font-normal text-orange-600 mt-0.5">
@@ -311,7 +315,7 @@ const TransactionTable = memo(function TransactionTable() {
                             <button
                               onClick={(e) => handleActionClick(transaction.id, 'encaisser', e)}
                               disabled={isProcessingTransaction}
-                              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
+                              className="bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
                             >
                               Encaisser
                             </button>
@@ -321,7 +325,7 @@ const TransactionTable = memo(function TransactionTable() {
                             <button
                               onClick={(e) => handleActionClick(transaction.id, 'payerPar', e)}
                               disabled={isProcessingTransaction}
-                              className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
+                              className="bg-green-700 hover:bg-green-800 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
                             >
                               Payer par
                             </button>
@@ -331,7 +335,7 @@ const TransactionTable = memo(function TransactionTable() {
                             <button
                               onClick={(e) => handleActionClick(transaction.id, 'rembourser', e)}
                               disabled={isProcessingTransaction}
-                              className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
+                              className="bg-green-700 hover:bg-green-800 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
                             >
                               Rembourser
                             </button>
@@ -401,14 +405,14 @@ const TransactionTable = memo(function TransactionTable() {
                         className="text-gray-500 hover:text-gray-800 text-base leading-none"
                         aria-label="Retour"
                       >
-                        ←
+                        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                       </button>
                       <p className="text-sm font-medium text-gray-700">{selectedMethod}</p>
                     </div>
                     {t && (
                       <div className="px-4 pt-2 pb-1 border-b border-gray-100 space-y-0.5">
                         <p className="text-xs text-gray-700 font-medium truncate">{getClientName(t.client)}</p>
-                        <p className="text-[11px] text-gray-400">{t.type}{t.reseau ? ` · ${t.reseau}` : ''}</p>
+                        <p className="text-[11px] text-encre-doux">{t.type}{t.reseau ? ` · ${t.reseau}` : ''}</p>
                         {/* Résumé financier */}
                         <div className="pt-1 space-y-0.5">
                           <p className="text-[11px] text-gray-500">
@@ -489,7 +493,7 @@ const TransactionTable = memo(function TransactionTable() {
                 <button
                   onClick={handleConfirmPayment}
                   disabled={processingKeys.some(k => k.startsWith(`${activeDropdown}-`))}
-                  className="mt-3 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 rounded transition-colors"
+                  className="mt-3 w-full bg-blue-700 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 rounded transition-colors"
                 >
                   {processingKeys.some(k => k.startsWith(`${activeDropdown}-`)) ? 'Traitement...' : 'Confirmer'}
                 </button>
