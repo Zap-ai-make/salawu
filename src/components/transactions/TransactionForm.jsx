@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useId } from 'react'
 import ClientSearch from './ClientSearch'
 import ClientInfoDisplay from './ClientInfoDisplay'
 import { useToast } from '../../hooks/useToast'
@@ -9,6 +9,8 @@ import { NETWORK_OPTIONS, TRANSACTION_TYPES, NETWORK_CODES, MESSAGES } from '../
 import { validateTransactionForm, validateTransactionAction } from '../../utils/helpers.js'
 import logger from '../../utils/logger.js'
 import { parseFcfaAmount } from '../../utils/fcfaAmount.js'
+import useDialog from '../../hooks/useDialog'
+import { Lightbulb } from 'lucide-react'
 
 const normalizeLabel = (value) => String(value || '')
   .trim()
@@ -17,6 +19,11 @@ const normalizeLabel = (value) => String(value || '')
   .toLowerCase()
 
 function TransactionForm({ clients }) {
+  // `useId` : ces formulaires peuvent apparaitre plusieurs fois sur une page.
+  // Des identifiants fixes rattacheraient toutes les etiquettes au PREMIER
+  // champ — invisible a l'oeil, faux pour un lecteur d'ecran.
+  const idChamps = useId()
+
   const { toasts, showToast, removeToast } = useToast()
   const { addTransaction, editingTransaction, clearEditTransaction, updateTransaction } = useTransactions()
   const { validateAmount, getStock, getLiquidite, getFormattedStock } = useSimpleNetworkData()
@@ -60,7 +67,7 @@ function TransactionForm({ clients }) {
           // Aucun réseau disponible pour ce client - fallback gracieux
           console.warn('Aucun réseau disponible pour le client:', selectedClient)
           showToast(
-            `⚠️ Attention: ${selectedClient.nom} ${selectedClient.prenom} n'a aucun code réseau configuré. Veuillez configurer au moins un réseau pour ce client.`,
+            `Attention : ${selectedClient.nom} ${selectedClient.prenom} n'a aucun code réseau configuré. Veuillez configurer au moins un réseau pour ce client.`,
             'warning'
           )
           // Garder le réseau par défaut pour permettre la saisie mais désactiver la validation
@@ -323,6 +330,11 @@ function TransactionForm({ clients }) {
     ? formValidation.actionStates.validateReason
     : ''
 
+  // Modale de confirmation rendue en ligne : hook appele inconditionnellement
+  // (regle des hooks), active par isOpen. Escape annule — un dialogue qui
+  // engage un mouvement d'argent doit pouvoir se refuser au clavier.
+  const confirmDialogRef = useDialog({ isOpen: Boolean(pendingConfirmation), onClose: cancelPendingSubmit })
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       {editingTransaction && (
@@ -354,10 +366,11 @@ function TransactionForm({ clients }) {
 
         {/* Montant */}
         <div>
-          <label className="block text-lg font-semibold text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-montant-fcfa`} className="block text-lg font-semibold text-gray-700 mb-1">
             Montant (FCFA) :
           </label>
           <input
+            id={`${idChamps}-montant-fcfa`}
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
@@ -416,10 +429,11 @@ function TransactionForm({ clients }) {
 
         {/* Réseau */}
         <div>
-          <label className="block text-lg font-semibold text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-r-seau`} className="block text-lg font-semibold text-gray-700 mb-1">
             Réseau :
           </label>
           <select
+            id={`${idChamps}-r-seau`}
             value={network}
             onChange={(e) => setNetwork(e.target.value)}
             className={`w-full px-3 py-2 border-2 rounded focus:outline-none bg-white transition-colors ${
@@ -437,7 +451,7 @@ function TransactionForm({ clients }) {
                   key={option}
                   value={option}
                   disabled={isDisabled}
-                  className={isDisabled ? 'text-gray-400' : ''}
+                  className={isDisabled ? 'text-encre-doux' : ''}
                 >
                   {option} {isDisabled ? "(ce client n'a pas ce réseau)" : ''}
                 </option>
@@ -454,15 +468,16 @@ function TransactionForm({ clients }) {
 
               {/* Suggestion de réseaux disponibles */}
               {getClientAvailableNetworks(selectedClient).length > 0 && (
-                <div className="text-sm text-blue-600">
-                  💡 Réseaux disponibles pour ce client : {getClientAvailableNetworks(selectedClient).join(', ')}
+                <div className="flex items-start gap-1.5 text-sm text-blue-600">
+                  <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Réseaux disponibles pour ce client : {getClientAvailableNetworks(selectedClient).join(', ')}</span>
                 </div>
               )}
 
               {/* Message d'aide si aucun réseau disponible */}
               {selectedClient && getClientAvailableNetworks(selectedClient).length === 0 && (
                 <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
-                  ⚠️ Ce client n'a aucun code réseau configuré.
+                  Ce client n'a aucun code réseau configuré.
                   <br />
                   Rendez-vous dans la section "Clients" pour ajouter au moins un code réseau à ce client.
                 </div>
@@ -521,7 +536,7 @@ function TransactionForm({ clients }) {
                 className={`px-6 py-2 rounded font-medium transition-colors ${
                   !formValidation.isFormValid || isSubmitting
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    : 'bg-blue-700 hover:bg-blue-800 text-white'
                 }`}
               >
                 {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
@@ -562,7 +577,7 @@ function TransactionForm({ clients }) {
                 className={`px-6 py-2 rounded font-medium transition-colors ${
                   !formValidation.actionStates.canValidate || !formValidation.isFormValid || isSubmitting
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-green-700 hover:bg-green-800 text-white'
                 }`}
                 title={
                   isSubmitting
@@ -583,8 +598,14 @@ function TransactionForm({ clients }) {
 
       {pendingConfirmation && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-900">Confirmer la transaction</h3>
+          <div
+            ref={confirmDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tx-confirm-title"
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
+          >
+            <h3 id="tx-confirm-title" className="text-xl font-bold text-gray-900">Confirmer la transaction</h3>
             <div className="mt-4 space-y-2 text-sm text-gray-700">
               <p><span className="font-semibold">Client:</span> {pendingConfirmation.details.clientName}</p>
               <p><span className="font-semibold">Nature:</span> {pendingConfirmation.details.type}</p>
@@ -605,7 +626,7 @@ function TransactionForm({ clients }) {
                 type="button"
                 onClick={confirmPendingSubmit}
                 disabled={isSubmitting}
-                className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-gray-400"
+                className="rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-gray-400"
               >
                 {isSubmitting ? 'Sauvegarde...' : 'Confirmer'}
               </button>

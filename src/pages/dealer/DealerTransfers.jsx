@@ -14,6 +14,7 @@ import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/SkeletonList'
 import Toast from '../../components/Toast'
 import { formatDateTime as formatDate } from '../../utils/formatters'
+import useDialog from '../../hooks/useDialog'
 
 function DealerTransfers() {
   const { currentUser } = useAuth()
@@ -25,6 +26,12 @@ function DealerTransfers() {
   const [actingId, setActingId]   = useState(null)
   const [rejectFor, setRejectFor] = useState(null) // transfer id
   const [reason, setReason]       = useState('')
+  // Modale de rejet rendue en ligne : le hook est appele inconditionnellement
+  // (regle des hooks) et s'active via isOpen.
+  const rejectDialogRef = useDialog({
+    isOpen: Boolean(rejectFor),
+    onClose: () => { setRejectFor(null); setReason('') },
+  })
   // Incrémenté par « Réessayer » pour relancer l'abonnement sans recharger la page.
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -100,14 +107,14 @@ function DealerTransfers() {
                   <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{t.storeName || 'Boutique inconnue'}</td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{STORE_TRANSFER_TYPE_LABELS[t.transferType] ?? t.transferType}</td>
                   <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{formatCurrency(t.amount)}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
+                  <td className="px-4 py-3 text-encre-doux text-xs whitespace-nowrap">{formatDate(t.createdAt)}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => handleConfirm(t.id)}
                         disabled={actingId === t.id}
-                        className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                        className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                         data-testid={`confirm-${t.id}`}
                       >
                         {actingId === t.id ? '…' : 'Confirmer'}
@@ -132,9 +139,17 @@ function DealerTransfers() {
 
       {/* Modale de rejet */}
       {rejectFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-gray-900">Rejeter le retour</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          {/* role/aria-modal sur le PANNEAU : c'est lui le dialogue, et lui que
+              le piege de focus borne — pas le voile. */}
+          <div
+            ref={rejectDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="transfer-reject-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+          >
+            <h2 id="transfer-reject-title" className="text-lg font-semibold text-gray-900">Rejeter le retour</h2>
             <p className="mt-1 text-sm text-gray-500">Indiquez un motif (3–500 caractères). Le solde de la boutique sera restauré.</p>
             <textarea
               value={reason}

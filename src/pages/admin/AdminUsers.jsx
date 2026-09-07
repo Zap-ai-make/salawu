@@ -115,7 +115,7 @@ function AdminUsers() {
             aria-label="Rechercher un utilisateur dans la page courante"
             title="Recherche dans la page courante (25 résultats max)"
           />
-          <p className="mt-0.5 text-[11px] text-gray-400">Recherche dans la page courante</p>
+          <p className="mt-0.5 text-[11px] text-encre-doux">Recherche dans la page courante</p>
         </div>
       </div>
 
@@ -156,7 +156,7 @@ function AdminUsers() {
                         label={u.active ? 'Actif' : 'Inactif'}
                       />
                     </td>
-                    <td className="px-4 py-3 text-gray-400 whitespace-nowrap text-xs">{formatDate(u.lastLogin)}</td>
+                    <td className="px-4 py-3 text-encre-doux whitespace-nowrap text-xs">{formatDate(u.lastLogin)}</td>
                   </tr>
                 ))}
               </tbody>

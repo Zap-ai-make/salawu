@@ -43,7 +43,7 @@ const TableRow = memo(({ client, index, onEdit, onAccessCode }) => {
               type="button"
               onClick={() => onAccessCode(client)}
               data-testid="btn-access-code"
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+              className="bg-green-700 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
             >
               Code d'accès
             </button>

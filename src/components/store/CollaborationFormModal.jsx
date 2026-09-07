@@ -3,6 +3,7 @@ import { ClientsContext } from '../../context/ClientsContext.jsx'
 import { activeProfile } from '../../config/activeClientProfile.js'
 import { COLLAB_OPERATION_TYPE_LABELS } from '../../constants/dealerConstants'
 import { createStoreCollaboration, listStoreCollaborationProviders } from '../../services/collaborationService'
+import useDialog from '../../hooks/useDialog'
 
 const NETWORKS = [...activeProfile.networks.enabled]
 
@@ -32,11 +33,8 @@ function CollaborationFormModal({ onClose, onCreated }) {
 
   const successTimer = useRef(null)
 
-  useEffect(() => {
-    const onKeyDown = (e) => { if (e.key === 'Escape') onClose?.() }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  // Escape, piege de focus et restitution du focus : mutualises dans useDialog.
+  const dialogRef = useDialog({ onClose })
 
   // Le message de succès reste 800 ms avant la fermeture : annuler le minuteur au
   // démontage, sinon fermer entre-temps déclenche un setState hors du cycle de vie.
@@ -87,13 +85,14 @@ function CollaborationFormModal({ onClose, onCreated }) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="collab-form-title"
-    >
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="collab-form-title"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl"
+      >
         <h3 id="collab-form-title" className="text-base font-semibold text-gray-800">Nouvelle collaboration</h3>
         <p className="mb-4 text-xs text-gray-500">Faire servir un client par une boutique fournisseuse</p>
 
@@ -168,7 +167,7 @@ function CollaborationFormModal({ onClose, onCreated }) {
             <button type="button" onClick={() => onClose?.()}
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Annuler</button>
             <button type="submit" disabled={submitting}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
+              className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
               {submitting ? 'Envoi…' : 'Créer la collaboration'}
             </button>
           </div>

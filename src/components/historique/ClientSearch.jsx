@@ -42,7 +42,7 @@ function ClientSearch({ onSearch, onSearchChange }) {
       
       <button
         onClick={handleSearch}
-        className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-medium transition-colors"
+        className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded font-medium transition-colors"
       >
         Rechercher
       </button>

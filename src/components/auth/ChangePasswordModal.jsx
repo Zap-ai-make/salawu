@@ -4,8 +4,13 @@ import { useFormValidation } from '../../hooks/useFormValidation'
 import { AUTH_LABELS, AUTH_PLACEHOLDERS, AUTH_SUCCESS, AUTH_CONFIG } from '../../constants/authMessages'
 import { AUTH_STYLES, THEME_VARIANTS } from '../../constants/authStyles'
 import { createTimeoutWithCleanup } from '../../utils/authHelpers'
+import { useDialog } from '../../hooks/useDialog'
 
 function ChangePasswordModal({ isOpen, onClose }) {
+  // Même omission que ForgotPasswordModal : les deux modales de
+  // src/components/auth/ étaient absentes du relevé du Lot 1 (constat C4).
+  const dialogRef = useDialog({ isOpen, onClose })
+
   const [message, setMessage] = useState('')
   const [timeoutHandler, setTimeoutHandler] = useState(null)
 
@@ -89,9 +94,15 @@ function ChangePasswordModal({ isOpen, onClose }) {
 
   return (
     <div className={AUTH_STYLES.modal.overlay}>
-      <div className={AUTH_STYLES.modal.container}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="change-password-titre"
+        className={AUTH_STYLES.modal.container}
+      >
         <div className={AUTH_STYLES.modal.header}>
-          <h3 className={AUTH_STYLES.modal.title}>
+          <h3 id="change-password-titre" className={AUTH_STYLES.modal.title}>
             {AUTH_LABELS.CHANGE_PASSWORD}
           </h3>
           <button

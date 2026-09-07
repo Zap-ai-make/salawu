@@ -29,26 +29,36 @@ function NetworkCard({ network, stockAmount, liquiditeAmount }) {
   }
 
   const stockStatus = getStockStatus()
+  // Chaque palier porte un LIBELLÉ, pas seulement une teinte. Auparavant seul
+  // `critical` en avait un : `low` et `warning` ne se distinguaient de `normal`
+  // que par la couleur de l'anneau et de la pastille — invisible pour un
+  // daltonien, et illisible en plein soleil, qui est le contexte d'usage réel.
+  // Un stock bas est une information d'exploitation : elle doit se lire.
+  // (DESIGN.md §5 ; anti-pattern « color-only status indicators ».)
   const statusConfig = {
     critical: {
       ring: 'ring-1 ring-red-300/60',
       dot: 'bg-red-400',
-      warning: true
+      label: 'Épuisé',
+      badge: 'bg-red-100 text-red-700',
     },
     low: {
       ring: 'ring-1 ring-orange-300/60',
       dot: 'bg-orange-400',
-      warning: false
+      label: 'Bas',
+      badge: 'bg-orange-100 text-orange-800',
     },
     warning: {
       ring: 'ring-1 ring-yellow-300/60',
       dot: 'bg-yellow-400',
-      warning: false
+      label: 'À surveiller',
+      badge: 'bg-yellow-100 text-yellow-800',
     },
     normal: {
       ring: 'ring-1 ring-white/10',
       dot: 'bg-emerald-400',
-      warning: false
+      label: null,
+      badge: '',
     }
   }
 
@@ -121,9 +131,9 @@ function NetworkCard({ network, stockAmount, liquiditeAmount }) {
             <h3 className="truncate text-sm font-bold text-slate-900">
               {config.name}
             </h3>
-            {status.warning && (
-              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
-                Bas
+            {status.label && (
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${status.badge}`}>
+                {status.label}
               </span>
             )}
           </div>
@@ -142,7 +152,7 @@ function NetworkCard({ network, stockAmount, liquiditeAmount }) {
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
               onBlur={handleInputBlur}
-              className={`w-28 border-b-2 bg-transparent text-right text-xl font-black text-slate-950 outline-none ${
+              className={`tabular w-28 border-b-2 bg-transparent text-right text-xl font-black text-slate-950 outline-none ${
                 isValidAmount(editValue) ? 'border-slate-400' : 'border-red-500'
               }`}
               autoFocus
@@ -154,14 +164,14 @@ function NetworkCard({ network, stockAmount, liquiditeAmount }) {
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={saveAmount}
-              className="rounded bg-blue-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-blue-700"
+              className="rounded bg-blue-700 px-2.5 py-1 text-xs font-bold text-white hover:bg-blue-700"
             >
               OK
             </button>
           </div>
         ) : (
           <div className="flex items-center justify-end gap-3">
-            <p className="text-2xl font-black leading-none text-slate-950">
+            <p className="tabular text-2xl font-black leading-none text-slate-950">
               {amount}
             </p>
             {canEdit && (

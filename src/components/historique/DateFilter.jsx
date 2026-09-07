@@ -1,6 +1,12 @@
-import { useState } from 'react'
+import { useState, useId } from 'react'
 
 function DateFilter({ onDateChange, onResetToToday }) {
+  // `useId` et non une chaine fixe : ces composants peuvent etre rendus
+  // plusieurs fois sur une meme page, et des identifiants dupliques
+  // rattacheraient toutes les etiquettes au PREMIER champ — un defaut
+  // invisible a l'oeil et bien reel au lecteur d'ecran.
+  const idBase = useId()
+
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
@@ -35,10 +41,11 @@ function DateFilter({ onDateChange, onResetToToday }) {
     <div className="space-y-4">
       {/* Date Du */}
       <div>
-        <label className="block text-lg font-semibold text-gray-700 mb-1">
+        <label htmlFor={`${idBase}-du`} className="block text-lg font-semibold text-gray-700 mb-1">
           Du :
         </label>
         <input
+          id={`${idBase}-du`}
           type="date"
           value={dateFrom}
           onChange={handleDateFromChange}
@@ -48,10 +55,11 @@ function DateFilter({ onDateChange, onResetToToday }) {
 
       {/* Date Au */}
       <div>
-        <label className="block text-lg font-semibold text-gray-700 mb-1">
+        <label htmlFor={`${idBase}-au`} className="block text-lg font-semibold text-gray-700 mb-1">
           Au :
         </label>
         <input
+          id={`${idBase}-au`}
           type="date"
           value={dateTo}
           onChange={handleDateToChange}
@@ -71,14 +79,14 @@ function DateFilter({ onDateChange, onResetToToday }) {
         <button
           onClick={handleFilter}
           disabled={!isValidDateRange() || (!dateFrom && !dateTo)}
-          className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-medium transition-colors"
+          className="bg-green-700 hover:bg-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-medium transition-colors"
         >
           Filtrer
         </button>
         
         <button
           onClick={handleResetToToday}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded font-medium transition-colors"
+          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded font-medium transition-colors"
         >
           Aujourd'hui
         </button>

@@ -8,6 +8,7 @@ import PageHeader from '../../components/ui/PageHeader'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/SkeletonList'
+import { Package, Banknote, AlertTriangle } from 'lucide-react'
 
 const SENS_STYLES = {
   '+': 'text-green-700 bg-green-50',
@@ -16,6 +17,7 @@ const SENS_STYLES = {
 }
 
 function BalanceCard({ label, value, icon, tint, dotColor }) {
+  const Icon = icon
   return (
     <div className={`flex-1 min-w-40 rounded-xl border border-gray-100 bg-gradient-to-br ${tint} to-white px-4 py-3`}>
       <div className="flex items-center justify-between gap-2">
@@ -23,9 +25,9 @@ function BalanceCard({ label, value, icon, tint, dotColor }) {
           {dotColor && <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden="true" />}
           {label}
         </span>
-        <span className="text-lg" aria-hidden="true">{icon}</span>
+        <Icon className="h-4 w-4 shrink-0 text-encre-doux" aria-hidden="true" />
       </div>
-      <p className="mt-0.5 text-xl font-bold text-gray-900">{formatCurrency(value)}</p>
+      <p className="tabular mt-0.5 text-xl font-bold text-gray-900">{formatCurrency(value)}</p>
     </div>
   )
 }
@@ -92,8 +94,9 @@ function AdminDealerInventory() {
       />
 
       {multipleDealers && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          ⚠️ Plusieurs dealers actifs détectés — l'inventaire affiché ne concerne qu'un seul d'entre eux. Vérifiez la configuration des comptes dealer.
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>Plusieurs dealers actifs détectés — l'inventaire affiché ne concerne qu'un seul d'entre eux. Vérifiez la configuration des comptes dealer.</span>
         </div>
       )}
 
@@ -106,17 +109,17 @@ function AdminDealerInventory() {
               key={net}
               label={NETWORK_CONFIG[net]?.name ?? net}
               value={byNetwork[net]?.stock ?? 0}
-              icon="📦"
+              icon={Package}
               tint="from-blue-50"
               dotColor={NETWORK_CONFIG[net]?.color}
             />
           ))}
-          <BalanceCard label="Liquidité" value={totalLiquidite} icon="💵" tint="from-teal-50" />
+          <BalanceCard label="Liquidité" value={totalLiquidite} icon={Banknote} tint="from-teal-50" />
         </div>
       ) : (
         <div className="mb-5 flex flex-col gap-3 sm:flex-row">
-          <BalanceCard label="Stock (Orange)" value={balance.stock} icon="📦" tint="from-blue-50" />
-          <BalanceCard label="Liquidité (Orange)" value={balance.liquidite} icon="💵" tint="from-teal-50" />
+          <BalanceCard label="Stock (Orange)" value={balance.stock} icon={Package} tint="from-blue-50" />
+          <BalanceCard label="Liquidité (Orange)" value={balance.liquidite} icon={Banknote} tint="from-teal-50" />
         </div>
       )}
 
@@ -144,7 +147,7 @@ function AdminDealerInventory() {
               <tbody className="divide-y divide-gray-50">
                 {movements.map(m => (
                   <tr key={m.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(m.createdAt)}</td>
+                    <td className="px-4 py-3 text-encre-doux text-xs whitespace-nowrap">{formatDate(m.createdAt)}</td>
                     <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{m.type}</td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{m.resourceLabel}</td>
                     <td className="px-4 py-3 whitespace-nowrap">

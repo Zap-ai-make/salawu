@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { Printer } from 'lucide-react'
 import TransactionReceipt from './TransactionReceipt.jsx'
+import useDialog from '../../hooks/useDialog'
 
 /**
  * ReceiptModal — aperçu plein écran du reçu + impression navigateur.
@@ -11,13 +12,9 @@ import TransactionReceipt from './TransactionReceipt.jsx'
  * ne sort que le ticket (#receipt-print-root), pas la barre d'actions ni le chrome.
  */
 function ReceiptModal({ transaction, onClose }) {
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  // Escape, piege de focus et restitution : mutualises dans useDialog. Le ref va
+  // sur le PANNEAU (le ticket + ses actions), pas sur le voile.
+  const dialogRef = useDialog({ isOpen: Boolean(transaction), onClose })
 
   if (!transaction) return null
 
@@ -31,6 +28,7 @@ function ReceiptModal({ transaction, onClose }) {
       onMouseDown={() => onClose?.()}
     >
       <div
+        ref={dialogRef}
         className="my-8 w-full max-w-sm"
         onMouseDown={(e) => e.stopPropagation()}
       >
@@ -43,9 +41,10 @@ function ReceiptModal({ transaction, onClose }) {
           <button
             type="button"
             onClick={() => window.print()}
-            className="flex-1 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
           >
-            🖨 Imprimer / Enregistrer en PDF
+            <Printer className="h-4 w-4" aria-hidden="true" />
+            Imprimer / Enregistrer en PDF
           </button>
           <button
             type="button"

@@ -180,7 +180,7 @@ function DealerHistory() {
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                       {r.soldeApres != null ? formatCurrency(r.soldeApres) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                    <td className="px-4 py-3 text-encre-doux text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

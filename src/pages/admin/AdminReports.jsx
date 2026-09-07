@@ -3,6 +3,7 @@ import PageHeader from '../../components/ui/PageHeader'
 import ErrorState from '../../components/ui/ErrorState'
 import { getRequestsForReport } from '../../services/adminService'
 import { formatDateShort as fmtDate } from '../../utils/formatters'
+import { ArrowRight } from 'lucide-react'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -103,7 +104,7 @@ function StatCard({ label, value, sub }) {
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
       <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
+      {sub && <p className="mt-0.5 text-xs text-encre-doux">{sub}</p>}
     </div>
   )
 }
@@ -158,7 +159,7 @@ function AdminReports() {
               aria-label="Date de début"
               data-testid="report-date-from"
             />
-            <span className="text-sm text-gray-400">→</span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-encre-doux" aria-hidden="true" />
             <input
               type="date"
               value={dateTo}
@@ -182,7 +183,7 @@ function AdminReports() {
               <button
                 type="button"
                 onClick={() => exportCsv(requests)}
-                className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                 data-testid="report-export-csv"
               >
                 Exporter CSV
@@ -206,7 +207,7 @@ function AdminReports() {
       {!loading && !error && requests.length === 0 && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-12 text-center">
           <p className="text-base font-medium text-gray-600">Aucune demande sur cette période</p>
-          <p className="mt-1 text-sm text-gray-400">Modifiez les dates ou actualisez.</p>
+          <p className="mt-1 text-sm text-encre-doux">Modifiez les dates ou actualisez.</p>
         </div>
       )}
 

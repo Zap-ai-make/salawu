@@ -12,14 +12,14 @@ function ChartTooltip({ active, payload, labelFormatter, valueFormatter, extraIn
       <p className="text-white font-semibold">
         {labelFormatter ? labelFormatter(data) : data.name}
       </p>
-      <p className={`${CHART_TEXT_COLORS.primary} text-gray-300`}>
+      <p className={`${CHART_TEXT_COLORS.primary} text-encre-doux`}>
         <span className="text-blue-400">
           {valueFormatter ? valueFormatter(data.value) : data.value}
         </span>
         {extraInfo && ` ${extraInfo}`}
       </p>
       {data.percentage && (
-        <p className={`${CHART_TEXT_COLORS.secondary} text-gray-400 text-sm`}>
+        <p className={`${CHART_TEXT_COLORS.secondary} text-encre-doux text-sm`}>
           {data.percentage}% du total
         </p>
       )}

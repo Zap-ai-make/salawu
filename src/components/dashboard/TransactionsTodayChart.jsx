@@ -68,10 +68,10 @@ function TransactionsTodayChart() {
       return (
         <div className="bg-gray-900 border border-gray-600 rounded-lg p-3 shadow-lg">
           <p className="text-white font-semibold">{item.name}</p>
-          <p className="text-gray-300">
+          <p className="text-encre-doux">
             <span className="text-blue-400">{item.value}</span> transaction{item.value > 1 ? 's' : ''}
           </p>
-          <p className="text-gray-400 text-sm">
+          <p className="text-encre-doux text-sm">
             {percentage}% du total
           </p>
         </div>

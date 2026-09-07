@@ -229,7 +229,7 @@ function NewDealerRequest() {
   const canReview = amountRaw.trim() !== '' && (isPartner ? !!selectedPartnerId : (selectedStoreId && requestType))
   const tabClass = (active) =>
     `flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
-      active ? 'bg-green-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+      active ? 'bg-green-700 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
     }`
 
   return (

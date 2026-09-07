@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { useToast } from '../hooks/useToast'
 import { getStorageKey } from '../config/clientIsolation'
 import { NETWORK_OPTIONS } from '../utils/constants'
@@ -48,6 +48,11 @@ const hasFormDraft = (data) => {
 }
 
 function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' }) {
+  // `useId` : ces formulaires peuvent apparaitre plusieurs fois sur une page.
+  // Des identifiants fixes rattacheraient toutes les etiquettes au PREMIER
+  // champ — invisible a l'oeil, faux pour un lecteur d'ecran.
+  const idChamps = useId()
+
   const { toasts, showToast, removeToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState(() => initialData ? EMPTY_CLIENT_FORM : readClientFormDraft())
@@ -158,10 +163,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-nom`} className="block text-sm font-medium text-gray-700 mb-1">
             Nom
           </label>
           <input
+            id={`${idChamps}-nom`}
             type="text"
             name="nom"
             value={formData.nom}
@@ -172,10 +178,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-pr-nom`} className="block text-sm font-medium text-gray-700 mb-1">
             Prénom
           </label>
           <input
+            id={`${idChamps}-pr-nom`}
             type="text"
             name="prenom"
             value={formData.prenom}
@@ -186,10 +193,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-num-ro-d-identit`} className="block text-sm font-medium text-gray-700 mb-1">
             Numéro d'identité
           </label>
           <input
+            id={`${idChamps}-num-ro-d-identit`}
             type="text"
             name="numeroIdentite"
             value={formData.numeroIdentite}
@@ -199,10 +207,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-num-ro-personnel`} className="block text-sm font-medium text-gray-700 mb-1">
             Numéro personnel
           </label>
           <input
+            id={`${idChamps}-num-ro-personnel`}
             type="text"
             name="numeroPersonnel"
             value={formData.numeroPersonnel}
@@ -226,10 +235,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
                   </legend>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      <label htmlFor={`${idChamps}-num-ro-agent`} className="block text-xs font-medium text-gray-600 mb-1">
                         Numéro agent
                       </label>
                       <input
+            id={`${idChamps}-num-ro-agent`}
                         type="text"
                         inputMode="numeric"
                         name={`numerosAgent.${key}`}
@@ -239,10 +249,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      <label htmlFor={`${idChamps}-code-agent`} className="block text-xs font-medium text-gray-600 mb-1">
                         Code agent
                       </label>
                       <input
+            id={`${idChamps}-code-agent`}
                         type="text"
                         inputMode="numeric"
                         name={key}
@@ -259,10 +270,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-localit`} className="block text-sm font-medium text-gray-700 mb-1">
             Localité
           </label>
           <input
+            id={`${idChamps}-localit`}
             type="text"
             name="localite"
             value={formData.localite}
@@ -272,10 +284,11 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${idChamps}-nom-de-l-agent-commercia`} className="block text-sm font-medium text-gray-700 mb-1">
             Nom de l'agent commercial
           </label>
           <input
+            id={`${idChamps}-nom-de-l-agent-commercia`}
             type="text"
             name="agentCommercial"
             value={formData.agentCommercial}
@@ -287,7 +300,7 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 px-6 rounded mt-6"
+          className="bg-green-700 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 px-6 rounded mt-6"
         >
           {isSubmitting ? 'Enregistrement...' : initialData ? 'Modifier' : 'Enregistrer'}
         </button>

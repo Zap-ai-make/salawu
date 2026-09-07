@@ -5,6 +5,7 @@ import PageHeader from '../../components/ui/PageHeader'
 import ErrorState from '../../components/ui/ErrorState'
 import { listStoreClosures } from '../../services/closureService'
 import { formatDateShort as fmtDate } from '../../utils/formatters'
+import useDialog from '../../hooks/useDialog'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -31,6 +32,7 @@ const STATUS_LABELS = {
 // ──────────────────────────────────────────────────────────────────────────────
 
 function RejectModal({ closureId, onSuccess, onClose }) {
+  const dialogRef = useDialog({ onClose })
   const [reason, setReason]         = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [err, setErr]               = useState(null)
@@ -52,9 +54,17 @@ function RejectModal({ closureId, onSuccess, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl p-6 mx-4">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Rejeter la clôture</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      {/* role/aria-modal portés par le PANNEAU et non par le voile : c'est le
+          panneau qui est le dialogue, et c'est lui que le piège de focus borne. */}
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="closure-reject-title"
+        className="w-full max-w-md rounded-2xl bg-white shadow-xl p-6 mx-4"
+      >
+        <h2 id="closure-reject-title" className="text-base font-semibold text-gray-900 mb-4">Rejeter la clôture</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Motif de rejet</label>
@@ -68,7 +78,7 @@ function RejectModal({ closureId, onSuccess, onClose }) {
               autoFocus
               data-testid="reject-reason-input"
             />
-            <p className="text-xs text-gray-400 mt-0.5">{reason.length}/500</p>
+            <p className="text-xs text-encre-doux mt-0.5">{reason.length}/500</p>
           </div>
           {err && <p className="text-sm text-red-600">{err}</p>}
           <div className="flex justify-end gap-3">
@@ -196,7 +206,7 @@ function StoreAdminClosures() {
       {!loading && !error && closures.length === 0 && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-12 text-center">
           <p className="text-base font-medium text-gray-600">Aucune clôture en attente</p>
-          <p className="mt-1 text-sm text-gray-400">Le Dealer n'a pas encore soumis de clôture pour votre boutique.</p>
+          <p className="mt-1 text-sm text-encre-doux">Le Dealer n'a pas encore soumis de clôture pour votre boutique.</p>
         </div>
       )}
 
@@ -219,19 +229,19 @@ function StoreAdminClosures() {
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-sm mb-3">
                   <div>
-                    <p className="text-xs text-gray-400">Stock déclaré</p>
+                    <p className="text-xs text-encre-doux">Stock déclaré</p>
                     <p className="font-medium text-gray-800">{fmtAmount(c.declaredStockBalance)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Stock enregistré</p>
+                    <p className="text-xs text-encre-doux">Stock enregistré</p>
                     <p className="font-medium text-gray-800">{fmtAmount(c.recordedStockBalance)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Liquidité déclarée</p>
+                    <p className="text-xs text-encre-doux">Liquidité déclarée</p>
                     <p className="font-medium text-gray-800">{fmtAmount(c.declaredLiquidityBalance)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Liquidité enregistrée</p>
+                    <p className="text-xs text-encre-doux">Liquidité enregistrée</p>
                     <p className="font-medium text-gray-800">{fmtAmount(c.recordedLiquidityBalance)}</p>
                   </div>
                 </div>
@@ -239,13 +249,13 @@ function StoreAdminClosures() {
                 {(c.stockDifference !== 0 || c.liquidityDifference !== 0) && (
                   <div className="flex flex-wrap gap-4 text-sm border-t border-gray-100 pt-3 mb-3">
                     <div>
-                      <span className="text-xs text-gray-400">Écart stock : </span>
+                      <span className="text-xs text-encre-doux">Écart stock : </span>
                       <span className={`font-semibold ${diffClass(c.stockDifference)}`}>
                         {c.stockDifference > 0 ? '+' : ''}{fmtAmount(c.stockDifference)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs text-gray-400">Écart liquidité : </span>
+                      <span className="text-xs text-encre-doux">Écart liquidité : </span>
                       <span className={`font-semibold ${diffClass(c.liquidityDifference)}`}>
                         {c.liquidityDifference > 0 ? '+' : ''}{fmtAmount(c.liquidityDifference)}
                       </span>
@@ -266,7 +276,7 @@ function StoreAdminClosures() {
                       type="button"
                       onClick={() => handleConfirm(c.id)}
                       disabled={isActing}
-                      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                      className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                       data-testid={`confirm-closure-${c.id}`}
                     >
                       {isActing ? 'Traitement…' : 'Confirmer'}

@@ -143,7 +143,7 @@ function TransactionReceipt({ transaction = {} }) {
           <Line label="Opérateur" value={operator} />
         </div>
 
-        <div className="mt-4 text-center text-xs text-gray-400">
+        <div className="mt-4 text-center text-xs text-encre-doux">
           <div>Merci de votre confiance</div>
         </div>
       </div>

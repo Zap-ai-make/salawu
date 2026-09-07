@@ -14,6 +14,7 @@ import { SkeletonCards } from '../../components/ui/SkeletonList'
 import RejectionRemarkButton from '../../components/ui/RejectionRemarkButton'
 import { DEALER_REQUEST_STATUSES } from '../../constants/dealerConstants'
 import { CARD, TABLE_WRAP, TABLE_HEAD } from '../../constants/workspaceTheme'
+import { Store, ClipboardList, Inbox, BarChart3, ArrowRight } from 'lucide-react'
 
 const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmée', rejected: 'Rejetée' }
 const TYPE_LABELS   = { stock_add: 'Ajout stock', liquidity_add: 'Ajout liquidité' }
@@ -83,7 +84,7 @@ function DealerDashboard() {
     <div data-testid="dealer-home">
       <PageHeader
         title="Vue générale"
-        subtitle={`Bonjour ${userProfile?.name ?? ''} 👋`}
+        subtitle={`Bonjour ${userProfile?.name ?? ''}`.trim()}
         actions={
           <button
             type="button"
@@ -97,7 +98,7 @@ function DealerDashboard() {
 
       {/* KPI */}
       <section aria-labelledby="kpi-heading" className="mb-8">
-        <h2 id="kpi-heading" className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
+        <h2 id="kpi-heading" className="mb-4 text-sm font-semibold uppercase tracking-wider text-encre-doux">
           Indicateurs
         </h2>
         {kpiError ? (
@@ -106,22 +107,22 @@ function DealerDashboard() {
           <SkeletonCards count={4} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Boutiques partenaires" value={storeCount ?? '—'} color="green" icon="🏪" />
+            <StatCard label="Boutiques partenaires" value={storeCount ?? '—'} color="green" icon={Store} />
             <StatCard
               label="Demandes en attente"
               value={pendingCount}
               color={pendingCount > 0 ? 'amber' : 'green'}
-              icon="📋"
+              icon={ClipboardList}
               onClick={() => navigate('/dealer/requests')}
             />
             <StatCard
               label="Retours en attente"
               value={transfersCount}
               color={transfersCount > 0 ? 'amber' : 'green'}
-              icon="📥"
+              icon={Inbox}
               onClick={() => navigate('/dealer/transfers')}
             />
-            <StatCard label="Mes demandes récentes" value={recentReqs.length} color="teal" icon="📊" />
+            <StatCard label="Mes demandes récentes" value={recentReqs.length} color="teal" icon={BarChart3} />
           </div>
         )}
       </section>
@@ -129,15 +130,16 @@ function DealerDashboard() {
       {/* Demandes récentes */}
       <section aria-labelledby="recent-heading">
         <div className="flex items-center justify-between mb-4">
-          <h2 id="recent-heading" className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+          <h2 id="recent-heading" className="text-sm font-semibold uppercase tracking-wider text-encre-doux">
             Mes dernières demandes
           </h2>
           <button
             type="button"
             onClick={() => navigate('/dealer/requests')}
-            className="text-xs font-medium text-green-600 hover:text-green-800 focus:outline-none focus-visible:underline"
+            className="inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-800 focus:outline-none focus-visible:underline"
           >
-            Voir tout →
+            Voir tout
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
 
@@ -181,7 +183,7 @@ function DealerDashboard() {
                         testId={`remark-btn-${r.id}`}
                       />
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                    <td className="px-4 py-3 text-encre-doux text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

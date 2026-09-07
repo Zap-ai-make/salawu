@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react'
+import { AlertTriangle, Check } from 'lucide-react'
 import { generateAgentAccessCode } from '../../services/agentAccessService'
+import useDialog from '../../hooks/useDialog'
 
 /**
  * Fenêtre de génération du code d'accès mobile d'un agent.
@@ -12,6 +14,7 @@ import { generateAgentAccessCode } from '../../services/agentAccessService'
  * @param {{ clientId: string, clientName?: string, onClose: () => void }} props
  */
 function AgentAccessCodeModal({ clientId, clientName, onClose }) {
+  const dialogRef = useDialog({ onClose })
   const [busy, setBusy] = useState(false)
   const [code, setCode] = useState(null)
   const [error, setError] = useState(null)
@@ -39,8 +42,16 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()} data-testid="agent-access-modal">
-        <h3 className="mb-1 text-base font-semibold text-gray-800">Code d'accès mobile</h3>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="agent-access-title"
+        className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+        onClick={e => e.stopPropagation()}
+        data-testid="agent-access-modal"
+      >
+        <h3 id="agent-access-title" className="mb-1 text-base font-semibold text-gray-800">Code d'accès mobile</h3>
         <p className="mb-4 text-sm text-gray-500">
           {clientName ? `Agent : ${clientName}` : 'Générer le code d\'accès de cet agent.'}
         </p>
@@ -56,7 +67,7 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
             <div className="flex justify-end gap-2">
               <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm">Annuler</button>
               <button type="button" disabled={busy} onClick={generate} data-testid="btn-generate-access-code"
-                className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
+                className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
                 {busy ? 'Génération…' : 'Générer le code'}
               </button>
             </div>
@@ -67,20 +78,22 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
               <div className="text-xs text-gray-500 mb-1">Code d'accès (à communiquer à l'agent)</div>
               <div className="font-mono text-xl font-bold tracking-wider text-gray-900 break-all" data-testid="agent-access-code-value">{code}</div>
             </div>
-            <p className="mb-4 text-xs text-amber-700">
-              ⚠ Notez-le maintenant : il ne sera plus réaffiché. En cas de perte, régénérez un nouveau code.
+            <p className="mb-4 flex items-start gap-1.5 text-xs text-amber-700">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Notez-le maintenant : il ne sera plus réaffiché. En cas de perte, régénérez un nouveau code.</span>
             </p>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={copy} data-testid="btn-copy-access-code"
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50">
-                {copied ? 'Copié ✓' : 'Copier'}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50">
+                {copied && <Check className="h-4 w-4" aria-hidden="true" />}
+                {copied ? 'Copié' : 'Copier'}
               </button>
               <button type="button" disabled={busy} onClick={generate}
                 className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50">
                 {busy ? '…' : 'Régénérer'}
               </button>
               <button type="button" onClick={onClose}
-                className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Fermer</button>
+                className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">Fermer</button>
             </div>
           </>
         )}

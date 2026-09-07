@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react'
 
 function Toast({ message, type = 'info', duration = 4000, onClose }) {
   const [isVisible, setIsVisible] = useState(true)
@@ -25,38 +26,53 @@ function Toast({ message, type = 'info', duration = 4000, onClose }) {
     }
   }
 
+  // Icone ET libelle : le type d'un toast ne doit jamais reposer sur la seule
+  // couleur ni sur la seule forme (DESIGN.md §5). Le libelle est visuellement
+  // masque mais annonce par les lecteurs d'ecran, avant le message.
   const getIcon = () => {
     switch (type) {
-      case 'success':
-        return '✓'
-      case 'error':
-        return '✕'
-      case 'warning':
-        return '⚠'
-      default:
-        return 'ℹ'
+      case 'success': return CheckCircle2
+      case 'error':   return XCircle
+      case 'warning': return AlertTriangle
+      default:        return Info
     }
   }
 
+  const TYPE_LABELS = {
+    success: 'Succes',
+    error:   'Erreur',
+    warning: 'Avertissement',
+    info:    'Information',
+  }
+
+  const Icon = getIcon()
+
   return (
     <div
+      // Une erreur interrompt ; le reste s'annonce sans couper la lecture en cours.
+      role={type === 'error' || type === 'warning' ? 'alert' : 'status'}
       className={`fixed top-4 right-4 z-50 p-4 rounded-lg text-white shadow-lg border-l-4 transition-all duration-300 max-w-sm ${
         isVisible ? 'opacity-100 transform translate-x-0' : 'opacity-0 transform translate-x-full'
       } ${getTypeStyles()}`}
     >
       <div className="flex items-start gap-3">
-        <span className="text-xl">{getIcon()}</span>
+        <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
         <div className="flex-1">
-          <p className="text-sm font-medium">{message}</p>
+          <p className="text-sm font-medium">
+            <span className="sr-only">{TYPE_LABELS[type] ?? TYPE_LABELS.info} : </span>
+            {message}
+          </p>
         </div>
         <button
+          type="button"
           onClick={() => {
             setIsVisible(false)
             setTimeout(() => onClose(), 300)
           }}
-          className="text-white hover:text-gray-200 transition-colors"
+          className="shrink-0 rounded text-white transition-colors hover:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          aria-label="Fermer la notification"
         >
-          ✕
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </div>

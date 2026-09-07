@@ -1,7 +1,13 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useId } from 'react'
 import { ClientsContext } from '../../context/ClientsContext'
 
 function HistoriqueFilters({ onFiltersChange, activeFilters }) {
+  // `useId` et non une chaine fixe : ces composants peuvent etre rendus
+  // plusieurs fois sur une meme page, et des identifiants dupliques
+  // rattacheraient toutes les etiquettes au PREMIER champ — un defaut
+  // invisible a l'oeil et bien reel au lecteur d'ecran.
+  const idBase = useId()
+
   const { clients } = useContext(ClientsContext)
   const [startDate, setStartDate] = useState(activeFilters?.startDate || '')
   const [endDate, setEndDate] = useState(activeFilters?.endDate || '')
@@ -41,10 +47,11 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Filtre par date de début */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor={`${idBase}-debut`} className="block text-sm font-medium text-gray-700 mb-2">
             Date de début
           </label>
           <input
+            id={`${idBase}-debut`}
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
@@ -54,10 +61,11 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
 
         {/* Filtre par date de fin */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor={`${idBase}-fin`} className="block text-sm font-medium text-gray-700 mb-2">
             Date de fin
           </label>
           <input
+            id={`${idBase}-fin`}
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
@@ -67,10 +75,11 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
 
         {/* Filtre par client */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor={`${idBase}-client`} className="block text-sm font-medium text-gray-700 mb-2">
             Client
           </label>
           <select
+            id={`${idBase}-client`}
             value={selectedClient}
             onChange={(e) => setSelectedClient(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -88,7 +97,7 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
         <div className="flex flex-col justify-end space-y-2">
           <button
             onClick={handleFilterChange}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors text-sm"
+            className="bg-blue-700 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors text-sm"
           >
             Appliquer les filtres
           </button>

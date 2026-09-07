@@ -17,18 +17,27 @@ import {
   COLLAB_STATUS_LABELS,
 } from '../../constants/dealerConstants'
 import { formatDateTime } from '../../utils/formatters'
+import useDialog from '../../hooks/useDialog'
 
 const fmtAmount = (n) => (typeof n === 'number' ? n.toLocaleString('fr-FR') + ' FCFA' : '—')
 const clientName = (c) => `${c.clientNom ?? ''} ${c.clientPrenom ?? ''}`.trim() || 'Client inconnu'
 
 function RejectModal({ onSubmit, onClose }) {
+  const dialogRef = useDialog({ onClose })
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl" onClick={e => e.stopPropagation()}>
-        <h3 className="mb-3 text-base font-semibold text-gray-800">Rejeter la collaboration</h3>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="collab-reject-title"
+        className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 id="collab-reject-title" className="mb-3 text-base font-semibold text-gray-800">Rejeter la collaboration</h3>
         <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3}
           placeholder="Motif (min. 3 caractères)…" className="w-full rounded border border-gray-300 p-2 text-sm" aria-label="Motif de rejet" />
         {err && <p className="mt-2 text-xs text-red-600">{err}</p>}
@@ -99,7 +108,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
 
   const newButton = (
     <button type="button" onClick={() => setShowNew(true)}
-      className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
+      className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
       Nouvelle collaboration
     </button>
   )
@@ -172,7 +181,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
                       <td className={tbl.cell}>
                         <div className="flex justify-center gap-2">
                           <button type="button" disabled={actioning === c.id} onClick={() => handleConfirm(c.id)}
-                            className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
+                            className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
                           <button type="button" onClick={() => setRejectId(c.id)}
                             className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Rejeter</button>
                         </div>

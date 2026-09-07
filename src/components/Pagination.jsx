@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { PAGINATION } from '../constants'
 
 function Pagination({ 
@@ -12,6 +13,12 @@ function Pagination({
   hasNextPage, 
   hasPrevPage 
 }) {
+  // `useId` et non une chaine fixe : ces composants peuvent etre rendus
+  // plusieurs fois sur une meme page, et des identifiants dupliques
+  // rattacheraient toutes les etiquettes au PREMIER champ — un defaut
+  // invisible a l'oeil et bien reel au lecteur d'ecran.
+  const idTaillePage = useId()
+
   const getVisiblePages = () => {
     const delta = 2
     const range = []
@@ -50,8 +57,9 @@ function Pagination({
         </p>
         
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-700">Éléments par page:</label>
+          <label htmlFor={idTaillePage} className="text-sm text-gray-700">Éléments par page:</label>
           <select
+            id={idTaillePage}
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:border-green-500"
@@ -79,7 +87,7 @@ function Pagination({
             disabled={page === '...'}
             className={`px-3 py-1 text-sm border border-gray-300 rounded ${
               page === currentPage 
-                ? 'bg-green-500 text-white border-green-500' 
+                ? 'bg-green-700 text-white border-green-500' 
                 : page === '...' 
                   ? 'cursor-default' 
                   : 'hover:bg-gray-50'

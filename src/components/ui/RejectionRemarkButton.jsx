@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { Eye } from 'lucide-react'
+import useDialog from '../../hooks/useDialog'
 
 /**
  * Bouton « œil » affichant la remarque de rejet d'une boutique dans un modal.
@@ -13,15 +15,9 @@ import { useState, useEffect } from 'react'
  */
 function RejectionRemarkButton({ storeName, reason, testId }) {
   const [open, setOpen] = useState(false)
+  const dialogRef = useDialog({ isOpen: open, onClose: () => setOpen(false) })
 
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open])
-
-  if (!reason) return <span className="text-gray-300">—</span>
+  if (!reason) return <span className="text-encre-doux">—</span>
 
   return (
     <>
@@ -32,10 +28,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
         aria-label={`Voir la remarque de rejet de ${storeName}`}
         data-testid={testId}
       >
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+        <Eye className="h-4 w-4" aria-hidden="true" />
         Voir
       </button>
 
@@ -48,6 +41,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
           onClick={() => setOpen(false)}
         >
           <div
+            ref={dialogRef}
             className="w-full max-w-md rounded-xl bg-white shadow-xl"
             onClick={e => e.stopPropagation()}
           >
@@ -61,7 +55,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                className="rounded-md p-1 text-encre-doux hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                 aria-label="Fermer"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">

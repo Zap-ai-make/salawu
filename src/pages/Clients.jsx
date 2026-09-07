@@ -5,6 +5,7 @@ import ClientForm from '../components/ClientForm'
 import AgentAccessCodeModal from '../components/agents/AgentAccessCodeModal'
 import { activeProfile } from '../config/activeClientProfile'
 import { getClientName } from '../utils/helpers'
+import { ArrowLeft } from 'lucide-react'
 
 // App mobile agents activée pour ce client (profil) → affiche l'action « code d'accès ».
 const MOBILE_APP_ENABLED = activeProfile?.mobileApp?.enabled === true
@@ -53,9 +54,10 @@ function Clients() {
         <div className="mb-4">
           <button
             onClick={handleCancelEdit}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+            className="inline-flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
           >
-            ← Retour à la liste
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Retour à la liste
           </button>
         </div>
         <ClientForm

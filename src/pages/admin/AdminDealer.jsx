@@ -7,6 +7,8 @@ import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import StatusBadge from '../../components/ui/StatusBadge'
 import { SkeletonTable } from '../../components/ui/SkeletonList'
+import useDialog from '../../hooks/useDialog'
+import { X } from 'lucide-react'
 
 const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmée', rejected: 'Rejetée' }
 const TYPE_LABELS    = { stock_add: 'Ajout stock', liquidity_add: 'Ajout liquidité' }
@@ -18,9 +20,11 @@ const STATUS_OPTIONS = [
 ]
 
 function RequestDetail({ req, onClose }) {
+  const dialogRef = useDialog({ onClose })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="w-full max-w-lg rounded-2xl bg-white shadow-2xl p-6 overflow-y-auto max-h-[90vh]"
         onClick={e => e.stopPropagation()}
         role="dialog"
@@ -29,7 +33,9 @@ function RequestDetail({ req, onClose }) {
       >
         <div className="flex items-start justify-between mb-4">
           <h2 id="req-detail-title" className="text-lg font-bold text-gray-900">Détail de la demande</h2>
-          <button onClick={onClose} className="rounded p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500" aria-label="Fermer">✕</button>
+          <button onClick={onClose} className="rounded p-1 text-encre-doux hover:text-encre focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500" aria-label="Fermer">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
         </div>
 
         <dl className="divide-y divide-gray-100 text-sm">
@@ -149,7 +155,7 @@ function AdminDealer() {
           title="Recherche dans la page courante (25 résultats max)"
         />
       </div>
-      <p className="-mt-3 mb-4 text-[11px] text-gray-400">Recherche dans la page courante (25 demandes max)</p>
+      <p className="-mt-3 mb-4 text-[11px] text-encre-doux">Recherche dans la page courante (25 demandes max)</p>
 
       {loading && <SkeletonTable rows={6} cols={6} />}
       {error && <ErrorState message={error} onRetry={() => load(true)} />}
@@ -182,7 +188,7 @@ function AdminDealer() {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <StatusBadge status={r.status} label={STATUS_LABELS[r.status] ?? r.status} />
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
+                    <td className="px-4 py-3 text-encre-doux text-xs whitespace-nowrap">{formatDate(r.createdAt)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <button
                         type="button"

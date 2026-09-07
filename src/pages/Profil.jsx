@@ -45,13 +45,16 @@ function Profil() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* En-tête du profil */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        {/* Empile sous 640 px : avatar, identite et deux boutons sur une seule
+            rangee depassaient de 187 px a 375 px (constat Q6). `gap-4` remplace
+            `space-x-4`, qui n'espace pas les rangees une fois le repli actif. */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <div className={`w-16 h-16 ${themeClasses.accent} rounded-full flex items-center justify-center text-white text-2xl font-bold`}>
               {getAvatarInitial(displayName, displayEmail)}
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 break-words">
                 {displayName}
               </h1>
               <p className="text-gray-600">{displayEmail}</p>
@@ -64,7 +67,7 @@ function Profil() {
             </div>
           </div>
 
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setShowChangePassword(true)}
               className={AUTH_STYLES.button.primary}

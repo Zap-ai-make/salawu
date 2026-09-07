@@ -73,7 +73,7 @@ function AmountCell({ debt, tbl }) {
     <td className={`${tbl.cell} whitespace-nowrap`}>
       <span className="font-semibold text-gray-800">{fmt(remaining)}</span>
       {remaining !== original && (
-        <span className="ml-1 text-xs text-gray-400">/ {fmt(original)}</span>
+        <span className="ml-1 text-xs text-encre-doux">/ {fmt(original)}</span>
       )}
     </td>
   )
@@ -165,7 +165,7 @@ function DebtRow({ debt, credits, tbl }) {
       </td>
       <td className={tbl.cell}>
         {debt.status === 'settled' ? (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-encre-doux">—</span>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
             {compensable > 0 && (
@@ -188,7 +188,7 @@ function DebtRow({ debt, credits, tbl }) {
               })}
             </select>
             <button type="button" disabled={busy || available <= 0} onClick={rembourser}
-              className="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Rembourser</button>
+              className="rounded-lg bg-green-700 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Rembourser</button>
             {pending > 0 && <p className="w-full text-xs text-gray-500">Déjà en attente : {fmt(pending)}</p>}
             {msg && <p className="w-full text-xs text-green-700">{msg}</p>}
             {err && <p className="w-full text-xs text-red-600">{err}</p>}
@@ -240,7 +240,7 @@ function CreditRow({ debt, tbl }) {
       </td>
       <td className={tbl.cell}>
         {sorted.length === 0 ? (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-encre-doux">—</span>
         ) : (
           <div className="space-y-1">
             {sorted.map(s => {
@@ -251,7 +251,7 @@ function CreditRow({ debt, tbl }) {
                   {actionable && (
                     <span className="flex gap-1">
                       <button type="button" disabled={busy === s.id} onClick={() => act(() => confirmTranche(s), s.id)}
-                        className="rounded bg-green-600 px-2 py-0.5 text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
+                        className="rounded bg-green-700 px-2 py-0.5 text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
                       <button type="button" disabled={busy === s.id} onClick={() => act(() => rejectTranche(s), s.id)}
                         className="rounded border border-red-200 px-2 py-0.5 text-red-600 hover:bg-red-50 disabled:opacity-50">Rejeter</button>
                     </span>
@@ -355,7 +355,7 @@ function StoreInternalDebts() {
                   <p className="truncate text-sm font-medium text-gray-800">{p.name}</p>
                   <p className={`text-sm font-semibold ${tone}`}>{label}{net !== 0 ? ` ${fmt(Math.abs(net))}` : ''}</p>
                   {both && (
-                    <p className="text-xs text-gray-400">Compensable jusqu'à {fmt(Math.min(p.debt, p.credit))}</p>
+                    <p className="text-xs text-encre-doux">Compensable jusqu'à {fmt(Math.min(p.debt, p.credit))}</p>
                   )}
                 </div>
               )

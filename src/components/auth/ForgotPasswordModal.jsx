@@ -4,8 +4,16 @@ import { useFormValidation } from '../../hooks/useFormValidation'
 import { AUTH_LABELS, AUTH_PLACEHOLDERS, AUTH_SUCCESS, AUTH_CONFIG } from '../../constants/authMessages'
 import { AUTH_STYLES, THEME_VARIANTS } from '../../constants/authStyles'
 import { createTimeoutWithCleanup } from '../../utils/authHelpers'
+import { useDialog } from '../../hooks/useDialog'
 
 function ForgotPasswordModal({ isOpen, onClose }) {
+  // Escape, piège de focus et restitution du focus au déclencheur. Cette modale
+  // avait été OMISE de la remédiation du Lot 1 : mon relevé des surfaces de
+  // recouvrement n'avait pas inspecté src/components/auth/, et axe ne signale
+  // rien ici — Escape et le piège de focus sont des comportements, pas des
+  // attributs. C'est la boucle QA navigateur qui l'a trouvé.
+  const dialogRef = useDialog({ isOpen, onClose })
+
   const [message, setMessage] = useState('')
   const [timeoutHandler, setTimeoutHandler] = useState(null)
 
@@ -75,9 +83,15 @@ function ForgotPasswordModal({ isOpen, onClose }) {
 
   return (
     <div className={AUTH_STYLES.modal.overlay}>
-      <div className={AUTH_STYLES.modal.container}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="forgot-password-titre"
+        className={AUTH_STYLES.modal.container}
+      >
         <div className={AUTH_STYLES.modal.header}>
-          <h3 className={AUTH_STYLES.modal.title}>
+          <h3 id="forgot-password-titre" className={AUTH_STYLES.modal.title}>
             {AUTH_LABELS.FORGOT_PASSWORD}
           </h3>
           <button

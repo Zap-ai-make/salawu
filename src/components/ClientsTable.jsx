@@ -56,7 +56,7 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode
         </button>
         <button 
           onClick={() => handleExport(filteredClients)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition-colors"
+          className="bg-blue-700 hover:bg-blue-700 text-white px-6 py-2 rounded transition-colors"
         >
           Exporter (XLSM) {filteredClients.length > 0 && `(${filteredClients.length})`}
         </button>
@@ -72,6 +72,10 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode
           className="flex-1 min-w-64 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
         />
         <select
+          // Sans nom accessible, un lecteur d'ecran annonce « liste deroulante »
+          // sans dire de quoi. Il n'y a pas de <label> visible ici : le nom passe
+          // donc par aria-label (constat Q4 de la boucle QA navigateur).
+          aria-label="Filtrer par mois"
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
           className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
@@ -83,7 +87,17 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode
       </div>
 
       {/* Tableau */}
-      <div className={`overflow-x-auto border ${themeClasses.tableHeader.split(' ')[1]} rounded`}>
+      {/* `tabIndex={0}` : une zone qui defile horizontalement DOIT etre focalisable,
+          sinon ses colonnes de droite sont hors d'atteinte sans souris (axe
+          `scrollable-region-focusable`, constat Q3). `role="region"` exige un nom
+          accessible — d'ou l'aria-label, qui dit AUSSI a l'utilisateur ou il vient
+          d'arriver quand le focus y entre. */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="Tableau des clients, defilement horizontal"
+        className={`overflow-x-auto border ${themeClasses.tableHeader.split(' ')[1]} rounded`}
+      >
         <table className="w-full border-collapse min-w-max">
           <thead>
             <tr className={themeClasses.tableHeader}>

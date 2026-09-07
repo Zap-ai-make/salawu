@@ -7,6 +7,8 @@ import { subscribeIncomingTransfersCount } from '../services/storeTransferServic
 import { BRAND, getRoleAccent } from '../constants/workspaceTheme'
 import { APP_NAME } from '../constants/branding'
 import DealerInventoryBar from '../components/dealer/DealerInventoryBar'
+import { X } from 'lucide-react'
+import useDialog from '../hooks/useDialog'
 
 const ACCENT = getRoleAccent('dealer')
 
@@ -53,6 +55,10 @@ function DealerLayout() {
   const [pendingCount, setPendingCount] = useState(0)
   const [transfersCount, setTransfersCount] = useState(0)
   const [sidebarOpen, setSidebarOpen]   = useState(false)
+  // Tiroir mobile rendu en ligne : hook appele inconditionnellement (regle
+  // des hooks), active par isOpen. Ferme a Escape, borne le focus, et rend
+  // le focus au bouton d'ouverture.
+  const drawerRef = useDialog({ isOpen: sidebarOpen, onClose: () => setSidebarOpen(false) })
 
   useEffect(() => {
     setPendingCount(0)
@@ -108,15 +114,21 @@ function DealerLayout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
-          <aside className={`absolute inset-y-0 left-0 w-64 flex flex-col ${BRAND.sidebar} shadow-xl`}>
+          <aside
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu Dealer"
+            className={`absolute inset-y-0 left-0 w-64 flex flex-col ${BRAND.sidebar} shadow-xl`}
+          >
             <div className={`flex h-16 flex-shrink-0 items-center justify-between px-5 border-b ${BRAND.sidebarBorder}`}>
               <p className="text-lg font-bold text-white">{APP_NAME} Dealer</p>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className={`rounded p-1 text-green-200 hover:text-white focus:outline-none focus-visible:ring-2 ${ACCENT.ring}`}
+                className={`rounded p-1 ${BRAND.sidebarMuted} hover:text-white focus:outline-none focus-visible:ring-2 ${ACCENT.ring}`}
                 aria-label="Fermer le menu"
               >
-                ✕
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5" aria-label="Navigation Dealer">
@@ -140,14 +152,14 @@ function DealerLayout() {
       <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 shadow-sm lg:hidden">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+          className={`rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 ${ACCENT.ring}`}
           aria-label="Ouvrir le menu"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <p className="font-bold text-green-900">{APP_NAME} Dealer</p>
+        <p className={`font-bold ${BRAND.wordmark}`}>{APP_NAME} Dealer</p>
         {(pendingCount + transfersCount) > 0 && (
           <span className="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
             {(pendingCount + transfersCount) > 99 ? '99+' : (pendingCount + transfersCount)}

@@ -22,6 +22,7 @@ import RejectionRemarkButton from '../ui/RejectionRemarkButton'
 import { themedTableClasses } from '../ui/themedTable.js'
 import Toast from '../Toast'
 import { formatDateTime as formatDate } from '../../utils/formatters'
+import useDialog from '../../hooks/useDialog'
 
 /**
  * Chemin dealer du formulaire de transactions boutique.
@@ -94,6 +95,11 @@ function DealerTransferForm() {
       submittingRef.current = false
     }
   }, [pending, showToast])
+
+  // Modale de confirmation rendue en ligne : hook appele inconditionnellement
+  // (regle des hooks), active par isOpen. Escape annule — un dialogue qui
+  // engage un mouvement d'argent doit pouvoir se refuser au clavier.
+  const confirmDialogRef = useDialog({ isOpen: Boolean(pending), onClose: () => setPending(null) })
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -168,7 +174,7 @@ function DealerTransferForm() {
           onClick={openConfirm}
           disabled={!validation.ok || isSubmitting}
           className={`px-6 py-2 rounded font-medium transition-colors ${
-            !validation.ok || isSubmitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'
+            !validation.ok || isSubmitting ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-700 hover:bg-green-700 text-white'
           }`}
         >
           {isSubmitting ? 'Envoi…' : 'Envoyer au dealer'}
@@ -223,8 +229,14 @@ function DealerTransferForm() {
       {/* Modale de confirmation */}
       {pending && (
         <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-900">Confirmer l'envoi au dealer</h3>
+          <div
+            ref={confirmDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dealer-transfer-confirm-title"
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
+          >
+            <h3 id="dealer-transfer-confirm-title" className="text-xl font-bold text-gray-900">Confirmer l'envoi au dealer</h3>
             <div className="mt-4 space-y-2 text-sm text-gray-700">
               <p><span className="font-semibold">Opération :</span> {STORE_TRANSFER_TYPE_LABELS[pending.transferType]}</p>
               {IS_DEALER_MULTI_NETWORK && <p><span className="font-semibold">Réseau :</span> {pending.network}</p>}
@@ -244,7 +256,7 @@ function DealerTransferForm() {
                 type="button"
                 onClick={confirmSubmit}
                 disabled={isSubmitting}
-                className="rounded bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 disabled:bg-gray-400"
+                className="rounded bg-green-700 px-4 py-2 font-medium text-white hover:bg-green-700 disabled:bg-gray-400"
               >
                 {isSubmitting ? 'Envoi…' : 'Confirmer'}
               </button>

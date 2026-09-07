@@ -69,7 +69,7 @@ function DealerStoreCard({ store, balances, balanceError, isLoading }) {
         <button
           type="button"
           onClick={() => openRequest(DEALER_REQUEST_TYPES.LIQUIDITY_ADD)}
-          className="flex-1 rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+          className="flex-1 rounded bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
           aria-label={`Ajouter liquidité pour ${store.name}`}
           data-testid={`btn-liquidite-${store.id}`}
         >

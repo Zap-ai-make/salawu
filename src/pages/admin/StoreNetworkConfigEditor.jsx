@@ -77,7 +77,7 @@ function StoreNetworkConfigEditor({ storeId, storeName }) {
   return (
     <div className="mt-6">
       <h3 className="text-sm font-semibold text-gray-700 mb-1">Configuration réseau</h3>
-      <p className="text-xs text-gray-400 mb-3">
+      <p className="text-xs text-encre-doux mb-3">
         Rôle de {storeName || 'la boutique'} pour chaque réseau (approvisionnement, couverture, fournisseur).
       </p>
 
@@ -164,7 +164,7 @@ function StoreNetworkConfigEditor({ storeId, storeName }) {
               type="button"
               onClick={handleSave}
               disabled={saving || !dirty}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+              className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
             >
               {saving ? 'Enregistrement…' : 'Enregistrer'}
             </button>

@@ -11,10 +11,10 @@ function isRunningStandalone() {
 function getBrowserHint() {
   const ua = navigator.userAgent
   if (/iPhone|iPad|iPod/.test(ua) && !/CriOS|FxiOS/.test(ua)) {
-    return "Sur Safari : appuyez sur le bouton Partager ↑, puis « Sur l'écran d'accueil »"
+    return "Sur Safari : appuyez sur le bouton Partager, puis « Sur l'écran d'accueil »"
   }
   if (/Firefox/.test(ua)) {
-    return 'Sur Firefox : ouvrez le menu (≡) en bas, puis appuyez sur « Installer »'
+    return 'Sur Firefox : ouvrez le menu en bas, puis appuyez sur « Installer »'
   }
   return null
 }
@@ -68,7 +68,7 @@ const PWAInstallButton = () => {
     <div className="relative">
       <button
         onClick={handleInstall}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+        className="bg-blue-700 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
         title="Installer l'application"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

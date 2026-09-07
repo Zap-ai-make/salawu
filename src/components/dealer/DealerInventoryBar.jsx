@@ -6,7 +6,9 @@ import { formatCurrency } from '../../utils/formatCurrency'
 import { DEALER_NETWORKS, IS_DEALER_MULTI_NETWORK } from '../../constants/dealerConstants'
 import { NETWORK_CONFIG } from '../../constants/networkConfig'
 import { emptyDealerInventory } from '../../utils/dealerInventory'
+import { Package, Banknote } from 'lucide-react'
 import Toast from '../Toast'
+import useDialog from '../../hooks/useDialog'
 
 /**
  * Bandeau d'inventaire dealer — persistant en haut de chaque page (comme le
@@ -92,13 +94,8 @@ function DealerInventoryBar() {
     setNetwork(DEALER_NETWORKS[0])
   }, [])
 
-  // Fermeture à la touche Échap
-  useEffect(() => {
-    if (!adjustOpen) return undefined
-    const onKey = (e) => { if (e.key === 'Escape') closeModal() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [adjustOpen, closeModal])
+  // Escape, piege de focus et restitution du focus : mutualises dans useDialog.
+  const dialogRef = useDialog({ isOpen: adjustOpen, onClose: closeModal })
 
   const submit = useCallback(async () => {
     if (submittingRef.current) return
@@ -126,25 +123,32 @@ function DealerInventoryBar() {
   const isDecrease = mode === 'decrease'
   const amountValid = /^[0-9]+$/.test(amount.trim())
 
-  const Card = ({ label, value, icon, tint, dotColor }) => (
-    <div className={`flex-1 min-w-40 rounded-xl border border-gray-100 bg-gradient-to-br ${tint} to-white px-4 py-2.5`}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-          {dotColor && <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden="true" />}
-          {label}
-        </span>
-        <span className="text-lg" aria-hidden="true">{icon}</span>
+  // `icon` est un COMPOSANT d'icône (lucide), pas une chaîne. Il est réassigné à
+  // une variable capitalisée dans le corps plutôt que renommé à la déstructuration :
+  // la config eslint du dépôt exempte les variables en `^[A-Z_]` mais pas les
+  // arguments, et sans eslint-plugin-react l'usage en JSX n'est pas détecté.
+  const Card = ({ label, value, icon, tint, dotColor }) => {
+    const Icon = icon
+    return (
+      <div className={`flex-1 min-w-40 rounded-xl border border-gray-100 bg-gradient-to-br ${tint} to-white px-4 py-2.5`}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            {dotColor && <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden="true" />}
+            {label}
+          </span>
+          <Icon className="h-4 w-4 shrink-0 text-encre-doux" aria-hidden="true" />
+        </div>
+        <p className="tabular mt-0.5 text-xl font-bold text-gray-900">{formatCurrency(value)}</p>
       </div>
-      <p className="mt-0.5 text-xl font-bold text-gray-900">{formatCurrency(value)}</p>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="mb-6 rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm">
       <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center">
         <div className="flex shrink-0 items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-green-500" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <span className="text-xs font-semibold uppercase tracking-wide text-encre-doux">
             {IS_DEALER_MULTI_NETWORK ? 'Mon inventaire' : 'Mon inventaire (Orange)'}
           </span>
         </div>
@@ -155,17 +159,17 @@ function DealerInventoryBar() {
                 key={net}
                 label={NETWORK_CONFIG[net]?.name ?? net}
                 value={inventory.byNetwork?.[net]?.stock ?? 0}
-                icon="📦"
+                icon={Package}
                 tint="from-blue-50"
                 dotColor={NETWORK_CONFIG[net]?.color}
               />
             ))}
-            <Card label="Liquidité" value={inventory.totalLiquidite ?? 0} icon="💵" tint="from-teal-50" />
+            <Card label="Liquidité" value={inventory.totalLiquidite ?? 0} icon={Banknote} tint="from-teal-50" />
           </div>
         ) : (
           <div className="flex flex-1 flex-col gap-3 sm:flex-row">
-            <Card label="Stock" value={inventory.stock} icon="📦" tint="from-blue-50" />
-            <Card label="Liquidité" value={inventory.liquidite} icon="💵" tint="from-teal-50" />
+            <Card label="Stock" value={inventory.stock} icon={Package} tint="from-blue-50" />
+            <Card label="Liquidité" value={inventory.liquidite} icon={Banknote} tint="from-teal-50" />
           </div>
         )}
         <div className="flex shrink-0">
@@ -183,7 +187,7 @@ function DealerInventoryBar() {
       {/* Modale d'ajustement unifiée */}
       {adjustOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="dealer-adjust-title">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <div ref={dialogRef} className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <h2 id="dealer-adjust-title" className="text-lg font-semibold text-gray-900">Ajuster l'inventaire</h2>
             <p className="mt-1 text-sm text-gray-500">
               {IS_DEALER_MULTI_NETWORK

@@ -7,12 +7,15 @@ import ErrorState from '../../components/ui/ErrorState'
 import StatusBadge from '../../components/ui/StatusBadge'
 import { SkeletonTable } from '../../components/ui/SkeletonList'
 import StoreNetworkConfigEditor from './StoreNetworkConfigEditor'
+import useDialog from '../../hooks/useDialog'
+import { X } from 'lucide-react'
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Panneau de détail boutique
 // ──────────────────────────────────────────────────────────────────────────────
 
 function StoreDetail({ store, onClose }) {
+  const dialogRef = useDialog({ onClose })
   const [balances, setBalances] = useState(null)
   const [balLoading, setBalLoading] = useState(true)
 
@@ -29,6 +32,7 @@ function StoreDetail({ store, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="w-full max-w-lg rounded-2xl bg-white shadow-2xl p-6 overflow-y-auto max-h-[90vh]"
         onClick={e => e.stopPropagation()}
         role="dialog"
@@ -41,10 +45,10 @@ function StoreDetail({ store, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+            className="rounded p-1 text-encre-doux hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
             aria-label="Fermer"
           >
-            ✕
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -79,7 +83,7 @@ function StoreDetail({ store, onClose }) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-400">Soldes non disponibles.</p>
+          <p className="text-sm text-encre-doux">Soldes non disponibles.</p>
         )}
 
         <StoreNetworkConfigEditor storeId={store.id} storeName={store.name} />
@@ -175,7 +179,7 @@ function AdminStores() {
               onClick={() => setActiveFilter(opt.value)}
               className={`px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
                 activeFilter === opt.value
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-blue-700 text-white'
                   : 'text-gray-600 hover:bg-gray-50'
               }`}
               aria-pressed={activeFilter === opt.value}
@@ -194,7 +198,7 @@ function AdminStores() {
             aria-label="Rechercher une boutique dans la page courante"
             title="Recherche dans la page courante (25 résultats max)"
           />
-          <p className="mt-0.5 text-[11px] text-gray-400">Recherche dans la page courante</p>
+          <p className="mt-0.5 text-[11px] text-encre-doux">Recherche dans la page courante</p>
         </div>
       </div>
 

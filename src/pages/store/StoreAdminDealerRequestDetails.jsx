@@ -12,6 +12,7 @@ import DealerRequestStatusBadge from '../../components/ui/DealerRequestStatusBad
 import {
   DEALER_REQUEST_TYPE_LABELS,
 } from '../../constants/dealerConstants'
+import { X, ArrowLeft } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Badges statut
@@ -151,7 +152,7 @@ function ConfirmModal({ request, processing, onConfirm, onClose, initialFocusRef
             onClick={onConfirm}
             disabled={!canSubmit}
             aria-disabled={!canSubmit}
-            className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 transition-colors"
+            className="rounded bg-green-700 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 transition-colors"
             data-testid="confirm-modal-submit"
           >
             {processing ? 'Confirmation…' : 'Confirmer la demande'}
@@ -242,7 +243,7 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
           <div className="flex justify-between items-center mt-1">
             <span
               id="reject-reason-hint"
-              className={`text-xs ${charCount > 500 ? 'text-red-600' : 'text-gray-400'}`}
+              className={`text-xs ${charCount > 500 ? 'text-red-600' : 'text-encre-doux'}`}
               aria-live="polite"
               data-testid="reject-char-counter"
             >
@@ -553,10 +554,12 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
         <button
           type="button"
           onClick={closeView}
-          className="text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+          className="inline-flex items-center gap-1.5 rounded text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           data-testid="btn-back"
         >
-          {asModal ? '✕ Fermer' : '← Retour à la liste'}
+          {asModal
+            ? <><X className="h-4 w-4" aria-hidden="true" />Fermer</>
+            : <><ArrowLeft className="h-4 w-4" aria-hidden="true" />Retour à la liste</>}
         </button>
       </div>
 
@@ -636,7 +639,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
               type="button"
               onClick={() => { setActionError(null); setActionSuccess(null); setRefreshError(null); setConfirmModalOpen(true) }}
               disabled={!!processingAction}
-              className="rounded bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 transition-colors"
+              className="rounded bg-green-700 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 transition-colors"
               aria-label="Confirmer cette demande Dealer"
               data-testid="btn-confirm"
             >
