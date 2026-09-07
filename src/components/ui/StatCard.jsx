@@ -5,7 +5,15 @@
  * dégradé léger `from-{couleur}-50 to-white`, coin `rounded-2xl`, accent coloré
  * discret, valeur en gris foncé. API inchangée pour ne pas réécrire les pages.
  */
+/**
+ * `icon` attend un COMPOSANT d'icône lucide (ex. `icon={Store}`), jamais une
+ * chaîne : DESIGN.md §8 proscrit l'emoji brut, dont le rendu varie selon l'OS,
+ * qu'on ne peut ni colorer ni aligner sur la typo, et qui ne dit rien à un
+ * lecteur d'écran. Il est réassigné à une variable capitalisée dans le corps —
+ * la config eslint du dépôt exempte les variables en `^[A-Z_]`, pas les arguments.
+ */
 function StatCard({ label, value, sub, color = 'blue', icon, loading = false, onClick }) {
+  const Icon = icon
   // Classes complètes (statiques) pour rester détectables par Tailwind JIT.
   const colorMap = {
     blue:   { grad: 'from-blue-50',   accent: 'text-blue-600',   iconBg: 'bg-blue-100' },
@@ -35,15 +43,15 @@ function StatCard({ label, value, sub, color = 'blue', icon, loading = false, on
           {loading ? (
             <div className="mt-2 h-7 w-24 animate-pulse rounded bg-gray-200" />
           ) : (
-            <p className="mt-1 text-2xl font-bold text-gray-900 truncate">{value ?? '—'}</p>
+            <p className="tabular mt-1 text-2xl font-bold text-gray-900 truncate">{value ?? '—'}</p>
           )}
           {sub && !loading && (
             <p className="mt-1 text-xs text-gray-500 truncate">{sub}</p>
           )}
         </div>
-        {icon && (
-          <span className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-lg ${c.iconBg} text-xl`} aria-hidden="true">
-            {icon}
+        {Icon && (
+          <span className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-lg ${c.iconBg}`}>
+            <Icon className={`h-5 w-5 ${c.accent}`} aria-hidden="true" />
           </span>
         )}
       </div>

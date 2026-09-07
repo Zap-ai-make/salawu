@@ -2,17 +2,25 @@ import { APP_NAME } from '../../constants/branding'
 
 function AuthSidebar({ isSignUp, onToggle }) {
   return (
-    <div className={`h-full min-h-[220px] lg:min-h-[500px] flex flex-col items-center justify-center text-white p-6 sm:p-8 lg:p-12 relative overflow-hidden ${
+    // `auth-sidebar` : point d'accroche de la portée d'identité, même mécanisme
+    // que `auth-page`, `auth-card` et `auth-decor` (cf. src/index.css). Les
+    // dégradés ci-dessous restent le rendu 'legacy' ; l'identité « registre » les
+    // remplace en CSS plutôt qu'ici, pour que ce composant n'ait pas à connaître
+    // le système de design actif.
+    <div className={`auth-sidebar h-full min-h-[220px] lg:min-h-[500px] flex flex-col items-center justify-center text-white p-6 sm:p-8 lg:p-12 relative overflow-hidden ${
       isSignUp
         ? 'bg-gradient-to-br from-[#2d5ea5] to-[#173e78]'
         : 'bg-gradient-to-br from-[#f08a00] to-[#2d5ea5]'
     }`}>
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full transform translate-x-16 -translate-y-16"></div>
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full transform -translate-x-12 translate-y-12"></div>
+      {/* Ronds décoratifs du rendu 'legacy'. `auth-decor` permet à l'identité
+          « registre » de les retirer (DESIGN.md §1 : pas de blobs) sans changer
+          quoi que ce soit pour les clients restés en 'legacy'. */}
+      <div className="auth-decor absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full transform translate-x-16 -translate-y-16" aria-hidden="true"></div>
+      <div className="auth-decor absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full transform -translate-x-12 translate-y-12" aria-hidden="true"></div>
 
       <div className="text-center z-10">
         <img
-          src="/akayis-mark.svg"
+          src="/brand-mark.svg"
           alt={APP_NAME}
           className="mx-auto mb-4 lg:mb-6 h-20 w-20 lg:h-28 lg:w-28 rounded-full bg-white p-2 lg:p-3 shadow-lg"
         />
@@ -49,7 +57,7 @@ function AuthSidebar({ isSignUp, onToggle }) {
 
       <div className="hidden lg:block absolute bottom-8 left-1/2 transform -translate-x-1/2">
         <div className="text-center">
-          <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-2">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-2">
             <svg
               className="w-6 h-6 text-white"
               fill="none"

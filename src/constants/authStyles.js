@@ -1,5 +1,23 @@
-// Styles Tailwind CSS réutilisables pour l'authentification
-export const AUTH_STYLES = {
+import { IS_REGISTRE } from './designSystem.js'
+
+/**
+ * authStyles.js — styles Tailwind réutilisables des écrans d'authentification.
+ *
+ * Deux jeux, choisis par le profil (design.system). Les sites d'appel importent
+ * `AUTH_STYLES` sans savoir lequel ils reçoivent.
+ *
+ * Ce que l'identité « registre » change ici, et pourquoi :
+ *   • les champs passent d'un aplat gris sans bordure à un fond de papier borné
+ *     par un filet — un champ doit se voir comme une case à remplir, y compris
+ *     en plein soleil ;
+ *   • l'action principale passe à l'encre : la couleur reste réservée au sens
+ *     d'un mouvement d'argent et à l'identité des opérateurs ;
+ *   • les anneaux de focus prennent l'encre, pour être francs.
+ * Le dégradé `from-blue-50 to-indigo-100` de `layout.authPage` est traité à part,
+ * par CSS porté (src/index.css), car il vit aussi dans AuthPage.jsx.
+ */
+
+const AUTH_STYLES_LEGACY = {
   // Inputs
   input: {
     base: "w-full px-4 py-3 bg-gray-100 border-0 rounded-md focus:bg-white focus:ring-2 focus:outline-none transition-all",
@@ -28,7 +46,17 @@ export const AUTH_STYLES = {
 
   // Modales
   modal: {
-    overlay: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50",
+    // `bg-black/50` et NON `bg-black bg-opacity-50` : Tailwind v4 a SUPPRIMÉ les
+    // utilitaires `bg-opacity-*` au profit de la syntaxe à barre oblique. La
+    // classe restait posée sur l'élément sans qu'aucune règle ne soit émise
+    // (vérifié : 0 occurrence de `bg-opacity` dans le CSS produit), donc le voile
+    // des modales était NOIR OPAQUE au lieu d'être à 50 % — la page disparaissait
+    // derrière au lieu d'être estompée.
+    //
+    // Défaut présent depuis le commit initial (d72d5d7), hérité de la migration
+    // v3 → v4. Il touche les deux clients et les trois modales qui utilisent ce
+    // voile (ChangePasswordModal, ForgotPasswordModal, Profil).
+    overlay: "fixed inset-0 bg-black/50 flex items-center justify-center z-50",
     container: "bg-white rounded-lg p-6 max-w-md w-full mx-4",
     header: "flex justify-between items-center mb-4",
     title: "text-lg font-bold text-gray-800",
@@ -85,6 +113,40 @@ export const AUTH_STYLES = {
     profile: "space-y-6"
   }
 }
+
+// ── Variante « registre » ───────────────────────────────────────────────────
+// Dérivée par surcharge ciblée plutôt que recopiée : les groupes non listés
+// (modales, profil, espacements) restent partagés, et ne peuvent pas diverger.
+const AUTH_STYLES_REGISTRE = {
+  ...AUTH_STYLES_LEGACY,
+  input: {
+    base: "w-full px-4 py-3 bg-papier border border-filet rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-encre focus-visible:border-encre transition-colors",
+    primary: "",
+    secondary: "",
+    error: "bg-papier border border-red-400 focus-visible:ring-red-500",
+  },
+  button: {
+    ...AUTH_STYLES_LEGACY.button,
+    primary: "w-full bg-encre hover:bg-encre-doux text-white font-semibold py-3 px-6 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-encre focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+    secondary: "w-full bg-encre-doux hover:bg-encre text-white font-semibold py-3 px-6 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-encre focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+    tertiary: "bg-registre hover:bg-registre/70 text-encre py-3 px-4 rounded-md transition-colors",
+    link: "text-encre underline underline-offset-2 hover:text-encre-doux font-semibold transition-colors",
+    linkSecondary: "text-encre-doux underline underline-offset-2 hover:text-encre font-semibold transition-colors",
+  },
+  text: {
+    ...AUTH_STYLES_LEGACY.text,
+    title: "text-3xl font-bold text-encre",
+    heading: "text-xl font-bold text-encre",
+    link: "text-encre underline underline-offset-2 hover:text-encre-doux transition-colors",
+  },
+  loading: {
+    ...AUTH_STYLES_LEGACY.loading,
+    spinner: "animate-spin rounded-full h-16 w-16 border-b-2 border-encre mx-auto",
+    container: "min-h-screen flex items-center justify-center bg-papier",
+  },
+}
+
+export const AUTH_STYLES = IS_REGISTRE ? AUTH_STYLES_REGISTRE : AUTH_STYLES_LEGACY
 
 // Fonction helper pour combiner les classes
 export const combineClasses = (...classes) => {
