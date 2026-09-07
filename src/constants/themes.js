@@ -1,33 +1,72 @@
 import { getStorageKey } from '../config/clientIsolation'
-import { BRAND_THEME } from './branding.js'
+import { IS_REGISTRE } from './designSystem.js'
 
+/**
+ * themes.js — catalogue des apparences servies par l'application.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * DEUX entrées, et deux seulement, parce que deux clients existent :
+ *
+ *   registre → ESAHAF (design.system = 'registre'), identité dessinée
+ *   dark     → tout profil resté en 'legacy', dont TAOFIC en production
+ *
+ * Le catalogue en comptait huit. Six ne pouvaient être atteints par AUCUN
+ * chemin de code : la page qui permettait de choisir un thème
+ * (src/pages/Personnalisation.jsx) a été retirée le 2026-05-29, un commit après
+ * la création du dépôt (d72d5d7 → 32e21b0). Depuis, `changeTheme` n'a plus
+ * jamais eu de site d'appel, et `currentTheme` ne peut donc valoir que
+ * DEFAULT_THEME. Un catalogue de huit apparences pour un produit qui n'en
+ * expose aucune, c'était la principale source de la palette générique.
+ *
+ * Un identifiant résiduel dans localStorage (hérité de cette page) reste sans
+ * danger : ThemeContext filtre par `THEMES[saved]`, donc une valeur devenue
+ * inconnue retombe sur DEFAULT_THEME. TC-158 le vérifie.
+ *
+ * ⚠ Ne pas remettre de thème ici pour « faire joli » : la couleur de cette
+ * application appartient aux jetons de src/index.css et aux six couleurs
+ * opérateur de src/constants/networkConfig.js.
+ */
 export const THEMES = {
-  blue: {
-    id: 'blue',
-    name: 'Thème Bleu',
+  // ── Identité « registre » (ESAHAF) ─────────────────────────────────────────
+  // Dérivée des jetons @theme de src/index.css, pas de la palette Tailwind par
+  // défaut. Elle n'est atteignable que par un profil déclarant design.system =
+  // 'registre' : DEFAULT_THEME ci-dessous ne la sélectionne pas autrement, et
+  // aucun autre client ne peut y tomber.
+  //
+  // `backgroundImage` : le bandeau photo est RÉTABLI à la demande explicite du
+  // client (2026-09-04), après l'avoir vu retiré. Le constat I4 du bilan (1,8 Mo
+  // de décor précaché dans une PWA destinée à des connexions instables) reste
+  // exact — c'est un arbitrage assumé entre poids et identité visuelle, et il
+  // appartient au client, pas à l'audit.
+  //
+  // ⚠ Ce champ ne se change pas seul. Deux choses en dépendent :
+  //   • vite.config.js doit garder bg-noir.png dans le précache d'ESAHAF, sinon
+  //     le fond manque hors connexion — or le profil salawu active `offlineMode`.
+  //   • Layout.jsx rend un bandeau de marque compact quand ce champ est nul, et
+  //     le bandeau photo de 200 px sinon. Le seuil de bascule de la navbar suit
+  //     automatiquement (il est mesuré, cf. TC-159) : rien d'autre à ajuster.
+  registre: {
+    id: 'registre',
+    name: 'ESAHAF — registre',
     backgroundImage: '/bg-noir.png',
     classes: {
-      background: 'bg-blue-50',
-      text: 'text-gray-900',
-      accent: 'bg-blue-600',
-      navbar: 'bg-blue-600/95 backdrop-blur-sm',
-      tableHeader: 'bg-blue-100/80 border-blue-300',
-      tableAccent: 'bg-blue-50/60'
+      background: 'bg-papier',
+      text: 'text-encre',
+      accent: 'bg-encre',
+      // Barre de navigation à l'encre : calme, et surtout elle laisse les six
+      // couleurs opérateur être les seules taches de couleur de l'écran.
+      navbar: 'bg-encre text-white',
+      // `border-filet` (3,48:1) et NON `border-registre` (1,21:1) : une réglure
+      // de tableau structure la lecture d'une colonne de montants — en plein
+      // soleil, un trait à 1,21:1 est invisible et la colonne se disloque.
+      tableHeader: 'bg-registre/60 border-filet',
+      tableAccent: 'bg-registre/30',
     }
   },
-  light: {
-    id: 'light',
-    name: 'Thème Clair',
-    backgroundImage: '/bg-noir.png',
-    classes: {
-      background: 'bg-white',
-      text: 'text-gray-900',
-      accent: 'bg-gray-600',
-      navbar: 'bg-gray-600/95 backdrop-blur-sm text-white',
-      tableHeader: 'bg-gray-100/80 border-gray-300',
-      tableAccent: 'bg-gray-50/60'
-    }
-  },
+
+  // ── Apparence historique (TAOFIC, et tout profil 'legacy') ─────────────────
+  // Conservée À L'IDENTIQUE, octet pour octet : c'est ce que rend un client en
+  // production. TC-158 fige ces six chaînes ; ne pas les « harmoniser » avec les
+  // jetons ESAHAF, ce serait faire entrer la refonte chez un autre client.
   dark: {
     id: 'dark',
     name: 'Thème Sombre',
@@ -40,67 +79,17 @@ export const THEMES = {
       tableHeader: 'bg-slate-100/80 border-slate-300',
       tableAccent: 'bg-slate-50/60'
     }
-  },
-  green: {
-    id: 'green',
-    name: 'Thème Vert',
-    backgroundImage: '/bg-noir.png',
-    classes: {
-      background: 'bg-green-50',
-      text: 'text-gray-900',
-      accent: 'bg-green-600',
-      navbar: 'bg-green-600/95 backdrop-blur-sm',
-      tableHeader: 'bg-green-100/80 border-green-300',
-      tableAccent: 'bg-green-50/60'
-    }
-  },
-  orange: {
-    id: 'orange',
-    name: 'Thème Orange',
-    backgroundImage: '/bg-noir.png',
-    classes: {
-      background: 'bg-orange-50',
-      text: 'text-gray-900',
-      accent: 'bg-orange-600',
-      navbar: 'bg-orange-600/95 backdrop-blur-sm',
-      tableHeader: 'bg-orange-100/80 border-orange-300',
-      tableAccent: 'bg-orange-50/60'
-    }
-  },
-  purple: {
-    id: 'purple',
-    name: 'Thème Violet',
-    backgroundImage: '/bg-noir.png',
-    classes: {
-      background: 'bg-purple-50',
-      text: 'text-gray-900',
-      accent: 'bg-purple-600',
-      navbar: 'bg-purple-600/95 backdrop-blur-sm',
-      tableHeader: 'bg-purple-100/80 border-purple-300',
-      tableAccent: 'bg-purple-50/60'
-    }
-  },
-  custom: {
-    id: 'custom',
-    name: 'Couleur personnalisée',
-    backgroundImage: '/bg-noir.png',
-    classes: {
-      background: 'bg-white',
-      text: 'text-gray-900',
-      accent: 'bg-blue-500',
-      navbar: 'bg-blue-500/95 backdrop-blur-sm',
-      tableHeader: 'bg-gray-100/80 border-gray-300',
-      tableAccent: 'bg-gray-50/60'
-    }
   }
 }
 
-// Thème par défaut dérivé de la marque du profil client actif (branding.theme).
-// Conservateur : seules les marques explicitement mappées ici pilotent le défaut ;
-// toute autre marque (dont 'green' = TAOFIC/pilote) retombe sur 'dark' — le
-// comportement historique reste identique pour les clients non mappés.
-const BRAND_DEFAULT_THEME = { orange: 'orange' }
-
-export const DEFAULT_THEME = BRAND_DEFAULT_THEME[BRAND_THEME] ?? 'dark'
+// L'apparence d'un client est décidée par UN SEUL axe : `design.system` du
+// profil. Auparavant une seconde table (BRAND_DEFAULT_THEME) faisait aussi
+// dériver l'apparence de `branding.theme` — deux mécanismes concurrents pour la
+// même question, exactement la dispersion que ce chantier supprime. La marque
+// pilote désormais le nom, le logo et la couleur du manifeste ; pas le chrome.
+//
+// TAOFIC (branding.theme = 'green') rendait déjà 'dark' : son résultat est
+// inchangé, seul le chemin qui y mène est devenu direct.
+export const DEFAULT_THEME = IS_REGISTRE ? 'registre' : 'dark'
 
 export const STORAGE_KEY = getStorageKey('theme')
