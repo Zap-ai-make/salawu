@@ -97,7 +97,7 @@ akayis-crm/
 ├── public/              # Assets statiques
 │   ├── pwa-*.png       # Icônes PWA AKAYIS
 │   ├── akayis-logo.*   # Logo complet AKAYIS
-│   ├── akayis-mark.svg # Marque/icône AKAYIS
+│   ├── brand-mark.svg  # Marque/icône du client (ESAHAF par défaut)
 │   └── akayis-bg.*     # Image de fond thème AKAYIS
 ├── src/
 │   ├── components/     # Composants React

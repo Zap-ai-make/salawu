@@ -4,13 +4,16 @@
  *
  *   node scripts/apply-branding.mjs --client salawu
  *
- * Copie branding/<clientId>/{akayis-mark.svg,pwa-192x192.png,pwa-512x512.png} dans public/
- * (mêmes noms de fichiers — cf. docs : « Remplacer seulement les images de logo »). C'est un
- * geste de DÉPLOIEMENT transitoire (comme la régénération des règles) : on ne committe PAS
- * public/ modifié sur main, sinon on changerait le logo du client par défaut (TAOFIC).
+ * Copie branding/<clientId>/{brand-mark.svg,pwa-192x192.png,pwa-512x512.png} dans public/
+ * (mêmes noms de fichiers — cf. docs : « Remplacer seulement les images de logo »). Les noms
+ * sont volontairement NEUTRES : index.html est statique et ne peut référencer qu'un seul nom
+ * pour tous les clients, donc le fichier ne porte jamais le nom d'un client — c'est le dossier
+ * branding/<clientId>/ qui porte l'identité. C'est un geste de DÉPLOIEMENT transitoire (comme
+ * la régénération des règles).
  *
  * Sûr par défaut : si le client n'a pas de dossier branding dédié (ex. taofic_ajagbe), le
- * script ne fait RIEN — la marque AKAYIS/TAOFIC de public/ reste en place.
+ * script ne fait RIEN — la marque déjà présente dans public/ reste en place. Depuis 1de88c2,
+ * c'est celle d'ESAHAF (dépôt dédié à ce client).
  *
  * À enchaîner : node scripts/apply-branding.mjs --client <id> && VITE_CLIENT_ID=<id> npm run build
  */
@@ -42,7 +45,7 @@ const clientId = normalizeClientId(rawClient)
 const brandingDir = resolve(repoRoot, 'branding', clientId)
 const publicDir = resolve(repoRoot, 'public')
 
-const ASSETS = ['akayis-mark.svg', 'pwa-192x192.png', 'pwa-512x512.png']
+const ASSETS = ['brand-mark.svg', 'pwa-192x192.png', 'pwa-512x512.png']
 
 if (!existsSync(brandingDir)) {
   console.log(`Aucun dossier branding/${clientId} — marque par défaut (public/) conservée. Rien à faire.`)

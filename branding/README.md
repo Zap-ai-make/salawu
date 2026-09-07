@@ -1,16 +1,18 @@
 # Assets de marque par client (logos)
 
 Le **nom** du produit dérive du profil (`config/clients/<id>.js` → `branding`). Les **images
-de logo**, elles, ne sont pas paramétrables par code : ce sont des fichiers à noms fixes dans
-`public/`. On les swappe **au déploiement** du client (geste transitoire, comme la régénération
-des règles) — jamais commité sur `main`, sinon on changerait le logo du client par défaut (TAOFIC).
+de logo**, elles, ne sont pas paramétrables par code : ce sont des fichiers à **noms fixes et
+neutres** dans `public/`. Le nom du fichier ne porte donc jamais celui d'un client — c'est le
+dossier `branding/<clientId>/` qui porte l'identité, et `index.html` étant statique, il ne peut
+référencer qu'un seul nom pour tous les clients. On swappe les images **au déploiement**
+(geste transitoire, comme la régénération des règles).
 
 ## Structure
 
 ```
-branding/<clientId>/akayis-mark.svg     → public/akayis-mark.svg
-branding/<clientId>/pwa-192x192.png     → public/pwa-192x192.png
-branding/<clientId>/pwa-512x512.png     → public/pwa-512x512.png
+branding/<clientId>/brand-mark.svg    → public/brand-mark.svg
+branding/<clientId>/pwa-192x192.png   → public/pwa-192x192.png
+branding/<clientId>/pwa-512x512.png   → public/pwa-512x512.png
 ```
 
 `<clientId>` est l'identifiant **normalisé** (ex. `salawu`).
@@ -23,8 +25,12 @@ VITE_CLIENT_ID=salawu npm run build
 # ⚠ ne PAS committer public/ modifié ; restaurer après si besoin : git checkout -- public/
 ```
 
-Client sans dossier dédié (ex. `taofic_ajagbe`) → le script ne fait rien, la marque
-AKAYIS/TAOFIC de `public/` reste en place.
+Client sans dossier dédié (ex. `taofic_ajagbe`) → le script ne fait rien, la marque déjà
+présente dans `public/` reste en place.
+
+Depuis le commit `1de88c2`, la marque commitée dans `public/` est **celle d'ESAHAF** : ce dépôt
+est dédié à ce client et sert son logo par défaut. Appliquer `branding/salawu/` est donc un
+non-événement ici ; le script garde son intérêt pour tout autre client.
 
 ## Clients
 

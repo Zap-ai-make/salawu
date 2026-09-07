@@ -89,7 +89,7 @@ dans son profil. Défauts = « AKAYIS » / « AKAYIS CRM » → TAOFIC stricteme
 - **Build-time** : `vite.config.js` résout `branding` depuis `VITE_CLIENT_ID` et l'injecte dans
   `index.html` (title, meta description, apple-mobile-web-app-title) **et** le manifest PWA.
 
-**Reste manuel par client** : remplacer les **images de logo** (`public/akayis-mark.svg`,
+**Reste manuel par client** : remplacer les **images de logo** (`public/brand-mark.svg`,
 `public/pwa-192x192.png`, `public/pwa-512x512.png` — actifs graphiques, pas du texte) ; le nom du
 package `akayis-crm` dans `package.json` est cosmétique. Les autres mentions TAOFIC/AKAYIS (tests,
 scripts, commentaires) sont sans impact fonctionnel.
