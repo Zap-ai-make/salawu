@@ -57,15 +57,11 @@ export function ClientsProvider({ children }) {
         setLoading(true)
         setError(null)
 
-        // Vérifier s'il y a des données localStorage à migrer
-        const localStorageClients = localStorage.getItem(STORAGE_KEYS.CLIENTS)
-        if (localStorageClients) {
-          const parsedClients = JSON.parse(localStorageClients)
-          if (parsedClients.length > 0) {
-            await firestoreService.migrateLocalStorageData({ clients: parsedClients })
-            localStorage.removeItem(STORAGE_KEYS.CLIENTS)
-          }
-        }
+        // Plus de migration automatique depuis STORAGE_KEYS.CLIENTS : cette clé
+        // est indexée par CLIENT, jamais par boutique. Son contenu n'est donc
+        // attribuable à aucune boutique, et l'ancienne migration le versait dans
+        // celle qui se connectait la première. La clé est laissée intacte —
+        // les données restent lisibles dans le navigateur si besoin (voir TC-164).
 
         // Timeout pour éviter le loading infini
         loadingTimeout = setTimeout(() => {

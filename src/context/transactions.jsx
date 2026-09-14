@@ -73,23 +73,11 @@ export const TransactionsProvider = ({ children }) => {
         setLoading(true)
         setError(null)
 
-        // Vérifier s'il y a des données localStorage à migrer
-        const pendingData = localStorage.getItem(STORAGE_KEYS.PENDING_TRANSACTIONS)
-        const completedData = localStorage.getItem(STORAGE_KEYS.COMPLETED_TRANSACTIONS)
-
-        if (pendingData || completedData) {
-          const pendingTx = pendingData ? JSON.parse(pendingData) : []
-          const completedTx = completedData ? JSON.parse(completedData) : []
-
-          if (pendingTx.length > 0 || completedTx.length > 0) {
-            await firestoreService.migrateLocalStorageData({
-              pendingTransactions: pendingTx,
-              completedTransactions: completedTx
-            })
-            localStorage.removeItem(STORAGE_KEYS.PENDING_TRANSACTIONS)
-            localStorage.removeItem(STORAGE_KEYS.COMPLETED_TRANSACTIONS)
-          }
-        }
+        // Plus de migration automatique depuis STORAGE_KEYS.PENDING_TRANSACTIONS
+        // et COMPLETED_TRANSACTIONS : ces clés sont indexées par CLIENT, jamais
+        // par boutique. L'ancienne migration versait donc des transactions non
+        // attribuables dans la boutique qui se connectait la première. Les clés
+        // sont laissées intactes — rien n'est détruit (voir TC-164).
 
         // Écouter les drafts (transactions non terminées)
         unsubscribeDrafts = firestoreService.subscribeToDrafts((draftsData) => {
