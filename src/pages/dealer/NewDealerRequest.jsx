@@ -12,7 +12,7 @@ import {
   IS_DEALER_MULTI_NETWORK,
 } from '../../constants/dealerConstants'
 import { NETWORK_CONFIG } from '../../constants/networkConfig'
-import { DEALER_PARTNERS, partnerLabel, findPartner } from '../../constants/dealerPartners'
+import { DEALER_PARTNERS, HAS_DEALER_PARTNERS, partnerLabel, findPartner } from '../../constants/dealerPartners'
 
 function validateAmount(raw) {
   const s = String(raw ?? '').trim()
@@ -69,7 +69,9 @@ function NewDealerRequest() {
 
   const selectedStore = stores.find(s => s.id === selectedStoreId) || null
   const selectedPartner = findPartner(selectedPartnerId)
-  const isPartner = targetType === 'partner'
+  // Sans annuaire au profil client, la cible « partenaire » n'existe pas — y
+  // compris si un état résiduel ou une URL tentait de l'activer.
+  const isPartner = HAS_DEALER_PARTNERS && targetType === 'partner'
 
   const handleReview = useCallback(() => {
     if (isPartner) {
@@ -237,11 +239,14 @@ function NewDealerRequest() {
       <div className="bg-white rounded-lg shadow p-6">
         <h1 className="text-lg font-bold text-gray-800 mb-4">Nouvelle demande</h1>
 
-        {/* Bascule destinataire */}
-        <div className="mb-5 flex gap-2">
-          <button type="button" className={tabClass(!isPartner)} onClick={() => switchTarget('store')} data-testid="target-store">Boutique</button>
-          <button type="button" className={tabClass(isPartner)} onClick={() => switchTarget('partner')} data-testid="target-partner">Partenaire</button>
-        </div>
+        {/* Bascule destinataire — seulement si le client a des partenaires ;
+            sinon il n'y a qu'une cible possible et la bascule n'a pas de sens. */}
+        {HAS_DEALER_PARTNERS && (
+          <div className="mb-5 flex gap-2">
+            <button type="button" className={tabClass(!isPartner)} onClick={() => switchTarget('store')} data-testid="target-store">Boutique</button>
+            <button type="button" className={tabClass(isPartner)} onClick={() => switchTarget('partner')} data-testid="target-partner">Partenaire</button>
+          </div>
+        )}
 
         {submitError && (
           <div role="alert" className="mb-4 rounded bg-red-50 border border-red-200 p-3 text-sm text-red-700">{submitError}</div>

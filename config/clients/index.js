@@ -18,7 +18,9 @@ import taoficProfile from './taofic-ajagbe.js'
 import salawuProfile from './salawu.js'
 
 // ⚠ Doit rester identique à normalizeClientId de src/config/clientIsolation.js.
-function normalizeClientId(value) {
+// Exporté pour que les modules voisins (partners.js) partagent EXACTEMENT la même
+// normalisation : deux tables clés différemment se désaligneraient en silence.
+export function normalizeClientId(value) {
   return String(value || '')
     .trim()
     .toLowerCase()

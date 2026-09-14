@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { resolveProfile } from './config/clients/index.js'
 import { pilotProfile } from './config/clients/_pilot.js'
+import { partnersFor } from './config/clients/partners.js'
 
 /**
  * Configuration Vite pour le CRM (produit standard paramétré par profil client).
@@ -79,8 +80,16 @@ export default defineConfig(({ mode }) => {
   const description = `Application CRM pour la gestion des clients et transactions de ${branding.appName}`
   const designSystem = resolveDesignSystem(env.VITE_CLIENT_ID)
   const themeColor = resolveThemeColor(branding.theme, designSystem)
+  // Annuaire des sous-dealers du SEUL client cible. Les profils clients sont tous
+  // embarques dans un meme bundle : y placer ces donnees nominatives les livrerait
+  // a tous les autres clients. L'injection build-time est ce qui garantit qu'elles
+  // n'existent que dans le bundle de leur proprietaire.
+  const dealerPartners = partnersFor(env.VITE_CLIENT_ID)
 
   return {
+  define: {
+    __DEALER_PARTNERS__: JSON.stringify(dealerPartners),
+  },
   build: {
     rollupOptions: {
       output: {

@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react-swc'
 
 export default defineConfig({
   plugins: [react()],
+  // Meme injection qu'au build (vite.config.js). Vide par defaut : aucun test ne
+  // doit dependre de l'annuaire reel d'un client ; ceux qui en ont besoin mockent
+  // src/constants/dealerPartners ou lisent config/clients/partners.js directement.
+  define: { __DEALER_PARTNERS__: '[]' },
   test: {
     // Le suite de tests caractérise le profil de RÉFÉRENCE (TAOFIC), indépendamment
     // du VITE_CLIENT_ID du .env local (qui sert au build/déploiement d'un autre client).
