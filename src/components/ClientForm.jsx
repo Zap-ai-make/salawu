@@ -20,13 +20,20 @@ const EMPTY_CLIENT_FORM = {
   agentCommercial: ''
 }
 
-const CLIENT_FORM_DRAFT_KEY = getStorageKey('client_form_draft')
+// Le brouillon appartient à UNE boutique. Sans suffixe, la saisie inachevée d'une
+// boutique se retrouvait pré-remplie chez la suivante ouverte sur le même poste,
+// qui pouvait l'enregistrer sous sa propre identité.
+const CLIENT_FORM_DRAFT_PREFIX = getStorageKey('client_form_draft')
 
-const readClientFormDraft = () => {
-  if (typeof window === 'undefined') return EMPTY_CLIENT_FORM
+const draftKeyForStore = (storeId) =>
+  storeId ? `${CLIENT_FORM_DRAFT_PREFIX}_${storeId}` : null
+
+const readClientFormDraft = (storeId) => {
+  const key = draftKeyForStore(storeId)
+  if (!key || typeof window === 'undefined') return EMPTY_CLIENT_FORM
 
   try {
-    const draft = window.localStorage.getItem(CLIENT_FORM_DRAFT_KEY)
+    const draft = window.localStorage.getItem(key)
     if (!draft) return EMPTY_CLIENT_FORM
     const parsed = JSON.parse(draft)
     return {
@@ -47,7 +54,10 @@ const hasFormDraft = (data) => {
   return values.some((value) => String(value || '').trim())
 }
 
-function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' }) {
+// `draftScopeId` : boutique propriétaire du brouillon. Absent ⇒ la sauvegarde de
+// brouillon est désactivée. C'est le sens de défaillance voulu : perdre une aide
+// de saisie, jamais exposer la saisie d'une boutique à une autre.
+function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client', draftScopeId = null }) {
   // `useId` : ces formulaires peuvent apparaitre plusieurs fois sur une page.
   // Des identifiants fixes rattacheraient toutes les etiquettes au PREMIER
   // champ — invisible a l'oeil, faux pour un lecteur d'ecran.
@@ -55,7 +65,7 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
 
   const { toasts, showToast, removeToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState(() => initialData ? EMPTY_CLIENT_FORM : readClientFormDraft())
+  const [formData, setFormData] = useState(() => initialData ? EMPTY_CLIENT_FORM : readClientFormDraft(draftScopeId))
 
   // Charger les données initiales si on modifie
   useEffect(() => {
@@ -80,18 +90,28 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
   }, [initialData])
 
   useEffect(() => {
-    if (initialData || typeof window === 'undefined') return
+    const key = draftKeyForStore(draftScopeId)
+    if (initialData || !key || typeof window === 'undefined') return
 
     try {
       if (hasFormDraft(formData)) {
-        window.localStorage.setItem(CLIENT_FORM_DRAFT_KEY, JSON.stringify(formData))
+        window.localStorage.setItem(key, JSON.stringify(formData))
       } else {
-        window.localStorage.removeItem(CLIENT_FORM_DRAFT_KEY)
+        window.localStorage.removeItem(key)
       }
     } catch {
       // Le brouillon est une aide UX; l'enregistrement principal reste prioritaire.
     }
-  }, [formData, initialData])
+  }, [formData, initialData, draftScopeId])
+
+  // Purge du brouillon partagé par toutes les boutiques (avant cloisonnement).
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem(CLIENT_FORM_DRAFT_PREFIX)
+    } catch {
+      // Stockage indisponible : rien à purger.
+    }
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -142,7 +162,8 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client' 
 
       // Reset du formulaire seulement si on n'est pas en mode modification
       if (!initialData) {
-        window.localStorage.removeItem(CLIENT_FORM_DRAFT_KEY)
+        const key = draftKeyForStore(draftScopeId)
+        if (key) window.localStorage.removeItem(key)
         setFormData(EMPTY_CLIENT_FORM)
       }
     } catch (error) {
