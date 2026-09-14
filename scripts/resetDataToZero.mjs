@@ -3,7 +3,8 @@
  *
  * CONSERVÉ INTACT  : globalClients, users, stores.
  * REMIS À ZÉRO     : dealerBalances/{uid} (stock/liquidite → 0, docs conservés),
- *                    clients/{storeId}/networkBalances/current (5 réseaux → 0).
+ *                    clients/{storeId}/networkBalances/current (tous les réseaux
+ *                    du référentiel RESEAUX_SUPPORTES → 0).
  * SUPPRIMÉ         : dealerRequests, dealerClosures, storeDealerTransfers,
  *                    dealerPartnerDeposits, auditLogs (top-level),
  *                    clients/{storeId}/{drafts,history,sessions,auditLogs} (+ settlements),
@@ -32,6 +33,7 @@ import { resolveResetProject } from './lib/assertResetProject.mjs'
 import { NdjsonWriter } from './lib/firestoreBackup.mjs'
 import { verifyResetBackup } from './lib/verifyResetBackup.mjs'
 import { withRetry } from './lib/withRetry.mjs'
+import { RESEAUX_SUPPORTES } from '../config/clients/_pilot.js'
 
 // ─────────────────────────────────────────────
 // Périmètre (allowlists explicites)
@@ -51,7 +53,11 @@ const STORE_SUBCOLLECTIONS_DELETE = ['drafts', 'history', 'sessions', 'auditLogs
 const STORE_SUBCOLLECTIONS_PRESERVE = ['networkBalances']
 const TXN_SUBCOLLECTIONS_DELETE = ['settlements']
 const DEALER_SUBCOLLECTIONS_DELETE = ['auditLogs']
-const NETWORKS = ['Orange', 'Moov', 'Telecel', 'Coris', 'Sank']
+// Référentiel produit, importé et jamais recopié : la remise à zéro écrit en
+// set() SANS merge, donc un réseau absent de cette liste serait RETIRÉ du
+// document au lieu d'être remis à zéro. Une liste locale se désynchronise au
+// premier opérateur ajouté (c'est ainsi que Wave avait disparu).
+const NETWORKS = RESEAUX_SUPPORTES
 const PAGE_SIZE = 500
 
 // ─────────────────────────────────────────────

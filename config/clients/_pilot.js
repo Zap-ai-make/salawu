@@ -13,8 +13,9 @@
  * Convention : ne jamais lire une variation ailleurs qu'ici. Ajouter un axe =
  * ajouter un champ nommé + commenté dans ce profil, défaut « le plus riche ».
  *
- * ⚠ Phase 0 : ce module n'est encore IMPORTÉ nulle part. Le câblage des 3 couches
- * se fait aux phases suivantes, chacune prouvée sans régression pour les clients.
+ * ⚠ Phase 0 : le câblage des 3 couches applicatives se fait aux phases suivantes,
+ * chacune prouvée sans régression pour les clients. Seul RESEAUX_SUPPORTES est
+ * déjà consommé, par scripts/resetDataToZero.mjs (constante figée, hors couches).
  */
 
 // Ensemble figé des réseaux supportés par le produit (ordre = ordre d'affichage).

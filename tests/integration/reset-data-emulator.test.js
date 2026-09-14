@@ -181,6 +181,7 @@ async function seed() {
         Telecel: { stock: 0, liquidite: 0 },
         Coris: { stock: 5000, liquidite: 0 },
         Sank: { stock: 0, liquidite: 1000 },
+        Wave: { stock: 100000, liquidite: 500 },
       },
       updatedAt: T0,
     })
@@ -269,7 +270,9 @@ describe('Remise à zéro — cycle complet sur émulateur', () => {
       expect(bal.balances).toEqual({ Orange: { stock: 0, liquidite: 0 } })
     }
 
-    // networkBalances : forme stricte, 5 réseaux à zéro, clés exactes
+    // networkBalances : forme stricte, les 6 réseaux du référentiel à zéro, clés
+    // exactes. Wave inclus : l'écriture se fait en set() SANS merge, un réseau
+    // absent de la liste serait retiré du document au lieu d'être remis à zéro.
     for (const storeId of ['S1', 'S2']) {
       const nb = postDump[`clients/${storeId}/networkBalances/current`]
       expect(nb).toBeTruthy()
@@ -280,6 +283,7 @@ describe('Remise à zéro — cycle complet sur émulateur', () => {
         Telecel: { stock: 0, liquidite: 0 },
         Coris: { stock: 0, liquidite: 0 },
         Sank: { stock: 0, liquidite: 0 },
+        Wave: { stock: 0, liquidite: 0 },
       })
     }
 
