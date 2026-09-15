@@ -44,6 +44,41 @@ const ECRANS = [
   { nom: 'historique', lien: 'Historique', chemin: '/historique', marqueur: /historique/i },
   { nom: 'clients', lien: 'Clients', chemin: '/clients', marqueur: /client/i },
   { nom: 'profil', lien: 'Profil', chemin: '/profil', marqueur: /se déconnecter/i },
+  // ── Étendu de 5 à 8 écrans (lot L6.2 de la refonte) ───────────────────────
+  //
+  // Les cinq premiers etaient les seuls passes au crible d'un vrai moteur de
+  // mise en page. Trois des huit points d'entree atteignables par la navigation
+  // ne l'etaient pas du tout — donc ni axe, ni la sonde de debordement, ni la
+  // capture. On les ajoute AVANT de les redessiner, pas apres.
+  //
+  // ⚠ Les marqueurs sont pris sur le CONTENU de la page, jamais sur un libelle
+  // de navigation : « Demandes Dealer » et « Formulaire » sont aussi des liens,
+  // visibles sur TOUTES les pages au-dessus de 768 px. L'URL est verifiee en
+  // premier (cf. allerA), mais un marqueur qui accroche la barre de navigation
+  // rend l'assertion de contenu creuse.
+  { nom: 'formulaire', lien: 'Formulaire', chemin: '/formulaire', marqueur: /ajouter un client/i },
+  // ⚠ `/actualiser/i` et NON `/actualiser la liste/i` : « Actualiser la liste »
+  // est un `aria-label`, et `getByText` lit le CONTENU TEXTUEL, pas les noms
+  // accessibles. Premier jet rouge aux trois largeurs, sur un ecran parfaitement
+  // sain — le defaut etait dans mon marqueur. Le texte reellement rendu par ce
+  // bouton est « Actualiser », ou « Chargement… » pendant le chargement.
+  { nom: 'demandes-dealer', lien: 'Demandes Dealer', chemin: '/dealer-requests', marqueur: /actualiser|chargement/i },
+  { nom: 'dettes-internes', lien: 'Dettes internes', chemin: '/store/debts', marqueur: /ce que je dois et ce qu'on me doit/i },
+]
+
+/**
+ * Les deux routes de l'espace boutique SANS entree de navigation : on ne peut
+ * y arriver que par une URL directe (`/store/closures`) ou depuis une demande
+ * existante (`/dealer-requests/:id`).
+ *
+ * Elles ne sont PAS dans ECRANS, et ce n'est pas un oubli : `allerA` navigue
+ * par lien ou par liste deroulante, et aucune des deux ne les propose. Elles
+ * sont donc declarees ici, et couvertes par leur propre test. Le detail d'une
+ * demande attend un identifiant seme — il reste decouvert, et c'est ecrit dans
+ * le bilan plutot que masque.
+ */
+const ECRANS_SANS_LIEN = [
+  { nom: 'clotures', chemin: '/store/closures', marqueur: /clôtures dealer|aucune clôture/i },
 ]
 
 test.beforeAll(async () => {
@@ -210,6 +245,49 @@ test.describe('Écrans de travail', () => {
         elements: v.nodes.slice(0, 4).map((n) => n.target.join(' ')),
       }))
 
+      expect(lisible, JSON.stringify(lisible, null, 2)).toEqual([])
+    })
+  }
+
+  // Les routes sans entree de navigation : meme exigence, autre chemin d'arrivee.
+  for (const ecran of ECRANS_SANS_LIEN) {
+    test(`${ecran.nom} — capture, WCAG 2.2 AA, et pas de débordement`, async ({ page }, info) => {
+      await page.goto(ecran.chemin)
+
+      // Meme ordre que `allerA` : l'URL d'abord, le contenu ensuite. Un
+      // `goto` qui retombe sur la connexion rendrait un ecran parfaitement
+      // conforme… et faux.
+      await expect
+        .poll(() => new URL(page.url()).pathname, {
+          message: `la navigation directe vers ${ecran.chemin} n'a pas abouti`,
+          timeout: 30_000,
+        })
+        .toBe(ecran.chemin)
+      await expect(page.locator('input[type="email"]')).toHaveCount(0)
+      await expect(page.getByText(ecran.marqueur).filter({ visible: true }).first())
+        .toBeVisible({ timeout: 30_000 })
+
+      await page.screenshot({
+        path: `${CAPTURES}/${ecran.nom}-${info.project.name}.png`,
+        fullPage: true,
+      })
+
+      const d = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+      }))
+      expect(d.scroll, `deborde de ${d.scroll - d.client} px`).toBeLessThanOrEqual(d.client)
+
+      const resultats = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+
+      const lisible = resultats.violations.map((v) => ({
+        regle: v.id,
+        impact: v.impact,
+        description: v.help,
+        elements: v.nodes.slice(0, 4).map((n) => n.target.join(' ')),
+      }))
       expect(lisible, JSON.stringify(lisible, null, 2)).toEqual([])
     })
   }
