@@ -46,7 +46,7 @@ function Rail({ visible, top, ref }) {
       // un lecteur d'écran annoncerait des soldes invisibles.
       aria-hidden={!visible}
       className={[
-        'fixed left-0 right-0 z-40 border-b border-registre',
+        'fixed left-0 right-0 z-40 border-b border-reglure',
         // Fond OPAQUE, sans `backdrop-blur` : un flou d'arriere-plan sur un
         // element fixe se recalcule a chaque image pendant le defilement, et ce
         // depot a deja paye cette lecon avec `background-attachment: fixed`

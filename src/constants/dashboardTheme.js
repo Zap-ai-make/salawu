@@ -21,8 +21,8 @@ import { IS_REGISTRE } from './designSystem.js'
 // elles rendent la même surface de papier.
 const CHROME_REGISTRE = {
   background: 'from-papier',
-  border: 'border-registre',
-  iconBg: 'bg-registre/60',
+  border: 'border-reglure',
+  iconBg: 'bg-reglure/60',
   iconColor: 'bg-encre',
   title: 'text-encre',
   accent: 'text-encre-doux',

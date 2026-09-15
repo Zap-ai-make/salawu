@@ -97,7 +97,7 @@ function Layout({ children }) {
           </div>
         </header>
       ) : (
-        <header className="w-full border-b border-registre bg-papier px-4 py-3">
+        <header className="w-full border-b border-reglure bg-papier px-4 py-3">
           <h1 className="text-lg font-semibold tracking-tight text-encre">{APP_NAME}</h1>
         </header>
       )}

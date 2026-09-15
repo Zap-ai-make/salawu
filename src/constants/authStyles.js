@@ -129,7 +129,7 @@ const AUTH_STYLES_REGISTRE = {
     ...AUTH_STYLES_LEGACY.button,
     primary: "w-full bg-encre hover:bg-encre-doux text-white font-semibold py-3 px-6 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-encre focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
     secondary: "w-full bg-encre-doux hover:bg-encre text-white font-semibold py-3 px-6 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-encre focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
-    tertiary: "bg-registre hover:bg-registre/70 text-encre py-3 px-4 rounded-md transition-colors",
+    tertiary: "bg-reglure hover:bg-reglure/70 text-encre py-3 px-4 rounded-md transition-colors",
     link: "text-encre underline underline-offset-2 hover:text-encre-doux font-semibold transition-colors",
     linkSecondary: "text-encre-doux underline underline-offset-2 hover:text-encre font-semibold transition-colors",
   },

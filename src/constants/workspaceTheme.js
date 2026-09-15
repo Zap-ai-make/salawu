@@ -95,15 +95,15 @@ export const getRoleAccent = (role) => ROLE_ACCENT[role] ?? ROLE_ACCENT.dealer
 // L'identité troque l'ombre portée contre un filet et un rayon discret : une
 // ombre molle et omniprésente ne dit rien, un trait dit « ceci est une surface ».
 export const CARD = IS_REGISTRE
-  ? 'rounded-md bg-papier ring-1 ring-registre'
+  ? 'rounded-md bg-papier ring-1 ring-reglure'
   : 'rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm'
 
 export const TABLE_WRAP = IS_REGISTRE
-  ? 'overflow-x-auto rounded-md bg-papier ring-1 ring-registre'
+  ? 'overflow-x-auto rounded-md bg-papier ring-1 ring-reglure'
   : 'overflow-x-auto rounded-2xl bg-white ring-1 ring-gray-100 shadow-sm'
 
 export const TABLE_HEAD = IS_REGISTRE
-  ? 'bg-registre/60 text-encre'
+  ? 'bg-reglure/60 text-encre'
   : 'bg-green-50/70 text-green-900'   // en-tête tinté marque
 
 // ── Boutons ─────────────────────────────────────────────────────────────────
@@ -114,5 +114,5 @@ export const BTN_PRIMARY = IS_REGISTRE
   : 'rounded-xl bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 disabled:opacity-50 transition-colors'
 
 export const BTN_SECOND = IS_REGISTRE
-  ? 'rounded-md border border-filet bg-papier px-4 py-2 text-sm font-medium text-encre hover:bg-registre/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-encre focus-visible:ring-offset-2 disabled:opacity-50 transition-colors'
+  ? 'rounded-md border border-filet bg-papier px-4 py-2 text-sm font-medium text-encre hover:bg-reglure/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-encre focus-visible:ring-offset-2 disabled:opacity-50 transition-colors'
   : 'rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 disabled:opacity-50 transition-colors'

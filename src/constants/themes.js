@@ -55,11 +55,12 @@ export const THEMES = {
       // Barre de navigation à l'encre : calme, et surtout elle laisse les six
       // couleurs opérateur être les seules taches de couleur de l'écran.
       navbar: 'bg-encre text-white',
-      // `border-filet` (3,48:1) et NON `border-registre` (1,21:1) : une réglure
+      // `border-filet` (3,81:1) et NON `border-reglure` (1,21:1) : une réglure
       // de tableau structure la lecture d'une colonne de montants — en plein
       // soleil, un trait à 1,21:1 est invisible et la colonne se disloque.
-      tableHeader: 'bg-registre/60 border-filet',
-      tableAccent: 'bg-registre/30',
+      // Chiffre vérifié par `npm run qa:jetons`, pas recopié.
+      tableHeader: 'bg-reglure/60 border-filet',
+      tableAccent: 'bg-reglure/30',
     }
   },
 

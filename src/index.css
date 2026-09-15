@@ -75,46 +75,168 @@
    src/constants/networkConfig.js et y restent. Les dupliquer recréerait
    exactement la double source de vérité qu'on est en train de supprimer.
 
-   Chaque contraste ci-dessous est mesuré sur --papier, pas estimé.
+   Chaque contraste ci-dessous est MESURÉ, sur --papier puis sur --canvas quand
+   le jeton sert sur les deux fonds. Un chiffre non mesuré ne s'écrit pas.
+
+   ⚠ POURQUOI `@theme static` ET NON `@theme` — mesuré, pas supposé.
+   Tailwind v4 n'émet que les variables réellement UTILISÉES dans du texte
+   scanné. Un premier build de ce lot a produit un CSS où --color-canvas,
+   --color-surface-100, --color-trait-200, --color-alerte et --color-echec
+   étaient purement ABSENTS : aucun utilitaire ne les consomme encore, ils ont
+   été élagués.
+
+   Pire, et c'est ce qui a tranché : --color-brand-500 SURVIVAIT — non pas parce
+   que le produit l'utilise, mais parce que la chaîne « brand-500 » est écrite
+   dans docs/audit/maquette-espace-boutique.html et dans
+   METHODE-REFONTE-DESIGN.md. Tailwind v4 balaie le texte brut du dépôt, .md et
+   .html compris : la seule raison de vivre de ce jeton était une DOCUMENTATION.
+   Le jour où l'on archive la maquette, il disparaît du CSS sans un mot, et une
+   règle qui écrit `var(--color-brand-500)` peint alors du vide.
+
+   `static` force l'émission. C'est le prix à payer pour qu'un jeton existe
+   parce qu'il est DÉCLARÉ, et non parce qu'un fichier de travail le cite.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@theme {
-  /* ── Encre et papier ───────────────────────────────────────────────────── */
-  /* --encre reprend le noir bleuté du logo ESAHAF (#15202B) : la marque donne
-     sa teinte à l'interface par son noir. Ses couleurs, elles, restent dans le
-     logo — l'orange de marque (#EA6A21) et le bleu (#2E86E0) sont à distance 29
-     et 17 des couleurs Orange et Moov : en accent d'interface, ils se liraient
-     comme un réseau. La marque n'entre pas en concurrence avec l'information. */
-  --color-encre: #15202b;        /* 16,49:1 — texte principal, wordmark        */
-  --color-encre-doux: #5b6470;   /*  6,00:1 — texte secondaire (remplace       */
-                                 /*           text-gray-400, qui est à 2,54:1) */
-  --color-papier: #ffffff;       /* fond — blanc franc, pas crème : le contexte
-                                    d'usage est le plein soleil, on veut la
-                                    luminance maximale                          */
+@theme static {
+  /* ═══ FAMILLE 1 — LA MARQUE : le CHROME, et rien d'autre ═══════════════════
+     Navigation, bouton primaire, lien, anneau de focus, état actif.
+     Ces jetons N'ONT PAS LE DROIT de dire un sens (une entrée, une alerte) ni
+     d'identifier un tiers (un opérateur). Une couleur de marque qui se met à
+     signifier quelque chose entre en concurrence avec l'information.
 
-  /* ── Filets du registre ────────────────────────────────────────────────── */
-  /* Deux jetons et non un seul, et c'est une contrainte, pas un raffinement :
-     --registre est à 1,21:1, il ne peut porter AUCUNE limite de composant —
-     WCAG 1.4.11 exige 3:1. Les champs de saisie et les anneaux de focus
-     prennent donc --filet. Se tromper de jeton = formulaire non conforme.     */
-  --color-registre: #ece9e3;     /*  1,21:1 — zébrage, séparateurs, réglure.
-                                    JAMAIS un aplat de fond : c'est ce qui
-                                    évite de retomber sur le fond crème        */
-  --color-filet: #8f897d;        /*  3,48:1 — bordures d'entrée, focus         */
+     La base #1b62b0 est RELEVÉE AU PIXEL sur branding/salawu/pwa-512x512.png :
+     2ᵉ couleur du fichier, 9 924 pixels, le texte arqué et le corps de la
+     flèche. Les deux autres couleurs du logo sont écartées comme jetons, et la
+     mesure tranche — pas le goût :
+       · #2e86e0 est à distance RVB 16,9 de Moov (#1e88e5) : il se lirait « Moov » ;
+       · #ea6a21 est à 29,0 d'Orange (#ff6b35) ET plafonne à 3,19:1 sur blanc.
+     #1b62b0, lui, est à 65,3 de l'opérateur le plus proche — près de quatre
+     fois l'écart qui a disqualifié le bleu clair — et tient 6,14:1.
 
-  /* ── Sens du mouvement d'argent ────────────────────────────────────────── */
-  /* Le code entrée/sortie existe déjà dans le produit (commit 55812b4) ;
-     ces jetons le formalisent. La couleur ne porte JAMAIS l'information seule :
-     elle double toujours un signe (+/−), un mot et une icône.                 */
-  --color-entree: #0f6e3f;       /*  6,32:1 — entrée d'argent                  */
-  --color-sortie: #b3400f;       /*  5,74:1 — sortie d'argent                  */
+     ⚠ CE QUE CORRIGE CE BLOC. Le bilan du 2026-09-02 (docs/audit/BILAN-DESIGN.md
+     §4) concluait que « les couleurs de la marque ne peuvent pas devenir des
+     jetons d'interface ». C'est exact pour les deux couleurs qu'il a mesurées,
+     et faux comme règle générale : il n'avait jamais testé #1b62b0, qui est
+     pourtant la couleur du wordmark.                                          */
+  --color-canvas: #f0f6fe;       /*  1,09:1 sur papier — FOND D'APPLICATION,
+                                    derrière les surfaces. Jamais un fond de
+                                    texte long : c'est un fond, pas un aplat   */
+  --color-surface-100: #dceafc;  /*  1,22:1 — en-tête de tableau, ligne de
+                                    total. JAMAIS une bordure porteuse         */
+  --color-trait-200: #c0d7f5;    /*  1,47:1 — contour de surface, DÉCORATIF :
+                                    il ne borne aucun champ de saisie          */
+  --color-brand-400: #2a75ca;    /*  4,67:1 — anneau de focus, état actif, lien */
+  --color-brand-500: #1b62b0;    /*  6,14:1 — BASE relevée au pixel : barre de
+                                    navigation, bouton primaire. Blanc DESSUS
+                                    = 6,14:1, donc du texte blanc est conforme */
+  --color-brand-600: #00458d;    /*  9,39:1 — survol et état pressé du primaire */
 
-  /* ── Typographie ───────────────────────────────────────────────────────── */
-  /* Nommées --font-plex / --font-plex-mono et NON --font-sans : redéfinir
-     --font-sans changerait immédiatement le rendu de toute l'application, ce
-     qui n'appartient pas à ce lot. Le Lot 2 fera la bascule en une ligne.     */
+  /* ═══ FAMILLE 2 — LA STRUCTURE et le TEXTE ════════════════════════════════
+     --encre reprend le noir bleuté du logo (#15202b) : la marque donne sa
+     teinte à l'interface par son noir autant que par son bleu.                */
+  --color-encre: #15202b;        /* 16,49:1 sur papier · 15,17:1 sur canvas —
+                                    texte principal, titres, wordmark          */
+  --color-encre-doux: #5b6470;   /*  6,00:1 · 5,52:1 — texte secondaire.
+                                    Remplace text-gray-400, qui est à 2,54:1   */
+  --color-papier: #ffffff;       /* surface — blanc franc, pas crème : on
+                                    travaille en plein soleil sur un écran
+                                    d'entrée de gamme, on veut la luminance
+                                    maximale                                    */
+
+  /* Deux filets et non un seul, et c'est une CONTRAINTE, pas un raffinement :
+     --reglure est à 1,21:1, elle ne peut porter AUCUNE limite de composant —
+     WCAG 1.4.11 exige 3:1. Les champs de saisie, les anneaux de focus et la
+     réglure des montants prennent donc --filet. Se tromper de jeton ici, c'est
+     livrer un formulaire non conforme.                                        */
+  --color-reglure: #e5eaf0;      /*  1,21:1 · 1,11:1 — filets HORIZONTAUX,
+                                    zébrage. Jamais une bordure de champ, et
+                                    jamais un aplat de fond                    */
+  --color-filet: #778495;        /*  3,81:1 · 3,50:1 — bordure de saisie, focus,
+                                    ET la réglure de la colonne des montants   */
+
+  /* ═══ FAMILLE 3 — LE SENS, et lui seul ════════════════════════════════════
+     Chaque teinte est TOUJOURS doublée d'un signe, d'un mot et d'une forme.
+     Aucune ne paraît seule (DESIGN.md §5).
+
+     --entree / --sortie ne veulent PAS dire « bien / mal ». Un retrait n'est
+     pas une erreur : c'est un mouvement d'argent dans l'autre sens. D'où une
+     teinte de sortie distincte du rouge d'échec — le produit rendait « Crédit »
+     en rouge, ce qui accusait d'erreur une opération parfaitement normale.
+
+     ⚠ « Dans la grandeur mesurée PAR L'ÉCRAN » : Transactions mesure le stock,
+     Historique mesure la caisse. Le même jeton sert les deux, et c'est l'écran
+     qui dit ce qu'il mesure — pas le jeton.                                   */
+  --color-entree: #0f6e3f;       /*  6,32:1 · 5,81:1 — ce qui rentre           */
+  --color-sortie: #b3400f;       /*  5,74:1 · 5,28:1 — ce qui sort. PAS une
+                                    erreur : teinte distincte de --echec       */
+  --color-alerte: #8a5a00;       /*  5,93:1 — stock bas, à surveiller, en
+                                    attente. Toujours doublé du palier écrit   */
+  --color-echec: #a01b1b;        /*  7,87:1 — rejet, suppression, épuisement.
+                                    RÉSERVÉ à l'échec : aucune opération
+                                    normale ne le porte                        */
+
+  /* ═══ FAMILLE 4 — L'IDENTITÉ D'UN TIERS ═══════════════════════════════════
+     Elle n'est VOLONTAIREMENT PAS ici. Les 49 couleurs des six opérateurs
+     vivent dans src/constants/networkConfig.js et y restent : ce sont des
+     DONNÉES, pas du chrome. Les dupliquer ici recréerait la double source de
+     vérité que ce chantier supprime.
+
+     Elles n'ont droit qu'à la pastille de 9 px et aux séries de graphique,
+     toujours doublées du nom de l'opérateur en toutes lettres — cinq des sept
+     sont sous 4,5:1 sur blanc (Coris à 1,79:1) et ne peuvent porter de texte.
+     Et c'est PARCE QU'ELLES RESTENT que la marque ne peut pas leur ressembler. */
+
+  /* ═══ TYPOGRAPHIE ═════════════════════════════════════════════════════════
+     Nommées --font-plex / --font-plex-mono et NON --font-sans : redéfinir
+     --font-sans changerait le rendu de TOUS les clients d'un coup. La bascule
+     se fait sous la portée .design-registre, plus bas, et nulle part ailleurs. */
   --font-plex: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --font-plex-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Les neutres, retintés vers la teinte de marque (OKLCH 254,4°)
+   ───────────────────────────────────────────────────────────────────────────
+   Les gris de Tailwind tirent vers le vert-de-gris ; à côté d'un bleu, ils
+   jurent. On REDÉFINIT la rampe existante au lieu d'en ajouter une : 511
+   utilitaires neutres changent de teinte sans qu'un seul fichier .jsx soit
+   touché.
+
+   ⚠ POURQUOI SOUS .design-registre ET NON DANS @theme — c'est la décision
+   structurante de ce lot. Placés dans @theme, ces jetons atterrissent sur
+   `:root,:host` et repeignent les gris de TOUS les clients, TAOFIC compris.
+   Or retinter des neutres est un PARTI PRIS de mise en page, pas une correction
+   d'accessibilité : la frontière posée au Lot 3 (bilan §10) veut qu'un parti
+   pris passe par `profil.design`. Comme .design-registre est posée sur <html>
+   par src/main.jsx, et que les utilitaires Tailwind v4 s'écrivent
+   `color: var(--color-gray-500)`, redéfinir la variable ici la fait hériter par
+   toute la page — même effet, même coût, et TAOFIC ne peut pas en hériter.
+
+   ⚠ Ce bloc doit rester APRÈS le @theme ci-dessus : Tailwind émet aussi une
+   variante `color(display-p3 …)` de chaque gris sous @supports, et c'est
+   l'ordre de la feuille qui tranche entre deux déclarations de même spécificité.
+
+   Contrainte tenue et vérifiée : AUCUN niveau ne perd en contraste par rapport
+   au défaut Tailwind v4. Le niveau 400 reste sous AA (2,62:1) comme chez
+   Tailwind — il ne sert qu'aux états désactivés, que WCAG exempte.
+
+   ⚠ Le coup de rampe ne s'applique QU'AUX couleurs sans aucun sens. Retinter
+   `green` ou `red` d'un trait détruirait le sens pour gagner du temps : les
+   badges de succès deviendraient bleus.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre {
+  --color-gray-50: #f8fafc;   /*  1,05:1 — Tailwind : 1,05:1 (+0,00) */
+  --color-gray-100: #f2f4f7;  /*  1,10:1 — Tailwind : 1,10:1 (+0,00) */
+  --color-gray-200: #e3e7ec;  /*  1,24:1 — Tailwind : 1,24:1 (+0,00) */
+  --color-gray-300: #cfd5dd;  /*  1,48:1 — Tailwind : 1,47:1 (+0,00) */
+  --color-gray-400: #94a1b3;  /*  2,62:1 — Tailwind : 2,60:1 (+0,02)
+                                  sous AA : états désactivés UNIQUEMENT */
+  --color-gray-500: #637387;  /*  4,85:1 — Tailwind : 4,84:1 (+0,01) */
+  --color-gray-600: #45556a;  /*  7,61:1 — Tailwind : 7,56:1 (+0,05) */
+  --color-gray-700: #314156;  /* 10,39:1 — Tailwind : 10,30:1 (+0,09) */
+  --color-gray-800: #1a293d;  /* 14,70:1 — Tailwind : 14,67:1 (+0,03) */
+  --color-gray-900: #09182b;  /* 17,84:1 — Tailwind : 17,75:1 (+0,09) */
 }
 
 /* Reset basique pour assurer la compatibilité */
@@ -150,14 +272,40 @@ body {
   color: var(--color-encre);
 }
 
-/* Les montants sont le contenu de cette application : ils passent en chasse fixe
-   tabulaire dès que l'identité est active, sans avoir à toucher chaque tableau.
-   `.montant` reste disponible pour un ciblage explicite. */
+/* ── DEUX DÉCLARATIONS, ET IL FAUT LES DEUX ─────────────────────────────────
+   `data-nombre` — tout nombre QUI SE COMPARE d'une ligne à l'autre : un
+   décompte, un solde de dette, un numéro de page. Chasse fixe, chiffres
+   tabulaires, aligné à droite. AUCUN trait.
+
+   `data-montant` — un nombre qui est de l'ARGENT en FCFA. Tout ce qui précède,
+   PLUS la réglure verticale (voir le bloc suivant).
+
+   ⚠ POURQUOI DEUX ET NON UNE. La réglure est la signature du produit : elle
+   désigne l'argent. Posée aussi sur les dates, les codes agent et les numéros de
+   compte, elle cesse de désigner quoi que ce soit et redevient une bordure de
+   tableau de plus — exactement ce qu'on retire par ailleurs. Une colonne de
+   dates a besoin de chiffres tabulaires ; elle n'a pas besoin du trait.
+
+   `.tabular` et `.montant` restent disponibles pour un ciblage explicite depuis
+   une classe, quand la cellule n'est pas le bon porteur de la déclaration.     */
 .design-registre .tabular,
+.design-registre .montant,
+.design-registre [data-nombre],
 .design-registre [data-montant] {
   font-family: var(--font-plex-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
+}
+
+/* L'alignement à droite vaut pour les deux : avec des chiffres tabulaires, les
+   unités, dizaines et centaines tombent sur la même verticale d'une ligne à
+   l'autre. C'est ce qui permet de repérer un ordre de grandeur sans lire les
+   chiffres — 12 300 et 1 250 000 ne se confondent plus au premier coup d'œil. */
+.design-registre [data-nombre],
+.design-registre [data-montant],
+.design-registre th[data-nombre],
+.design-registre th[data-montant] {
+  text-align: right;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -175,10 +323,13 @@ body {
      permet de repérer un ordre de grandeur sans lire les chiffres — 12 300 et
      1 250 000 ne se confondent plus au premier coup d'œil.
 
-   • LE TRAIT EST EN --filet (3,48:1) ET NON EN --registre (1,21:1), contrairement
-     à ce que la direction annonçait. Motif : le contexte d'usage est le plein
-     soleil sur un écran d'entrée de gamme, et un trait à 1,21:1 y est
-     simplement invisible. Une signature qu'on ne voit pas n'en est pas une.
+   • LE TRAIT EST EN --filet (3,81:1 sur papier, 3,50:1 sur canvas) ET NON EN
+     --reglure (1,21:1), contrairement à ce que la direction annonçait. Motif :
+     le contexte d'usage est le plein soleil sur un écran d'entrée de gamme, et
+     un trait à 1,21:1 y est simplement invisible. Une signature qu'on ne voit
+     pas n'en est pas une. WCAG 1.4.11 exige 3:1 pour un élément graphique
+     porteur de sens : le jeton tient sur les DEUX fonds, et c'est pour cela que
+     les deux mesures sont écrites.
 
    • LA DÉCLARATION EST DANS LE COMPOSANT, L'APPARENCE ICI. Une cellule dit
      `data-montant` — un fait — et c'est l'identité qui décide du rendu. TAOFIC,
@@ -186,8 +337,9 @@ body {
      le JSX, donc aucune occasion d'en oublier un.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* LE TRAIT NE VA QU'À L'ARGENT. C'est la ligne qui sépare la signature d'une
+   bordure de tableau — cf. le bloc précédent sur les deux déclarations. */
 .design-registre [data-montant] {
-  text-align: right;
   /* `border-left` et non un pseudo-élément : sur une cellule de tableau, la
      bordure se répète mécaniquement à chaque ligne et forme le trait continu.
      Un ::before aurait exigé un positionnement relatif sur chaque <td>. */
@@ -195,12 +347,6 @@ body {
   /* Respirer autour du trait : sans cela le montant colle au filet et le trait
      se lit comme une bordure de cellule ordinaire au lieu d'une réglure. */
   padding-left: 1rem;
-}
-
-/* L'en-tête de la colonne porte le même trait, sinon la réglure démarre à la
-   première ligne de données et paraît tronquée en haut. */
-.design-registre th[data-montant] {
-  text-align: right;
 }
 
 /* ── Écran de connexion ─────────────────────────────────────────────────────
@@ -219,7 +365,7 @@ body {
 .design-registre .auth-card {
   /* Le filet remplace l'ombre portée : `shadow-2xl` est une ombre molle et
      omniprésente (§1), et elle ne dit rien. Un trait dit « ceci est une feuille ». */
-  border: 1px solid var(--color-registre);
+  border: 1px solid var(--color-reglure);
   border-top: 3px solid var(--color-encre);
   border-radius: 2px;
   box-shadow: none;
