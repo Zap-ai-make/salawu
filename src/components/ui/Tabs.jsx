@@ -11,7 +11,15 @@
  */
 
 export function tabButtonClass(active) {
-  return `px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 inline-flex items-center ${
+  // `onglet` / `onglet--actif` sont des marqueurs SÉMANTIQUES, pas des
+  // utilitaires : ils disent ce que l'élément EST, et l'identité « registre »
+  // décide de son apparence dans src/index.css. Ils sont inertes partout
+  // ailleurs — aucune règle ne les cible hors de la portée —, donc TAOFIC et les
+  // espaces admin/dealer rendent exactement ce qu'ils rendaient.
+  //
+  // Une classe plutôt qu'un `data-*` ici, parce que cette fonction renvoie une
+  // CHAÎNE DE CLASSES : un attribut aurait obligé à toucher chaque appelant.
+  return `onglet ${active ? 'onglet--actif' : ''} px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 inline-flex items-center ${
     active ? 'bg-green-700 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
   }`
 }
@@ -35,7 +43,7 @@ export function TabBadge({ count, tone = 'neutral', active = false, testId, labe
 
   return (
     <span
-      className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none min-w-[1.2rem] ${cls}`}
+      className={`onglet__compte ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none min-w-[1.2rem] ${cls}`}
       aria-label={label}
       data-testid={testId}
     >

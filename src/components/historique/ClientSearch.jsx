@@ -40,7 +40,7 @@ function ClientSearch({ onSearch, onSearchChange }) {
         />
       </div>
       
-      <button
+      <button data-rang="primaire"
         onClick={handleSearch}
         className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded font-medium transition-colors"
       >

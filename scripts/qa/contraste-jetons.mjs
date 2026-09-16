@@ -52,6 +52,33 @@ const ANNONCES = [
 ]
 
 /**
+ * Paires JETON SUR JETON.
+ *
+ * Les tableaux ci-dessus mesurent chaque jeton sur --papier et sur --canvas,
+ * parce que ce sont les deux fonds de l'application. Mais un bouton pose un
+ * jeton sur un AUTRE jeton, et ce ratio-là ne se déduit d'aucune des deux
+ * colonnes : il faut le calculer.
+ *
+ * Sans cette section, le lot L7.3 aurait annoncé un chiffre tiré d'un calcul à
+ * la main — exactement ce que la règle du chantier interdit : « un chiffre porte
+ * la commande qui l'a produit, ou il ne figure pas dans le rapport ».
+ */
+const PAIRES = [
+  {
+    quoi: 'bouton désactivé (L7.3)',
+    encre: 'encre-doux',
+    fond: 'reglure',
+    seuil: 4.5,
+    // Le dépôt rend « Filtrer » en `disabled:bg-gray-300` avec du texte blanc,
+    // soit environ 1,6:1 — le verbe disparaît au lieu d'être désactivé. WCAG
+    // exempte les contrôles désactivés ; ce n'est pas une raison de les rendre
+    // illisibles. Un bouton grisé doit encore dire ce qu'il fera quand il
+    // redeviendra possible.
+    pourquoi: 'un contrôle désactivé doit rester LISIBLE',
+  },
+]
+
+/**
  * La rampe de neutres retintée, avec le défaut Tailwind v4 en regard.
  * La contrainte n'est pas « être plus contrasté » : c'est « ne JAMAIS l'être
  * moins ». Retinter des gris ne doit rien coûter en lisibilité.
@@ -189,6 +216,27 @@ async function main() {
     const ratio = arrondi(contraste(PAPIER, hex))
     console.log(`  blanc sur --${niveau} (${hex}) : ${ratio.toFixed(2)}:1`)
     if (ratio < 4.5) ecarts.push(`du texte blanc sur --${niveau} tombe sous AA (${ratio})`)
+  }
+
+  // ── Jeton sur jeton ────────────────────────────────────────────────────────
+  if (PAIRES.length > 0) {
+    console.log('\nUn jeton posé sur un autre jeton\n')
+    for (const { quoi, encre, fond, seuil, pourquoi } of PAIRES) {
+      const hexEncre = jetons.get(encre)
+      const hexFond = jetons.get(fond)
+      if (!hexEncre || !hexFond) {
+        ecarts.push(`paire « ${quoi} » : --color-${encre} ou --color-${fond} est ABSENT de ${FEUILLE}`)
+        continue
+      }
+      const ratio = arrondi(contraste(hexEncre, hexFond))
+      console.log(
+        `  ${quoi.padEnd(26)} --${encre} sur --${fond} ` +
+          `(${hexEncre} / ${hexFond}) : ${ratio.toFixed(2)}:1  [seuil ${seuil}] — ${pourquoi}`,
+      )
+      if (ratio < seuil) {
+        ecarts.push(`« ${quoi} » : --${encre} sur --${fond} tombe à ${ratio}, sous le seuil ${seuil}`)
+      }
+    }
   }
 
   if (ecarts.length > 0) {

@@ -76,7 +76,7 @@ function DateFilter({ onDateChange, onResetToToday }) {
       
       {/* Boutons d'action */}
       <div className="flex gap-2">
-        <button
+        <button data-rang="second"
           onClick={handleFilter}
           disabled={!isValidDateRange() || (!dateFrom && !dateTo)}
           className="bg-green-700 hover:bg-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-medium transition-colors"
@@ -84,7 +84,7 @@ function DateFilter({ onDateChange, onResetToToday }) {
           Filtrer
         </button>
         
-        <button
+        <button data-rang="second"
           onClick={handleResetToToday}
           className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded font-medium transition-colors"
         >

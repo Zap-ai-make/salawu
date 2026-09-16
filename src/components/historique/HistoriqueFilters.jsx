@@ -95,7 +95,7 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
 
         {/* Boutons d'action */}
         <div className="flex flex-col justify-end space-y-2">
-          <button
+          <button data-rang="second"
             onClick={handleFilterChange}
             className="bg-blue-700 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors text-sm"
           >
@@ -103,7 +103,7 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
           </button>
 
           {hasActiveFilters && (
-            <button
+            <button data-rang="second"
               onClick={clearFilters}
               className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors text-sm"
             >

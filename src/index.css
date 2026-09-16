@@ -497,6 +497,124 @@ body {
    suppression du fond sémantique, quand le sens sera porté par le signe, le mot
    et la couleur du MONTANT — jamais par la ligne entière. */
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE RANG DES ACTIONS (lot L7.3)
+   ───────────────────────────────────────────────────────────────────────────
+   Sur l'historique, quatre boutons pleins se disputaient l'attention :
+   « Rechercher » et « Filtrer » en `bg-green-700`, « Aujourd'hui » et
+   « Appliquer les filtres » en `bg-blue-700`, « Exporter XLSM » et
+   « Importer (XLSM) » en vert encore. Six aplats, aucune hiérarchie : l'œil ne
+   peut pas savoir lequel fait avancer le travail.
+
+   La maquette le dit sans détour : « une couleur d'action dit le RANG ». Elle
+   n'accorde qu'UN SEUL primaire par écran — sur l'historique, « Rechercher » —
+   et met tout le reste en contour. Les quatorze boutons d'une colonne d'actions
+   feraient sinon une bande de couleur qui entrerait en concurrence avec lui.
+
+   `data-rang` est un FAIT : l'importance de cette action dans cet écran. Il ne
+   dit rien d'une couleur, et il est inerte partout où cette feuille ne
+   s'applique pas — TAOFIC, l'espace admin, l'espace dealer.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-rang] {
+  font-size: 0.84375rem; /* 13,5px */
+  font-weight: 600;
+  padding: 0.5rem 0.9375rem;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+/* L'UNIQUE action qui fait avancer le travail de l'écran. Blanc sur
+   --brand-500 : 6,14:1, mesuré par `npm run qa:jetons`. */
+.design-registre [data-espace='boutique'] [data-rang='primaire'] {
+  background: var(--color-brand-500);
+  color: #fff;
+}
+.design-registre [data-espace='boutique'] [data-rang='primaire']:hover {
+  background: var(--color-brand-600);
+}
+
+/* Tout le reste : un contour, pas un aplat. Le texte en --brand-600 tient
+   9,39:1 sur le papier, et le contour en --filet 3,81:1 — au-dessus des 3:1
+   qu'exige WCAG 1.4.11 pour la limite d'un composant d'interface. */
+.design-registre [data-espace='boutique'] [data-rang='second'] {
+  background: var(--color-papier);
+  color: var(--color-brand-600);
+  border-color: var(--color-filet);
+}
+.design-registre [data-espace='boutique'] [data-rang='second']:hover {
+  background: var(--color-surface-100);
+  border-color: var(--color-brand-500);
+}
+
+/* L'action qui TERMINE l'opération d'une ligne : contour de marque, épaissi.
+   Elle se distingue d'un second sans devenir un aplat de plus. */
+.design-registre [data-espace='boutique'] [data-rang='accent'] {
+  background: var(--color-papier);
+  color: var(--color-brand-600);
+  border-color: var(--color-brand-500);
+  border-width: 2px;
+  padding: 0.4375rem 0.875rem;
+}
+
+/* Ce qui détruit ou annule. --echec tient 7,87:1 sur le papier. */
+.design-registre [data-espace='boutique'] [data-rang='danger'] {
+  background: var(--color-papier);
+  color: var(--color-echec);
+  border-color: var(--color-filet);
+}
+
+/* ⚠ UN BOUTON DÉSACTIVÉ DOIT RESTER LISIBLE.
+   Le dépôt rend « Filtrer » en `disabled:bg-gray-300` avec du texte blanc —
+   environ 1,6:1 : le verbe DISPARAÎT au lieu d'être désactivé, et l'utilisateur
+   ne sait plus ce que le bouton fera quand il redeviendra possible. WCAG exempte
+   les contrôles désactivés du seuil de contraste ; ce n'est pas une raison de
+   les rendre illisibles.
+   --encre-doux sur --reglure : 4,96:1, mesuré par `npm run qa:jetons`. */
+.design-registre [data-espace='boutique'] [data-rang]:disabled {
+  background: var(--color-reglure);
+  color: var(--color-encre-doux);
+  border-color: var(--color-filet);
+  cursor: not-allowed;
+}
+
+/* ── L'onglet, même règle de rang ───────────────────────────────────────────
+   L'onglet actif était une pilule `bg-green-700` : le dernier aplat vert de
+   l'écran, et depuis que l'action primaire est passée en bleu de marque, le plus
+   SONORE des deux. Deux couleurs franches qui disent deux choses différentes —
+   « tu es ici » et « fais ceci » — se disputaient le regard.
+
+   L'onglet actif prend donc la marque, comme dans la maquette : c'est le même
+   système qui dit où l'on est et ce qu'on peut faire, et il n'y en a qu'un. */
+.design-registre [data-espace='boutique'] .onglet {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.4375rem 0.8125rem;
+  background: var(--color-papier);
+  border: 1px solid var(--color-trait-200);
+  border-radius: 2px;
+  color: var(--color-encre-doux);
+}
+.design-registre [data-espace='boutique'] .onglet--actif {
+  background: var(--color-brand-500);
+  border-color: var(--color-brand-500);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Le compteur d'un onglet est un NOMBRE QUI SE COMPARE : chasse fixe tabulaire,
+   comme tous les nombres du produit. Trois en attente et douze en attente ne
+   doivent pas demander un effort de lecture différent. */
+.design-registre [data-espace='boutique'] .onglet__compte {
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  border-radius: 2px;
+}
+
 /* ── Écran de connexion ─────────────────────────────────────────────────────
    Le rendu 'legacy' sert un dégradé `from-blue-50 to-indigo-100` — le tic que
    DESIGN.md §1 désigne nommément, sur le premier écran que voit l'utilisateur.

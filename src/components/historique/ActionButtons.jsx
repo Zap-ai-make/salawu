@@ -111,14 +111,14 @@ function ActionButtons({ filteredTransactions = [], resetFilters }) {
       )}
 
       <div className="flex flex-wrap gap-4">
-        <button
+        <button data-rang="second"
           onClick={handleExport}
           className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded font-medium transition-colors"
         >
           Exporter XLSM
         </button>
 
-        <button
+        <button data-rang="second"
           onClick={handleImport}
           className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded font-medium transition-colors"
         >
