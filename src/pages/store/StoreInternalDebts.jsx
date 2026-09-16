@@ -367,7 +367,7 @@ function StoreInternalDebts() {
       {error && <p className="mb-4 rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
 
       <div className={tbl.container}>
-        <div className={tbl.scroll}>
+        <div {...tbl.zoneDefilante("Dettes internes en cours, défilement horizontal")}>
           <table className="w-full border-collapse">
             <thead>
               <tr className={tbl.headerRow}>

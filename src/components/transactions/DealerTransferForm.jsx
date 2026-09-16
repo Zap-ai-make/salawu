@@ -185,7 +185,7 @@ function DealerTransferForm() {
       <div className="mt-8">
         <h3 className={tbl.title}>Mes envois au dealer</h3>
         <div className={tbl.container}>
-          <div className={tbl.scroll}>
+          <div {...tbl.zoneDefilante("Envois dealer, défilement horizontal")}>
             <table className="w-full border-collapse">
               <thead>
                 <tr className={tbl.headerRow}>

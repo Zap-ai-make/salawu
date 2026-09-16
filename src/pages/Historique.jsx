@@ -227,7 +227,7 @@ function Historique() {
           {/* Onglet Opérations dealer */}
           {tab === 'dealer' && (
             <div className={tbl.container}>
-              <div className={tbl.scroll}>
+              <div {...tbl.zoneDefilante("Opérations dealer, défilement horizontal")}>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className={tbl.headerRow}>
@@ -265,7 +265,7 @@ function Historique() {
           {/* Onglet Collaborations */}
           {tab === 'collab' && IS_MULTI_NETWORK && (
             <div className={tbl.container}>
-              <div className={tbl.scroll}>
+              <div {...tbl.zoneDefilante("Collaborations, défilement horizontal")}>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className={tbl.headerRow}>
@@ -323,7 +323,7 @@ function Historique() {
           {/* Onglet Dettes internes (réglées) */}
           {tab === 'internaldebts' && IS_MULTI_NETWORK && (
             <div className={tbl.container}>
-              <div className={tbl.scroll}>
+              <div {...tbl.zoneDefilante("Dettes internes réglées, défilement horizontal")}>
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className={tbl.headerRow}>

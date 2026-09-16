@@ -26,7 +26,7 @@
  * pas l'ordre dans l'attribut class.
  *
  * @param {{ tableHeader?: string, text?: string }} themeClasses - issu de useTheme().
- * @returns {{ border, title, container, scroll, headerRow, headerCell,
+ * @returns {{ border, title, container, zoneDefilante, headerRow, headerCell,
  *   headerCellCenter, cell, cellCenter, empty: string }}
  */
 export function themedTableClasses(themeClasses = {}) {
@@ -41,7 +41,47 @@ export function themedTableClasses(themeClasses = {}) {
     border,
     title: `text-xl font-bold ${text} mb-4`,
     container: `bg-white rounded-lg border ${border}`,
-    scroll: 'overflow-x-auto overflow-y-visible',
+
+    /**
+     * La zone défilante, avec TOUT ce qu'il lui faut pour exister au clavier.
+     *
+     * ⚠ C'EST UNE FONCTION, ET NON UNE CHAÎNE, DÉLIBÉRÉMENT.
+     *
+     * Elle rendait auparavant `scroll: 'overflow-x-auto overflow-y-visible'` —
+     * une classe, rien d'autre. Les huit zones qui s'en servaient (cinq
+     * fichiers) défilaient donc horizontalement sans jamais pouvoir prendre le
+     * focus : à qui n'a pas de souris, les colonnes de droite n'existaient pas,
+     * et le MONTANT est l'une d'elles (WCAG 2.1.1).
+     *
+     * `ClientsTable.jsx` faisait déjà les choses correctement, à la main. Ce
+     * n'était donc pas une intention manquante mais une aide partagée qui
+     * l'avait perdue — et un défaut logé dans une aide se répand partout où
+     * l'aide sert. Rendre les attributs avec la classe est la seule forme qui
+     * empêche de les oublier : on ne peut plus prendre l'un sans les autres.
+     *
+     * Le libellé est OBLIGATOIRE et la fonction refuse de s'en passer. Une
+     * région sans nom accessible est annoncée « région », ce qui ne dit rien ;
+     * quand le focus y entre, ce nom est la seule chose qui indique à
+     * l'utilisateur où il vient d'arriver. Un défaut silencieux serait recopié
+     * huit fois avant que quiconque le remarque.
+     *
+     * @param {string} libelle - ce que la zone contient, en toutes lettres.
+     */
+    zoneDefilante(libelle) {
+      if (typeof libelle !== 'string' || libelle.trim() === '') {
+        throw new Error(
+          'themedTable.zoneDefilante : un libellé est obligatoire. ' +
+            'Une zone défilante sans nom accessible est annoncée « région » et ' +
+            "ne dit pas à l'utilisateur où son focus vient d'arriver.",
+        )
+      }
+      return {
+        className: 'overflow-x-auto overflow-y-visible',
+        tabIndex: 0,
+        role: 'region',
+        'aria-label': libelle,
+      }
+    },
     headerRow: themeClasses.tableHeader ?? '',
     headerCell: `${headerBase} text-left`,
     headerCellCenter: `${headerBase} text-center`,

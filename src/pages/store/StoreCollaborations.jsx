@@ -151,7 +151,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
       {tab === 'incoming' && (
       <section>
         <div className={tbl.container}>
-          <div className={tbl.scroll}>
+          <div {...tbl.zoneDefilante("Collaborations entrantes, défilement horizontal")}>
             <table className="w-full border-collapse">
               <thead>
                 <tr className={tbl.headerRow}>
@@ -200,7 +200,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
       {tab === 'outgoing' && (
       <section>
         <div className={tbl.container}>
-          <div className={tbl.scroll}>
+          <div {...tbl.zoneDefilante("Collaborations sortantes, défilement horizontal")}>
             <table className="w-full border-collapse">
               <thead>
                 <tr className={tbl.headerRow}>

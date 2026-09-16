@@ -205,8 +205,37 @@ describe('TC-156 — themedTable', () => {
   it('expose toutes les clés attendues par les tableaux', () => {
     const t = themedTableClasses({ tableHeader: 'border-gray-300' })
 
-    for (const cle of ['border', 'title', 'container', 'scroll', 'headerRow', 'headerCell', 'headerCellCenter', 'cell', 'cellCenter', 'empty']) {
+    // ⟲ RETOURNÉ AU LOT L7.2a : `scroll` a laissé la place à `zoneDefilante`.
+    //
+    // `scroll` était une simple chaîne de classes. Les huit zones qui s'en
+    // servaient défilaient horizontalement sans jamais prendre le focus : sans
+    // souris, les colonnes de droite — dont le MONTANT — étaient hors d'atteinte
+    // (WCAG 2.1.1). Une clé qui ne rend que l'apparence d'un comportement
+    // invitait à oublier le comportement.
+    for (const cle of ['border', 'title', 'container', 'zoneDefilante', 'headerRow', 'headerCell', 'headerCellCenter', 'cell', 'cellCenter', 'empty']) {
       expect(t, `clé manquante : ${cle}`).toHaveProperty(cle)
     }
+
+    // Et l'ancienne clé ne doit PAS revenir : sa seule présence permettrait de
+    // recréer une zone défilante muette sans que rien ne proteste.
+    expect(t, 'la clé `scroll` ne doit pas réapparaître').not.toHaveProperty('scroll')
+  })
+
+  it('refuse une zone défilante sans nom accessible', () => {
+    // Le libellé est le seul indice donné à l'utilisateur quand son focus entre
+    // dans la zone. Accepter son absence en silence aurait produit huit régions
+    // annoncées « région », ce qui ne renseigne personne — et le défaut se
+    // serait recopié avant d'être remarqué.
+    const t = themedTableClasses({ tableHeader: 'border-gray-300' })
+
+    expect(() => t.zoneDefilante()).toThrow(/libellé est obligatoire/i)
+    expect(() => t.zoneDefilante('   ')).toThrow(/libellé est obligatoire/i)
+
+    expect(t.zoneDefilante('Historique, défilement horizontal')).toEqual({
+      className: 'overflow-x-auto overflow-y-visible',
+      tabIndex: 0,
+      role: 'region',
+      'aria-label': 'Historique, défilement horizontal',
+    })
   })
 })

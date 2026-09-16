@@ -226,7 +226,7 @@ const TransactionTable = memo(function TransactionTable() {
       </h2>
 
       <div className={tbl.container}>
-        <div className={tbl.scroll}>
+        <div {...tbl.zoneDefilante("Transactions non terminées, défilement horizontal")}>
           <table className="w-full border-collapse">
             <thead>
               <tr className={tbl.headerRow}>

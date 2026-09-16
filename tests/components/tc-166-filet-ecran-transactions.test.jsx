@@ -231,6 +231,38 @@ describe('TC-166 — les colonnes du tableau « Non Terminées »', () => {
   })
 })
 
+describe('TC-166 — la zone défilante est atteignable au clavier (lot L7.2a)', () => {
+  /**
+   * CORRECTION d'accessibilité, product-wide — TAOFIC compris. Ce n'est pas du
+   * restyle : c'est une fonction du produit qui manquait.
+   *
+   * Le tableau a quatorze colonnes et ne tient sur aucun téléphone : il défile
+   * horizontalement. `themedTable.js` fournissait pour cela une simple chaîne,
+   * `scroll: 'overflow-x-auto overflow-y-visible'` — sans `tabIndex`, sans
+   * `role`, sans nom accessible. Une zone qui défile mais ne prend jamais le
+   * focus est inatteignable à qui n'a pas de souris : les colonnes de droite,
+   * dont le MONTANT, n'existent tout simplement pas pour cet utilisateur
+   * (WCAG 2.1.1).
+   *
+   * Huit zones dans cinq fichiers étaient dans ce cas. `ClientsTable.jsx`, lui,
+   * le faisait correctement depuis toujours — la preuve que l'intention était
+   * là et que c'est l'outil partagé qui l'a perdue en route. Un défaut logé dans
+   * une aide se répand partout où l'aide est utile.
+   *
+   * Le nom accessible n'est pas un ornement : quand le focus entre dans la zone,
+   * il est la seule chose qui dise à l'utilisateur où il vient d'arriver.
+   */
+  it('la zone qui défile prend le focus et porte un nom', async () => {
+    await monterLeTableau()
+
+    const zone = screen.getByRole('region', { name: /transactions.*défilement horizontal/i })
+    expect(zone).toBeInTheDocument()
+    expect(zone).toHaveAttribute('tabindex', '0')
+    // Le nom seul ne suffit pas : c'est bien CETTE boîte qui défile.
+    expect(zone.className).toContain('overflow-x-auto')
+  })
+})
+
 describe('TC-166 — les états du tableau', () => {
   it('le squelette de chargement a la FORME du tableau qui arrive', async () => {
     // Un squelette de trois cartes devant un tableau fait sauter la page à
