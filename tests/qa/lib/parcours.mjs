@@ -163,7 +163,25 @@ export async function allerA(page, ecran) {
       .poll(async () => page.locator('main').first().innerText().catch(() => ''), {
         message: `le contenu de <main> n'a pas changé en arrivant sur ${ecran.chemin} — ` +
           'la page précédente est encore rendue',
-        timeout: 30_000,
+        // 45 s, et ce plafond n'excuse aucun défaut du produit — il tient compte
+        // de ce que MESURE cette boucle. Les dix routes sont en `React.lazy`
+        // (App.jsx:26-32) et le banc tourne sur le serveur de développement :
+        // le premier passage sur un écran fait COMPILER son fragment. Pendant
+        // qu'une route suspend, React garde délibérément l'ancienne page à
+        // l'écran — c'est exactement ce que ce contrôle voit, et le message
+        // ci-dessus le décrit fidèlement.
+        //
+        // Relevé le 2026-09-16 : sur une boucle de 19 minutes aux trois largeurs
+        // (42 tests, chacun payant une connexion complète), deux navigations
+        // vers l'historique — l'écran le plus lourd, 200 transactions — ont
+        // dépassé 30 s. Les mêmes navigations tiennent en 8 à 13 s sur une
+        // boucle à une seule largeur.
+        //
+        // En production les fragments sont préconstruits : ce délai n'existe
+        // pas. On cesse donc d'interrompre un travail correct mais lent, sans
+        // ajouter de `retries` — une seconde tentative masquerait, elle, un vrai
+        // défaut de synchronisation.
+        timeout: 45_000,
       })
       .not.toBe(texteAvant)
   }

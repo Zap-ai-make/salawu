@@ -149,7 +149,12 @@ test.beforeAll(async () => {
 // On releve le plafond, on ne met PAS de `retries` : une nouvelle tentative
 // masquerait un vrai probleme de synchronisation, alors qu'un plafond realiste
 // ne fait que cesser d'interrompre un travail correct mais lent.
-test.describe.configure({ timeout: 150_000 })
+// ⚠ 180 s et non 150 : le plafond d'un test doit rester SUPÉRIEUR à la somme des
+// attentes qu'il contient, sinon c'est lui qui rompt en premier et le rouge ne
+// dit plus quoi. `allerA` attend désormais jusqu'à 45 s le rendu d'une route
+// `lazy` compilée à la demande (cf. parcours.mjs) ; avec la connexion, la
+// stabilisation et le contrôle d'URL, 150 s ne laissaient plus de marge.
+test.describe.configure({ timeout: 180_000 })
 
 test.describe('Écrans de travail', () => {
   test.beforeEach(async ({ page }) => {
@@ -268,6 +273,14 @@ test.describe('Écrans de travail', () => {
   }
 
   test("aucun texte technique ne s'affiche a l'utilisateur", async ({ page }) => {
+    // ⚠ BUDGET PROPRE : ce test paie HUIT navigations la ou les douze autres en
+    // paient une. Mesure du 2026-09-16 : 2,1 min et 2,8 min pour les deux tests
+    // qui parcourent tous les ecrans, contre 8 a 30 s pour les autres. A 180 s,
+    // c'est le PLAFOND qui rompait en premier — et le rouge accusait alors la
+    // derniere attente en cours (« la page precedente est encore rendue »)
+    // plutot que la vraie cause. Un test doit echouer sur ce qu'il mesure.
+    test.setTimeout(420_000)
+
     // NE PAS SUPPRIMER — ce controle vient d'un defaut REEL, vu par le client sur
     // son ecran : un commentaire de code s'affichait en toutes lettres au-dessus
     // de « Navigation par jour ».
@@ -416,6 +429,10 @@ test.describe('Écrans de travail', () => {
   })
 
   test("n'affiche jamais les données de l'autre boutique", async ({ page }) => {
+    // Même budget propre que le test voisin, et pour la même raison : huit
+    // navigations dans un seul test. Mesuré à 2,1 min, donc sans marge à 180 s.
+    test.setTimeout(420_000)
+
     // Le cloisonnement par boutique est une exigence de CLAUDE.md, et la seule
     // manière honnête de l'éprouver est d'avoir une seconde boutique peuplée de
     // montants reconnaissables. Une boutique unique ne prouve rien.
