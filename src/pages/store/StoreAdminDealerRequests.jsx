@@ -280,9 +280,16 @@ function StoreAdminDealerRequests() {
         </div>
       </div>
 
-      {/* État chargement initial */}
+      {/* État chargement initial.
+          `role="status"` n'est pas décoratif : ARIA n'autorise `aria-label` que
+          sur un élément dont le rôle accepte d'être nommé. Un <div> nu a le rôle
+          `generic`, qui l'INTERDIT — le libellé était donc ignoré par les
+          lecteurs d'écran, et `aria-busy` posé là ne disait rien non plus.
+          `status` est une région live discrète : elle annonce le chargement
+          sans voler le focus. (axe `aria-prohibited-attr`, impact serious ;
+          relevé par la boucle QA au lot L7.4c, défaut antérieur.) */}
       {loading && (
-        <div className="space-y-3" aria-busy="true" aria-label="Chargement des demandes">
+        <div className="space-y-3" role="status" aria-busy="true" aria-label="Chargement des demandes">
           {[1, 2, 3].map(n => (
             <div key={n} className="bg-white rounded-lg shadow p-4 animate-pulse">
               <div className="flex justify-between items-center">

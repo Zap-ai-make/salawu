@@ -216,6 +216,31 @@ describe('TC-033-LIST — StoreAdminDealerRequests (liste)', () => {
     })
   })
 
+  it('[LIST-02b] le squelette de chargement porte un rôle qui AUTORISE son nom', async () => {
+    // ARIA n'autorise `aria-label` que sur un élément dont le rôle accepte
+    // d'être nommé. Un <div> nu a le rôle `generic`, qui l'interdit : le nom est
+    // alors ignoré par les lecteurs d'écran, et axe le signale en `serious`
+    // (règle `aria-prohibited-attr`). Le libellé était donc écrit pour personne.
+    //
+    // `role="status"` est le bon rôle ici, et pas seulement le rôle permis :
+    // c'est une région live discrète, qui annonce « Chargement des demandes… »
+    // sans voler le focus. `aria-busy` y prend enfin son sens.
+    //
+    // ⚠ Ce défaut n'apparaissait qu'À L'INSTANT du chargement, donc la boucle QA
+    // ne le voyait que lorsqu'elle scannait au bon moment. Un filet unitaire ne
+    // dépend pas de cet instant.
+    mocks.subscribeStoreAdminDealerRequests.mockImplementation(() => vi.fn())
+    renderList()
+
+    await waitFor(() => {
+      const squelette = screen
+        .getByTestId('store-dealer-requests')
+        .querySelector('[aria-busy="true"]')
+      expect(squelette, 'le squelette de chargement doit être rendu').not.toBeNull()
+      expect(squelette.getAttribute('role')).toBe('status')
+    })
+  })
+
   it('[LIST-03] liste vide → empty state visible', async () => {
     renderList()
     await waitFor(() => expect(screen.getByTestId('empty-state')).toBeInTheDocument())
