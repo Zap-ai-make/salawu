@@ -47,6 +47,23 @@ export const salawuProfile = Object.freeze({
   // ── Réseaux boutique : les 6 (superset complet, comme le pilote) ────────────
   networks: Object.freeze({
     enabled: [...RESEAUX_SUPPORTES],
+
+    // Seuil de stock BAS, en FCFA. Fixé par le client le 2026-09-16.
+    //
+    // C'est une RÈGLE MÉTIER, pas un réglage d'apparence, et c'est pourquoi elle
+    // vit ici et non dans un composant : elle décide de ce que la bande des
+    // réserves DIT au caissier (« Stock », « Bas », « Épuisé »), et ce mot le
+    // fait agir — il va se réapprovisionner, ou non.
+    //
+    // Un profil qui ne la déclare pas n'affiche aucun mot d'état : TAOFIC ne la
+    // déclare pas, et sa bande reste ce qu'elle est. Aucun seuil n'est inventé
+    // par défaut — un seuil devine faux pour toutes les boutiques sauf une.
+    //
+    // ⚠ UN SEUL SEUIL, donc TROIS états. La maquette montre quatre mots
+    // (« Stock », « À surveiller », « Bas », « Épuisé ») mais « À surveiller »
+    // et « Bas » y portent la même couleur : ce sont deux mots pour un seul
+    // état, et les séparer demanderait un second seuil qui n'a pas été fixé.
+    seuilStockBas: 100_000,
   }),
 
   // ── Transactions : sans Crédit, toutes les méthodes de règlement ───────────
