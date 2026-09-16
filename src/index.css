@@ -424,6 +424,79 @@ body {
   padding-bottom: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE TABLEAU : DES FILETS HORIZONTAUX, PLUS DE QUADRILLAGE (lot L7.2b)
+   ───────────────────────────────────────────────────────────────────────────
+   Le dépôt trace une bordure sur les QUATRE côtés de chaque cellule. Sur
+   l'historique — quatorze colonnes, vingt lignes — cela fait plusieurs centaines
+   de traits, et l'œil doit tous les franchir pour suivre une seule ligne. C'est
+   le dessin d'un tableur, pas celui d'un registre.
+
+   La maquette n'en garde qu'un par ligne, et UN SEUL trait vertical dans tout le
+   produit : celui de la colonne des montants.
+
+   POURQUOI UN SÉLECTEUR D'ÉLÉMENT, ET NON UN `data-*` DE PLUS
+
+   Le quadrillage vient de DEUX sources : `themedTable.js` (`border ${border}
+   px-4 py-3`) et des classes écrites à la main dans `HistoriqueTable`
+   (`border border-gray-200 …`). Poser un attribut par cellule aurait demandé de
+   les retrouver toutes — donc d'en oublier, et d'obtenir un tableau à moitié
+   quadrillé. La règle porte sur `table th` / `table td` : elle vaut pour tous
+   les tableaux de cet espace, sans exception à tenir à jour.
+
+   Spécificité : `.design-registre` (0,1,0) + `[data-espace]` (0,1,0) + deux
+   éléments (0,0,2) = (0,2,2), contre (0,1,0) pour une utilitaire Tailwind. Aucun
+   `!important`.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ⚠ `:not([data-montant])` N'EST PAS UNE PRÉCAUTION DÉCORATIVE.
+   Sans elle, cette règle EFFACE la signature du produit. `[data-montant]` porte
+   son filet via `.design-registre [data-montant]`, de spécificité (0,2,0) ; la
+   règle ci-dessous pèse (0,2,2) et l'emporterait, où qu'elle soit placée dans le
+   fichier. La colonne des montants est donc exclue nommément, et ce qu'elle doit
+   perdre lui est retiré juste après. */
+.design-registre [data-espace='boutique'] table th:not([data-montant]),
+.design-registre [data-espace='boutique'] table td:not([data-montant]) {
+  border: 0;
+}
+
+/* La cellule des montants perd le haut et la droite, garde son filet à gauche
+   (déclaré plus haut, dans le bloc de la signature) et reprend la réglure du
+   bas comme toutes les autres. */
+.design-registre [data-espace='boutique'] table th[data-montant],
+.design-registre [data-espace='boutique'] table td[data-montant] {
+  border-top: 0;
+  border-right: 0;
+}
+
+/* L'en-tête tient par son fond, pas par un cadre. --surface-100 est à 1,22:1 sur
+   le papier : assez pour séparer, trop peu pour faire une barre de couleur. */
+.design-registre [data-espace='boutique'] table th {
+  background: var(--color-surface-100);
+  color: var(--color-encre);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.625rem 0.8125rem;
+  border-bottom: 1px solid var(--color-trait-200);
+}
+
+/* La ligne : un seul filet, dessous, en --reglure. */
+.design-registre [data-espace='boutique'] table td {
+  padding: 0.5625rem 0.8125rem;
+  border-bottom: 1px solid var(--color-reglure);
+  vertical-align: top;
+}
+
+/* ⟲ LA ZÉBRURE DE LA MAQUETTE N'EST PAS ENCORE POSÉE — LOT L8.4.
+   Elle teinte une ligne sur deux en `rgba(240,246,254,.55)`. Or l'historique
+   peint aujourd'hui ses lignes PAR SENS (`bg-green-50` pour une entrée,
+   `bg-orange-50` pour une sortie) : ajouter la zébrure maintenant donnerait une
+   ligne paire bleutée et une ligne impaire verte, soit deux systèmes qui se
+   contredisent au lieu d'un seul qui s'efface. La zébrure viendra avec la
+   suppression du fond sémantique, quand le sens sera porté par le signe, le mot
+   et la couleur du MONTANT — jamais par la ligne entière. */
+
 /* ── Écran de connexion ─────────────────────────────────────────────────────
    Le rendu 'legacy' sert un dégradé `from-blue-50 to-indigo-100` — le tic que
    DESIGN.md §1 désigne nommément, sur le premier écran que voit l'utilisateur.
