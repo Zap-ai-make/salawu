@@ -13,9 +13,15 @@ import { render } from '@testing-library/react'
  *    d'écran ignore. C'est le genre de défaut qu'on introduit sans le voir, et
  *    qu'une capture d'écran ne montre jamais.
  *
- * 2. CLOISONNEMENT — le rail est un parti pris de mise en page, pas une
- *    correction : il ne doit exister que pour le client qui a commandé la
- *    refonte. `Layout` en est le seul point de décision.
+ * 2. MISE HORS SERVICE — depuis le lot L7.4b, `Layout` ne monte plus le rail
+ *    pour AUCUN client : la bande des réserves ne disparaissant plus au
+ *    défilement, il n'a plus rien à compenser.
+ *
+ * ⚠ CE FICHIER EST CONSERVÉ DÉLIBÉRÉMENT, et le composant avec lui. Le premier
+ * contrat continue d'être vérifié sur le composant réel : c'est ce qui permet de
+ * le remonter un jour sans redécouvrir à quel prix son accessibilité avait été
+ * obtenue. Ne plus monter un composant n'est pas le supprimer — une suppression
+ * de fichier relève du protocole de CLAUDE.md, pas d'un lot de design.
  */
 
 const DONNEES = {
@@ -90,7 +96,7 @@ describe('TC-161 — le rail suit la visibilité, arbre d\'accessibilité compri
   })
 })
 
-describe('TC-161 — Layout : le rail n\'existe que pour le client « registre »', () => {
+describe('TC-161 — Layout : le rail n\'est plus monté par aucun client', () => {
   async function rendreLayout({ registre }) {
     mockerLesDonnees()
     vi.doMock('../../src/constants/designSystem.js', () => ({
@@ -121,8 +127,20 @@ describe('TC-161 — Layout : le rail n\'existe que pour le client « registre �
     expect(conteneur.querySelector('[data-balance-rail]')).toBeNull()
   })
 
-  it('client « registre » (ESAHAF) : le rail est monté', async () => {
+  it('⟲ RETOURNÉ AU LOT L7.4b — plus AUCUN client ne monte le rail', async () => {
+    // Ce cas exigeait l'inverse : le rail monté pour le client « registre ».
+    //
+    // Le rail compensait la disparition du rideau au défilement. La bande des
+    // réserves ne disparaît plus : il n'a plus rien à compenser, et deux rendus
+    // de la même donnée redeviennent un seul.
+    //
+    // ⚠ CE FICHIER RESTE, ET LE COMPOSANT AUSSI. Les cas ci-dessus continuent de
+    // vérifier ses contrats d'accessibilité — `tabIndex` suivant la visibilité,
+    // `aria-hidden` basculant avec lui. Ne plus monter un composant n'est pas le
+    // supprimer : une suppression de fichier relève du protocole de CLAUDE.md
+    // (preuve d'absence d'import statique ET dynamique, recherche dans les
+    // scripts et configurations, restauration possible), pas d'un lot de design.
     const conteneur = await rendreLayout({ registre: true })
-    expect(conteneur.querySelector('[data-balance-rail]')).not.toBeNull()
+    expect(conteneur.querySelector('[data-balance-rail]')).toBeNull()
   })
 })

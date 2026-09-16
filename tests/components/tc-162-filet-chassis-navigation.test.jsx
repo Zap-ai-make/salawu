@@ -309,18 +309,19 @@ describe("TC-162 — le bandeau de marque et ce qu'il porte", () => {
     expect(document.querySelector('[data-network-cards]')).not.toBeNull()
   })
 
-  it('⚠ DÉFAUT FIGÉ — « combien il me reste » est porté par DEUX dispositifs', async () => {
-    // Le rideau (permanent) et le rail collant (au défilement) disent la même
-    // chose à deux endroits. La direction validée les fusionne en une bande
-    // unique et toujours visible.
+  it('⟲ RETOURNÉ AU LOT L7.4b — « combien il me reste » n\'est plus porté que par UN dispositif', async () => {
+    // Ce cas figeait le défaut inverse : le rideau (permanent) ET le rail
+    // collant (au défilement) rendaient la même donnée à deux endroits, donc
+    // deux occasions de diverger. Le rail compensait un effet — la disparition
+    // du rideau au défilement ; la bande supprime la cause, elle ne s'en va plus.
     //
-    // ⟲ À RETOURNER AU LOT L7.4, après accord explicite sur la suppression de
-    // `StickyBalanceRail.jsx` — une suppression de fichier relève du protocole
-    // de CLAUDE.md, pas d'une décision d'agent.
+    // ⚠ `StickyBalanceRail.jsx` n'est PAS supprimé : il n'est plus monté. Le
+    // fichier et ses contrats d'accessibilité restent (TC-161). Supprimer un
+    // fichier relève du protocole de CLAUDE.md, pas d'un lot de design.
     await monterLeChassis(ESAHAF)
 
     expect(document.querySelector('[data-network-cards]')).not.toBeNull()
-    expect(document.querySelector('[data-balance-rail]')).not.toBeNull()
+    expect(document.querySelector('[data-balance-rail]')).toBeNull()
   })
 
   it("TAOFIC n'a pas le rail collant : c'est un parti pris, pas une correction", async () => {

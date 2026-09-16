@@ -50,6 +50,43 @@ export async function seConnecter(page, compte) {
 }
 
 /**
+ * Le texte de `<main>` une fois qu'il A CESSÉ DE BOUGER.
+ *
+ * ⚠ Ce n'est pas une précaution de confort, c'est la réparation d'un faux
+ * positif que ma propre garde produisait. `allerA` déclare l'arrivée quand le
+ * contenu de `<main>` a CHANGÉ par rapport au départ. Mais le relevé de départ
+ * était pris sans attendre : juste après une connexion, le tableau de bord
+ * affiche encore « Chargement des données… ». Le clic partait, l'URL basculait,
+ * le tableau de bord FINISSAIT de charger — et le contenu devenait différent du
+ * relevé de départ sans qu'on ait quitté la page. La garde se déclarait
+ * satisfaite par le chargement de la page qu'on voulait quitter.
+ *
+ * Constaté le 2026-09-16 : le test de l'écran « transactions » a capturé, scanné
+ * et mesuré le TABLEAU DE BORD, en signalant « h1 rendus : 1 — Tableau de bord ».
+ * Deux écrans plus loin, les violations de contraste relevées étaient celles du
+ * tableau des derniers clients, qui n'existe pas sur l'écran des transactions.
+ *
+ * On compare donc deux lectures espacées : tant qu'elles diffèrent, la page
+ * travaille encore. Le plafond borne l'attente — une page qui ne se stabilise
+ * jamais rend sa dernière lecture plutôt que d'immobiliser la boucle.
+ */
+async function texteStableDeMain(page, { timeout = 15_000, pause = 300 } = {}) {
+  const lire = () => page.locator('main').first().innerText().catch(() => '')
+
+  let precedent = await lire()
+  const limite = Date.now() + timeout
+
+  while (Date.now() < limite) {
+    await page.waitForTimeout(pause)
+    const actuel = await lire()
+    if (actuel === precedent) return actuel
+    precedent = actuel
+  }
+
+  return precedent
+}
+
+/**
  * La navigation change de NATURE selon la largeur : liens horizontaux au-dessus
  * de `md` (768 px), et un <select> en dessous (NavBar.jsx:191). Chercher un lien
  * à 375 px ne trouve donc rien — ce n'était pas un défaut de l'application mais
@@ -77,8 +114,11 @@ export async function allerA(page, ecran) {
   // Un écran n'est pas identifié par un mot qu'il contient : il est identifié
   // par le fait que le contenu a CHANGÉ. C'est vrai de tous les écrans, sans
   // avoir à leur inventer un texte unique à chacun.
+  // ⚠ STABILISÉ, et pas simplement lu. Un relevé pris pendant que la page de
+  // départ charge encore rend la comparaison ci-dessous satisfaite par ce
+  // chargement, sans qu'on ait quitté l'écran. Voir `texteStableDeMain`.
   const cheminAvant = new URL(page.url()).pathname
-  const texteAvant = await page.locator('main').first().innerText().catch(() => '')
+  const texteAvant = await texteStableDeMain(page)
 
   if (await lien.isVisible().catch(() => false)) {
     await lien.click()
@@ -134,8 +174,11 @@ export async function allerA(page, ecran) {
   //  1. `page.getByText(...)` sur la page entière accrochait le lien de la barre
   //     de navigation desktop — présent dans le DOM mais masqué sous 768 px.
   //     `.first()` tombait dessus et attendait qu'un élément caché apparaisse.
-  //  2. Restreindre à `<main>` échouait pour le tableau de bord : « Cartes Réseau »
-  //     est rendu par le rideau, qui vit HORS de <main> (Layout.jsx).
+  //  2. Restreindre à `<main>` échouait pour le tableau de bord, dont le
+  //     marqueur était alors « Cartes Réseau » — rendu par le rideau du Layout,
+  //     donc HORS de <main>. Ce marqueur-là a été remplacé au lot L7.4b (il
+  //     était présent sur les huit écrans), mais la règle reste : un marqueur
+  //     n'a pas à promettre où il se trouve dans la page.
   // Ce qu'on veut dire est simplement « un élément visible portant ce texte ».
   await expect(page.getByText(ecran.marqueur).filter({ visible: true }).first())
     .toBeVisible({ timeout: 30_000 })

@@ -1,11 +1,24 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import NavBar from './NavBar'
 import NetworkCardsDrawer from './network/NetworkCardsDrawer'
-import StickyBalanceRail from './network/StickyBalanceRail'
 import { IS_REGISTRE } from '../constants/designSystem.js'
 import { APP_NAME } from '../constants/branding'
+
+/**
+ * ⚠ `StickyBalanceRail` n'est plus monté ici — et son fichier est CONSERVÉ.
+ *
+ * Il répondait à un vrai manque : le rideau des cartes réseau disparaissait dès
+ * qu'on faisait défiler une liste, c'est-à-dire au moment exact où la question
+ * « combien il me reste » se pose. Il compensait donc un effet. La bande des
+ * réserves supprime la cause — elle ne s'en va plus — et deux rendus de la même
+ * donnée redeviennent un seul.
+ *
+ * Le fichier reste sur disque et ses contrats d'accessibilité restent testés
+ * (TC-161) : supprimer un fichier relève du protocole de CLAUDE.md, pas d'un lot
+ * de design.
+ */
 /**
  * La balise du wordmark — et c'est une décision d'ACCESSIBILITÉ, pas de style.
  *
@@ -35,8 +48,6 @@ function Layout({ children }) {
   const { themeClasses, backgroundImage } = useTheme()
   const [navbarHeight, setNavbarHeight] = useState(0)
   const [isNavbarSticky, setIsNavbarSticky] = useState(false)
-  const railRef = useRef(null)
-  const [railHeight, setRailHeight] = useState(0)
 
   // Ce composant compense le passage de la navbar en position fixe par un
   // padding sur <main>. Il DOIT donc basculer au même seuil qu'elle, sinon le
@@ -68,23 +79,16 @@ function Layout({ children }) {
     window.addEventListener('scroll', handleScroll)
     window.addEventListener('resize', handleResize)
 
-    // Le rail de soldes est MESURÉ, jamais supposé. Sa hauteur dépend de données
-    // réseau qui arrivent après le montage : la mesurer une fois donnerait 0, et
-    // <main> passerait sous le rail au défilement. Même raison de fond que le
-    // seuil de la navbar (TC-159) — une hauteur codée en dur cesse d'être vraie
-    // à la première modification de ce qu'elle décrit.
-    let observateur
-    if (railRef.current && typeof ResizeObserver !== 'undefined') {
-      observateur = new ResizeObserver(([entree]) => {
-        setRailHeight(entree.target.offsetHeight)
-      })
-      observateur.observe(railRef.current)
-    }
+    // Le ResizeObserver qui mesurait la hauteur du rail a disparu avec lui, et
+    // ce n'est pas un nettoyage de circonstance : un élément `fixed` est hors
+    // flux, donc sa hauteur devait être mesurée puis reversée en `padding-top`
+    // sur <main>, sinon le contenu passait dessous. La bande des réserves est
+    // `sticky` — elle garde sa place dans le flux. Il n'y a plus de hauteur à
+    // mesurer, donc plus rien à resynchroniser quand elle change.
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleResize)
-      observateur?.disconnect()
     }
   }, [])
 
@@ -133,15 +137,13 @@ function Layout({ children }) {
       {/* Navigation */}
       <NavBar />
 
-      {/* Rail de soldes collant — identité « registre » uniquement. C'est un
-          parti pris de mise en page, pas une correction : il passe donc par
-          `profil.design`, comme M5. */}
-      {IS_REGISTRE && (
-        <StickyBalanceRail ref={railRef} visible={isNavbarSticky} top={navbarHeight} />
-      )}
-
-      {/* Rideau des cartes réseau */}
-      <NetworkCardsDrawer />
+      {/* La bande des réserves. `top` est la hauteur de la navigation, mesurée :
+          celle-ci passe en `fixed` au défilement, et une bande collée à 0 se
+          glisserait dessous. Une valeur codée en dur cesserait d'être vraie à la
+          première modification de la barre — même raison que le seuil de bascule
+          (TC-159). Le rideau repliable des profils sans identité « registre » ne
+          lit pas cette propriété. */}
+      <NetworkCardsDrawer top={navbarHeight} />
 
       {/* Contenu principal avec padding top conditionnel.
           `data-espace="boutique"` est un FAIT : ce Layout sert EXCLUSIVEMENT
@@ -158,7 +160,7 @@ function Layout({ children }) {
         data-espace="boutique"
         className="w-full px-4 py-6 transition-all duration-300"
         style={{
-          paddingTop: isNavbarSticky ? `${navbarHeight + railHeight + 24}px` : '24px'
+          paddingTop: isNavbarSticky ? `${navbarHeight + 24}px` : '24px'
         }}
       >
         <div className="relative">

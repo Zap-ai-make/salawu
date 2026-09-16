@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useSimpleNetworkData } from '../../hooks/useSimpleNetworkData'
 import { activeProfile } from '../../config/activeClientProfile.js'
+import { IS_REGISTRE } from '../../constants/designSystem.js'
 import NetworkCard from './NetworkCard'
 import NetworkBalanceCard from './NetworkBalanceCard'
 
@@ -125,8 +126,83 @@ function ExpandableCardsDrawer() {
   )
 }
 
-function NetworkCardsDrawer() {
-  return IS_MULTI_NETWORK ? <ExpandableCardsDrawer /> : <CompactBalanceBar />
+// ── Identité « registre » — la bande des réserves, permanente ─────────────────
+/**
+ * Une seule bande, qui ne se replie plus et ne s'en va plus au défilement.
+ *
+ * CE QU'ELLE REMPLACE, ET POURQUOI
+ * « Combien il me reste » était porté par DEUX dispositifs qui disaient la même
+ * chose à deux endroits : le rideau repliable en haut de page, et le rail
+ * collant qui apparaissait au défilement pour compenser sa disparition. Deux
+ * rendus de la même donnée, donc deux occasions de diverger.
+ *
+ * La bande supprime la cause au lieu de compenser l'effet : elle reste sous la
+ * navigation en permanence (`position: sticky`), et le rail n'a plus d'objet.
+ *
+ * ⚠ `StickyBalanceRail.jsx` est CONSERVÉ sur disque, et ses contrats
+ * d'accessibilité restent testés (TC-161). Il n'est plus monté, c'est tout :
+ * supprimer un fichier relève du protocole de CLAUDE.md, pas d'un lot de design.
+ *
+ * POURQUOI `sticky` ET NON `fixed`
+ * Le rail était `fixed`, donc hors flux : sa hauteur devait être MESURÉE au
+ * ResizeObserver puis reversée en `padding-top` sur <main>, sans quoi le contenu
+ * passait dessous. Une bande `sticky` garde sa place dans le flux — il n'y a
+ * plus de hauteur à mesurer, donc plus rien à resynchroniser.
+ *
+ * `top` vaut la hauteur de la navigation : celle-ci passe en `fixed` au
+ * défilement, et une bande collée à 0 se glisserait dessous.
+ */
+function BandeDesReserves({ top = 0 }) {
+  const visibleCards = useVisibleCards()
+
+  return (
+    <div
+      data-network-cards
+      data-bande-reserves
+      className="sticky z-30 bg-white border-b border-gray-200 shadow-sm"
+      style={{ top: `${top}px` }}
+    >
+      <div className="px-2 sm:px-4 py-3 sm:py-4">
+        {/* Même exigence que partout ailleurs : une zone à défilement horizontal
+            non focalisable rend ses derniers réseaux inatteignables au clavier
+            (constat Q3, relevé à 375 px). */}
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Soldes par reseau, defilement horizontal"
+          className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 justify-center"
+        >
+          {visibleCards.map(([network, data]) => (
+            <NetworkBalanceCard
+              key={network}
+              network={network}
+              stockAmount={data.stock}
+              liquiditeAmount={data.liquidite}
+            />
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+      `}</style>
+    </div>
+  )
+}
+
+/**
+ * Trois branches, et une seule est nouvelle.
+ *
+ * Le repli sur `ExpandableCardsDrawer` n'est pas de la prudence décorative : un
+ * profil multi-réseaux sans l'identité « registre » garde son rideau, son bouton
+ * et son animation, octet pour octet. La bande est un parti pris de mise en
+ * page — elle passe donc par `profil.design`, comme le wordmark et le rail avant
+ * elle, et jamais par un identifiant de client.
+ */
+function NetworkCardsDrawer({ top }) {
+  if (!IS_MULTI_NETWORK) return <CompactBalanceBar />
+  return IS_REGISTRE ? <BandeDesReserves top={top} /> : <ExpandableCardsDrawer />
 }
 
 export default NetworkCardsDrawer

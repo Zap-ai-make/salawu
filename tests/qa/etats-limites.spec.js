@@ -29,7 +29,11 @@ const CAPTURES = 'docs/audit/qa-captures/etats'
 
 /** Les quatre écrans qui AFFICHENT des données — les seuls que l'état change. */
 const ECRANS_DE_DONNEES = [
-  { nom: 'tableau-de-bord', lien: 'Tableau de bord', chemin: '/', marqueur: /cartes réseau/i },
+  // Marqueur pris sur le contenu propre de l'ecran — cf. la note detaillee dans
+  // ecrans-authentifies.spec.js. « Cartes Réseau » etait le libelle du bouton de
+  // repli du rideau, rendu par le Layout sur les huit ecrans, et disparu au lot
+  // L7.4b avec le bouton lui-meme.
+  { nom: 'tableau-de-bord', lien: 'Tableau de bord', chemin: '/', marqueur: /derniers clients enregistrés/i },
   { nom: 'transactions', lien: 'Transactions', chemin: '/transactions', marqueur: /transaction/i },
   { nom: 'historique', lien: 'Historique', chemin: '/historique', marqueur: /historique/i },
   { nom: 'clients', lien: 'Clients', chemin: '/clients', marqueur: /client/i },

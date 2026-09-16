@@ -25,7 +25,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, within, cleanup, fireEvent } from '@testing-library/react'
+import { render, screen, within, cleanup } from '@testing-library/react'
 import { pilotProfile } from '../../config/clients/_pilot.js'
 
 vi.setConfig({ testTimeout: 30_000 })
@@ -94,12 +94,12 @@ function poserLesMocks({ reseaux, designSystem }) {
   }))
 }
 
-async function monterLeRideau(options) {
+async function monterLeRideau(options, proprietes) {
   poserLesMocks(options)
   const { default: NetworkCardsDrawer } = await import(
     '../../src/components/network/NetworkCardsDrawer.jsx'
   )
-  render(<NetworkCardsDrawer />)
+  render(<NetworkCardsDrawer {...proprietes} />)
 }
 
 async function monterLeRail(options, proprietes) {
@@ -122,7 +122,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('TC-163 — le rideau des cartes réseau (ESAHAF, multi-réseaux)', () => {
+describe('TC-163 — la bande des réserves (ESAHAF, multi-réseaux)', () => {
   it('nomme chaque réseau en toutes lettres, les six plus la liquidité', async () => {
     // La pastille de couleur est un repère de balayage, jamais un code : le nom
     // doit être écrit. C'est ce qui rend les 49 couleurs d'opérateur
@@ -151,16 +151,36 @@ describe('TC-163 — le rideau des cartes réseau (ESAHAF, multi-réseaux)', () 
     expect(screen.getAllByText('Liquidité FCFA')).toHaveLength(1)
   })
 
-  it('se replie et se déplie, et son nom accessible dit ce que le clic va faire', async () => {
+  it('⟲ RETOURNÉ AU LOT L7.4b — la bande ne se replie plus, et n\'a plus de bouton', async () => {
+    // Ce cas figeait l'inverse : un bouton « Réduire les cartes réseau »,
+    // `aria-expanded` passant de true à false, et les soldes escamotables.
+    //
+    // Un repli n'est une bonne affordance que si ce qu'il cache est secondaire.
+    // Ici il cachait la réponse à la seule question que le caissier se pose
+    // toute la journée, et il la cachait DE FAÇON PERSISTANTE : replié une fois,
+    // il le restait. La bande ne se replie plus ; il n'y a donc plus de bouton à
+    // nommer.
     await monterLeRideau(ESAHAF)
 
-    const bouton = screen.getByRole('button', { name: /réduire les cartes réseau/i })
-    expect(bouton).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getByText('Orange')).toBeInTheDocument()
+    expect(screen.getByText('Liquidité')).toBeInTheDocument()
+  })
 
-    fireEvent.click(bouton)
+  it('se cale sous la navigation à la hauteur qu\'on lui donne, jamais à une valeur devinée', async () => {
+    // La navigation passe en `fixed` au défilement : une bande collée à 0 se
+    // glisserait dessous. Le décalage est donc MESURÉ par le Layout et transmis
+    // — une constante codée en dur cesserait d'être vraie à la première
+    // modification de la barre (même raison que le seuil de bascule, TC-159).
+    //
+    // C'est le seul aspect de son placement qu'un filet peut tenir : le reste
+    // (`position: sticky`) est une règle de feuille de style, et l'asserter
+    // reviendrait à vérifier une classe CSS — ce que ces filets s'interdisent.
+    await monterLeRideau(ESAHAF, { top: 64 })
 
-    const replie = screen.getByRole('button', { name: /afficher les cartes réseau/i })
-    expect(replie).toHaveAttribute('aria-expanded', 'false')
+    const bande = document.querySelector('[data-bande-reserves]')
+    expect(bande).not.toBeNull()
+    expect(bande.style.top).toBe('64px')
   })
 
   it('rend sa bande défilante atteignable au clavier', async () => {
