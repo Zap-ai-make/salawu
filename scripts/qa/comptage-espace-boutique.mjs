@@ -325,10 +325,38 @@ async function main() {
   const largeurs = new Set()
   const totalStructure = { h1: 0, pageHeader: 0, emptyState: 0, aucun: 0 }
 
+  /**
+   * Les largeurs de CHÂSSIS, et elles seules.
+   *
+   * ⚠ Correction d'une erreur de cette sonde. Elle ramassait tout `max-w-*` du
+   * fichier, et annonçait donc « 5 largeurs de châssis » — alors que `md` vient
+   * de la modale de clôture (StoreAdminClosures.jsx:65) et de deux modales de
+   * détail de demande, et qu'un `max-w-2xl` est le cadre d'impression d'un reçu.
+   * Ce ne sont pas des châssis de page ; les compter gonflait le désordre que le
+   * chantier prétend réduire, et aurait fabriqué une belle baisse en « corrigeant »
+   * des largeurs qui n'avaient jamais été le problème.
+   *
+   * Le critère qui sépare les deux est net et tient dans le code : un châssis de
+   * page se centre lui-même — il porte `mx-auto` sur le MÊME élément. Une modale
+   * est centrée par son voile (flex), et porte `mx-4` ou rien.
+   */
+  function chassisDeclares(source) {
+    const trouves = []
+    // On capture le premier segment LITTÉRAL de chaque liste de classes. Les
+    // châssis du dépôt sont tous des chaînes simples ; un `${...}` en tête
+    // couperait la capture, et il vaut mieux manquer un cas que d'en inventer un.
+    for (const m of source.matchAll(/class(?:Name)?\s*=\s*\{?\s*[`"']([^`"']*)/g)) {
+      const liste = m[1]
+      if (!/\bmx-auto\b/.test(liste)) continue
+      for (const w of liste.matchAll(/\bmax-w-(\w+)\b/g)) trouves.push(w[1])
+    }
+    return trouves
+  }
+
   for (const chemin of POINTS_ENTREE) {
     const source = await readFile(chemin, 'utf8')
     const h1 = compter(source, /<h1[\s>]/g)
-    const cadres = [...source.matchAll(/\bmax-w-(\w+)\b/g)].map((m) => m[1])
+    const cadres = chassisDeclares(source)
     const pageHeader = /<PageHeader[\s/>]/.test(source) ? 1 : 0
     const emptyState = /<EmptyState[\s/>]/.test(source) ? 1 : 0
     const aucun = compter(source, /['"`>]\s*Aucun[e]?\b/g)
@@ -365,15 +393,24 @@ async function main() {
   const totalH1Graphe = h1DansLeGraphe.reduce((s, f) => s + f.n, 0)
 
   console.log(
-    `\n  <h1> : ${totalStructure.h1} sur les points d'entrée, ` +
+    `\n  <h1> DÉCLARÉS : ${totalStructure.h1} sur les points d'entrée, ` +
       `${totalH1Graphe} dans TOUT le graphe (${h1DansLeGraphe.length} fichiers) —` +
       '\n         un écran est fait par ses composants, pas par son fichier de page.',
   )
+  // ⚠ DÉCLARÉS, et non RENDUS. Cette sonde lit du texte ; elle ne sait pas quelle
+  // branche s'exécute. Dashboard.jsx en déclare deux (chargement / chargé) et
+  // Layout.jsx deux aussi (bandeau photo / en-tête sobre, selon l'identité) : un
+  // seul de chaque paire atteint l'écran. Le nombre qui compte pour l'arbre
+  // d'accessibilité — deux titres de niveau 1 par écran, celui du Layout et celui
+  // de la page — est MESURÉ dans un navigateur par la boucle QA, jamais ici.
+  console.log('         (déclarations dans le source : les branches exclusives comptent double)')
   for (const f of h1DansLeGraphe.filter((f) => !POINTS_ENTREE.includes(f.chemin))) {
     console.log(`         + ${f.chemin} (${f.n})`)
   }
   console.log(
-    `\n  ${largeurs.size} largeurs de châssis déclarées (${[...largeurs].sort().join(', ')})`,
+    `\n  ${largeurs.size} largeurs de châssis déclarées (${[...largeurs].sort().join(', ')})` +
+      '\n         — un châssis = un `max-w-*` porté avec `mx-auto` ; les largeurs' +
+      '\n           de modale et de cadre d\'impression sont exclues.',
   )
   console.log(
     `  PageHeader : ${totalStructure.pageHeader}/11 écrans · ` +

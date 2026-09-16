@@ -61,6 +61,17 @@ export default defineConfig({
     {
       name: 'tablette-768',
       use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } },
+      // Les ÉTATS LIMITES (vide, clairsemé, erreur partielle) ne tournent qu'aux
+      // deux extrêmes, et c'est un choix assumé, pas un oubli. Les deux largeurs
+      // disent des choses OPPOSÉES sur un écran vide : à 375 px on vérifie
+      // qu'une phrase tient sans déborder sur le téléphone du caissier, à
+      // 1440 px qu'un grand blanc au milieu du poste du gérant est habité. La
+      // tablette est entre les deux et n'apporte rien de nouveau ici — alors
+      // qu'elle coûterait un tiers de boucle sur un fichier qui paie déjà une
+      // connexion complète par test.
+      //
+      // `ecrans-authentifies.spec.js`, lui, garde bien les trois largeurs.
+      testIgnore: /etats-limites\.spec\.js/,
     },
     {
       name: 'bureau-1440',

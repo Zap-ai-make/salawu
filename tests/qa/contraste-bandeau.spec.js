@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { lirePng, luminance, contraste, pireLuminance } from './lib/png.mjs'
+import { seConnecter } from './lib/parcours.mjs'
+import { ETATS } from '../../scripts/qa/etats-du-banc.mjs'
 
 /**
  * Sonde de contraste — sur les PIXELS RÉELLEMENT RENDUS.
@@ -33,37 +35,15 @@ import { lirePng, luminance, contraste, pireLuminance } from './lib/png.mjs'
  * pire cas pour du texte clair est le seul qui compte pour WCAG.
  */
 
-const COMPTE = {
-  email: 'qa.esahaf@example.test',
-  motDePasse: 'QaEsahaf!2026',
-}
+// L'état DENSE : le bandeau est le même partout, mais un écran plein est le
+// seul qui garantisse une page assez haute pour une capture pleine hauteur.
+const COMPTE = ETATS.dense.compte
 
 /** Seuils WCAG 2.2 AA. Grand texte = ≥ 24 px, ou ≥ 18,66 px en gras. */
 const SEUIL_NORMAL = 4.5
 const SEUIL_GRAND = 3
 
 test.describe.configure({ timeout: 150_000 })
-
-async function seConnecter(page) {
-  await page.goto('/')
-  const champEmail = page.locator('input[type="email"]').first()
-  const champMdp = page.locator('input[type="password"]').first()
-  await expect(champEmail).toBeVisible({ timeout: 60_000 })
-
-  // `pressSequentially` et non `fill` : les champs sont contrôlés par
-  // useFormValidation, et `fill` pose la valeur dans le DOM sans que l'état
-  // React la reçoive — aucune requête ne part, et rien ne s'affiche.
-  await champEmail.click()
-  await champEmail.pressSequentially(COMPTE.email, { delay: 5 })
-  await champEmail.blur()
-  await champMdp.click()
-  await champMdp.pressSequentially(COMPTE.motDePasse, { delay: 5 })
-  await champMdp.blur()
-  await page.getByRole('button', { name: /se connecter/i }).click()
-
-  await expect(page.locator('nav').first()).toBeVisible({ timeout: 60_000 })
-  await expect(page.locator('input[type="email"]')).toHaveCount(0, { timeout: 60_000 })
-}
 
 /**
  * L'emprise des LETTRES, et non la boîte de bordure de l'élément.
@@ -119,7 +99,7 @@ test.describe('Contraste mesuré sur les pixels rendus', () => {
   test.beforeEach(async ({ page }) => {
     // Précaution 3 : sans elle, la mesure dépend de l'instant où elle tombe.
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await seConnecter(page)
+    await seConnecter(page, COMPTE)
   })
 
   test('le décodeur de capture dit la vérité — contrôle sur une couleur connue', async ({ page }) => {

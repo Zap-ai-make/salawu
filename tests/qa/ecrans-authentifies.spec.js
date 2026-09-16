@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
 import { mkdir } from 'node:fs/promises'
+import { seConnecter, allerA, mesurerDebordement, violationsAxe } from './lib/parcours.mjs'
+import { ETATS, MONTANT_TEMOIN as MONTANT_TEMOIN_NOMBRE } from '../../scripts/qa/etats-du-banc.mjs'
 
 /**
  * QA visuelle — écrans de travail (authentifiés).
@@ -21,16 +22,25 @@ import { mkdir } from 'node:fs/promises'
 
 const CAPTURES = 'docs/audit/qa-captures'
 
-// Doit rester synchronisé avec scripts/qa/seed-qa.mjs. Dupliqué plutôt
-// qu'importé : ce fichier tourne sous Playwright, le seed sous l'Admin SDK.
-const COMPTE = {
-  email: 'qa.esahaf@example.test',
-  motDePasse: 'QaEsahaf!2026',
-}
+// Les identifiants viennent du MÊME module que le seed (`etats-du-banc.mjs`,
+// données pures, aucun effet de bord). Ils étaient recopiés ici avec une note
+// « doit rester synchronisé » — une note n'est pas un mécanisme.
+const COMPTE = ETATS.dense.compte
 
-// Montant de la boutique TÉMOIN (facteur 7 sur Orange : 1 250 000 × 7).
-// S'il apparaissait sur un écran de la boutique QA, le cloisonnement serait rompu.
-const MONTANT_TEMOIN = '8 750 000'
+/**
+ * Montant de la boutique TÉMOIN (facteur 7 sur Orange : 1 250 000 × 7). S'il
+ * apparaissait sur un écran de la boutique QA, le cloisonnement serait rompu.
+ *
+ * ⚠ En CHIFFRES NUS. Ce contrôle était écrit `'8 750 000'`, avec une espace
+ * ordinaire — alors que le français sépare les milliers par une insécable
+ * (U+00A0) ou une fine insécable (U+202F), selon ce qu'Intl choisit à
+ * l'exécution. Un `not.toContain` sur la mauvaise espace ne peut JAMAIS
+ * correspondre : le contrôle de cloisonnement passait au vert par construction,
+ * y compris sur une fuite réelle. C'est le pire genre de test — celui qui
+ * rassure sans rien vérifier. Le test voisin (« les soldes semés sont bien
+ * affichés ») normalisait déjà ; celui-ci ne le faisait pas.
+ */
+const MONTANT_TEMOIN = String(MONTANT_TEMOIN_NOMBRE)
 
 // `lien` = libellé exact dans la barre de navigation.
 // `marqueur` = texte présent sur l'écran d'arrivée ET ABSENT de l'écran de
@@ -85,92 +95,6 @@ test.beforeAll(async () => {
   await mkdir(CAPTURES, { recursive: true })
 })
 
-async function seConnecter(page) {
-  await page.goto('/')
-
-  const champEmail = page.locator('input[type="email"]').first()
-  const champMdp = page.locator('input[type="password"]').first()
-  await expect(champEmail).toBeVisible({ timeout: 60_000 })
-
-  // `pressSequentially` et NON `fill` — ce n'est pas une préférence de style.
-  // Les champs sont contrôlés par useFormValidation : `fill` pose la valeur dans
-  // le DOM sans que l'état React la reçoive, donc `values` reste vide, la
-  // validation refuse la soumission, et AUCUNE requête ne part. Le pire est que
-  // rien ne s'affiche : `getFieldError` ne montre une erreur que sur un champ
-  // `touched`, et `fill` ne déclenche pas de blur. Diagnostiqué en observant le
-  // réseau — zéro appel à l'émulateur — plutôt qu'en devinant.
-  await champEmail.click()
-  await champEmail.pressSequentially(COMPTE.email, { delay: 5 })
-  await champEmail.blur()
-  await champMdp.click()
-  await champMdp.pressSequentially(COMPTE.motDePasse, { delay: 5 })
-  await champMdp.blur()
-
-  await page.getByRole('button', { name: /se connecter/i }).click()
-
-  // Repère de sortie valable aux DEUX largeurs : la barre de navigation existe dans les
-  // deux formes, alors qu'un lien nommé n'existe qu'au-dessus de `md`.
-  await expect(page.locator('nav').first()).toBeVisible({ timeout: 60_000 })
-  await expect(page.locator('input[type="email"]')).toHaveCount(0, { timeout: 60_000 })
-}
-
-/**
- * La navigation change de NATURE selon la largeur : liens horizontaux au-dessus
- * de `md` (768 px), et un <select> en dessous (NavBar.jsx:191). Chercher un lien
- * à 375 px ne trouve donc rien — ce n'était pas un défaut de l'application mais
- * de mon relevé. On emprunte le chemin réellement offert à chaque largeur.
- */
-async function allerA(page, ecran) {
-  const lien = page.getByRole('link', { name: ecran.lien }).first()
-  const selecteur = page.getByRole('combobox', { name: /navigation principale/i })
-
-  if (await lien.isVisible().catch(() => false)) {
-    await lien.click()
-  } else {
-    await expect(selecteur).toBeVisible({ timeout: 30_000 })
-    // Selection par VALEUR (le chemin de route) et non par libelle : Playwright
-    // exige une chaine exacte pour `label`, et le libelle porte un badge de
-    // compteur quand il y a des elements en attente (« Transactions (2) »).
-    // La valeur, elle, ne bouge pas.
-    await selecteur.selectOption(ecran.chemin)
-  }
-
-  // ── D'ABORD l'URL, ENSUITE le contenu ────────────────────────────────────
-  //
-  // Cet ordre repare un faux positif que j'avais introduit : le marqueur de
-  // l'historique est /historique/i, et « Historique » est aussi le LIBELLE DU
-  // LIEN de navigation, visible en permanence au-dessus de 768 px. Le test
-  // declarait donc l'arrivee alors que la page n'avait pas bouge — il validait
-  // sa propre navigation ratee. Idem pour /transaction/i et /client/i.
-  //
-  // Ce n'etait invisible qu'a 375 px, ou la navigation est un <select> : aucun
-  // texte de lien a accrocher, donc le test attendait vraiment.
-  //
-  // L'URL, elle, ne peut pas etre confondue avec un libelle. Et quand elle
-  // echoue, le message dit ou l'on se trouve reellement — ce qui distingue « le
-  // clic n'a pas navigue » de « la route a rendu une page vide ».
-  await expect
-    .poll(() => new URL(page.url()).pathname, {
-      message: `la navigation vers ${ecran.chemin} n'a pas eu lieu`,
-      timeout: 30_000,
-    })
-    .toBe(ecran.chemin)
-
-  // On filtre sur la VISIBILITE, et non sur l'emplacement.
-  //
-  // Deux tentatives ratees avant celle-ci, et elles disent pourquoi :
-  //  1. `page.getByText(...)` sur la page entiere accrochait le lien de la barre
-  //     de navigation desktop — present dans le DOM mais masque sous 768 px.
-  //     `.first()` tombait dessus et attendait qu'un element cache apparaisse.
-  //  2. Restreindre a `<main>` echouait pour le tableau de bord : « Cartes Reseau »
-  //     est rendu par le rideau, qui vit HORS de <main> (Layout.jsx).
-  // Ce qu'on veut dire est simplement « un element visible portant ce texte ».
-  await expect(page.getByText(ecran.marqueur).filter({ visible: true }).first())
-    .toBeVisible({ timeout: 30_000 })
-  // Garde anti-faux-positif : on ne doit JAMAIS être retombé sur la connexion.
-  await expect(page.locator('input[type="email"]')).toHaveCount(0)
-}
-
 // Budget de temps propre a ce fichier : CHAQUE test y paie une connexion
 // complete en `beforeEach` (formulaire saisi caractere par caractere, aller-retour
 // avec l'emulateur Auth, puis navigation cote client). Sur cette machine, les
@@ -185,7 +109,7 @@ test.describe.configure({ timeout: 150_000 })
 
 test.describe('Écrans de travail', () => {
   test.beforeEach(async ({ page }) => {
-    await seConnecter(page)
+    await seConnecter(page, COMPTE)
   })
 
   for (const ecran of ECRANS) {
@@ -197,55 +121,30 @@ test.describe('Écrans de travail', () => {
         fullPage: true,
       })
 
-      // On ne se contente pas de constater le debordement : on DESIGNE le coupable.
-      // Un « deborde de 40 px » sans element fautif oblige a fouiller la page a
-      // la main ; ici l'echec dit ou regarder. Le coupable est l'element le plus
-      // a droite dont le bord depasse la fenetre ET dont aucun ancetre ne le
-      // contient par un `overflow` — sinon on accuse le contenu d'une zone
-      // defilante, qui est cense depasser.
-      const d = await page.evaluate(() => {
-        const client = document.documentElement.clientWidth
-        const contenu = (el) => {
-          for (let p = el.parentElement; p; p = p.parentElement) {
-            const ov = getComputedStyle(p).overflowX
-            if (ov === 'auto' || ov === 'scroll' || ov === 'hidden') return true
-          }
-          return false
-        }
-        let pire = null
-        for (const el of document.querySelectorAll('body *')) {
-          const r = el.getBoundingClientRect()
-          if (r.width === 0 || r.right <= client + 1) continue
-          if (contenu(el)) continue
-          if (!pire || r.right > pire.droite) {
-            pire = {
-              droite: Math.round(r.right),
-              balise: el.tagName.toLowerCase(),
-              classes: String(el.className || '').slice(0, 90),
-            }
-          }
-        }
-        return { scroll: document.documentElement.scrollWidth, client, pire }
-      })
+      // ── Relevé des titres RENDUS (relevé, pas assertion) ──────────────────
+      //
+      // `npm run qa:comptage` compte les `<h1>` DÉCLARÉS dans le source, et il
+      // en compte trop : Dashboard.jsx et Layout.jsx en déclarent deux chacun,
+      // dont un seul s'exécute (chargement/chargé, bandeau photo/en-tête sobre).
+      // Une sonde qui lit du texte ne sait pas quelle branche tourne.
+      //
+      // Ici on est dans un navigateur, donc on MESURE. On RELÈVE sans asserter :
+      // le double titre est le défaut déjà gelé par tc-162, et l'exiger ici
+      // rendrait la boucle rouge pour une correction déjà datée.
+      // ⟲ DEVIENT UNE ASSERTION AU LOT L7.1.
+      const titres = await page.evaluate(() =>
+        [...document.querySelectorAll('h1')]
+          .filter((h) => h.getClientRects().length > 0)
+          .map((h) => h.textContent.trim().slice(0, 40)),
+      )
+      console.log(`  h1 rendus [${ecran.nom}] : ${titres.length} — ${titres.join(' | ')}`)
 
-      const coupable = d.pire
-        ? `<${d.pire.balise} class="${d.pire.classes}"> atteint ${d.pire.droite}px`
-        : 'aucun element non contenu identifie'
-      expect(d.scroll, `deborde de ${d.scroll - d.client} px — ${coupable}`)
+      const d = await mesurerDebordement(page)
+      expect(d.scroll, `deborde de ${d.scroll - d.client} px — ${d.coupable}`)
         .toBeLessThanOrEqual(d.client)
 
-      const resultats = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-        .analyze()
-
-      const lisible = resultats.violations.map((v) => ({
-        regle: v.id,
-        impact: v.impact,
-        description: v.help,
-        elements: v.nodes.slice(0, 4).map((n) => n.target.join(' ')),
-      }))
-
-      expect(lisible, JSON.stringify(lisible, null, 2)).toEqual([])
+      const violations = await violationsAxe(page)
+      expect(violations, JSON.stringify(violations, null, 2)).toEqual([])
     })
   }
 
@@ -272,23 +171,15 @@ test.describe('Écrans de travail', () => {
         fullPage: true,
       })
 
-      const d = await page.evaluate(() => ({
-        scroll: document.documentElement.scrollWidth,
-        client: document.documentElement.clientWidth,
-      }))
-      expect(d.scroll, `deborde de ${d.scroll - d.client} px`).toBeLessThanOrEqual(d.client)
+      // Ces routes mesuraient le débordement SANS désigner de coupable — un
+      // reliquat de la première version. Elles partagent maintenant la sonde
+      // complète : même exigence, même message d'échec exploitable.
+      const d = await mesurerDebordement(page)
+      expect(d.scroll, `deborde de ${d.scroll - d.client} px — ${d.coupable}`)
+        .toBeLessThanOrEqual(d.client)
 
-      const resultats = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-        .analyze()
-
-      const lisible = resultats.violations.map((v) => ({
-        regle: v.id,
-        impact: v.impact,
-        description: v.help,
-        elements: v.nodes.slice(0, 4).map((n) => n.target.join(' ')),
-      }))
-      expect(lisible, JSON.stringify(lisible, null, 2)).toEqual([])
+      const violations = await violationsAxe(page)
+      expect(violations, JSON.stringify(violations, null, 2)).toEqual([])
     })
   }
 
@@ -437,14 +328,8 @@ test.describe('Écrans de travail', () => {
     expect(d.scroll, `le rail fait deborder la page de ${d.scroll - d.client} px`)
       .toBeLessThanOrEqual(d.client)
 
-    const resultats = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .analyze()
-    const lisible = resultats.violations.map((v) => ({
-      regle: v.id, impact: v.impact, description: v.help,
-      elements: v.nodes.slice(0, 4).map((n) => n.target.join(' ')),
-    }))
-    expect(lisible, JSON.stringify(lisible, null, 2)).toEqual([])
+    const violations = await violationsAxe(page)
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([])
   })
 
   test("n'affiche jamais les données de l'autre boutique", async ({ page }) => {
@@ -454,7 +339,8 @@ test.describe('Écrans de travail', () => {
     for (const ecran of ECRANS) {
       await allerA(page, ecran)
       const corps = await page.locator('body').innerText()
-      expect(corps, `fuite de données de la boutique témoin sur ${ecran.nom}`)
+      const chiffres = corps.replace(/[^0-9]/g, '')
+      expect(chiffres, `fuite de données de la boutique témoin sur ${ecran.nom}`)
         .not.toContain(MONTANT_TEMOIN)
     }
   })

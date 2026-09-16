@@ -1,5 +1,5 @@
 /**
- * seed-qa.mjs — jeu de données minimal pour la boucle QA visuelle.
+ * seed-qa.mjs — peuple l'émulateur pour la boucle QA visuelle.
  * ─────────────────────────────────────────────────────────────────────────────
  * ⚠ ÉMULATEURS UNIQUEMENT (CLAUDE.md). Ce script écrit dans Firestore et crée des
  * comptes Auth : il refuse de démarrer hors émulateur, et il réutilise pour cela
@@ -11,21 +11,28 @@
  *   firebase emulators:exec --only auth,firestore --project demo-akayis-test \
  *     "node scripts/qa/seed-qa.mjs && npm run qa"
  *
+ * Restreindre à un ou deux états pendant une mise au point :
+ *   node scripts/qa/seed-qa.mjs --etat=vide,erreur-partielle
+ *
  * Le front doit voir les MÊMES données : l'émulateur Firestore cloisonne par
  * identifiant de projet. `playwright.config.js` force donc
  * VITE_FIREBASE_PROJECT_ID sur le projet de démonstration. C'est aussi une
  * garantie de sûreté — avec un projet et une clé factices, le front ne peut pas
  * joindre la production même si la connexion à l'émulateur échouait.
  *
- * Deux boutiques, et ce n'est pas décoratif : les règles Firestore doivent être
- * exercées avec au moins deux boutiques (CLAUDE.md), et une seule boutique ne
- * prouve jamais qu'une requête est correctement cloisonnée.
+ * CINQ boutiques, et ce n'est pas décoratif. Quatre portent les ÉTATS que le banc
+ * doit savoir montrer (cf. `etats-du-banc.mjs`, qui explique pourquoi un état est
+ * une boutique et non un `?etat=` lu par l'application) ; la cinquième est le
+ * témoin de cloisonnement, jamais visitée. Les règles Firestore doivent être
+ * exercées avec au moins deux boutiques (CLAUDE.md), et une seule ne prouve
+ * jamais qu'une requête est correctement cloisonnée.
  */
 
 import { initializeApp, deleteApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { validateEmulatorEnv, PRODUCTION_BLOCKED_PROJECTS } from '../lib/technicalUserProvisioning.mjs'
+import { ETATS, TEMOIN, CLES_ETATS } from './etats-du-banc.mjs'
 
 // ── Garde de sécurité, avant toute initialisation ─────────────────────────────
 const envCheck = validateEmulatorEnv(process.env)
@@ -48,32 +55,37 @@ if (PROJECT_ID !== 'demo-akayis-test') {
   process.exit(1)
 }
 
-// ── Données ───────────────────────────────────────────────────────────────────
-export const COMPTE_QA = Object.freeze({
-  email: 'qa.esahaf@example.test',
-  motDePasse: 'QaEsahaf!2026',
-  boutiqueId: 'qa-boutique-ouaga',
-  boutiqueNom: 'ESAHAF QA OUAGA',
-})
+/**
+ * Toute boutique écrite ou purgée par ce script porte ce préfixe, et la fonction
+ * de purge REFUSE d'agir sur autre chose. C'est une seconde serrure derrière le
+ * garde d'émulateur : celui-ci protège le projet, celle-ci protège du voisin.
+ */
+const PREFIXE_BANC = 'qa-boutique-'
 
-// Seconde boutique : sert à prouver le cloisonnement, jamais connectée.
-const BOUTIQUE_TEMOIN = Object.freeze({
-  email: 'qa.temoin@example.test',
-  motDePasse: 'QaTemoin!2026',
-  boutiqueId: 'qa-boutique-temoin',
-  boutiqueNom: 'BOUTIQUE TÉMOIN',
-})
+// ── Sélection des états à semer ───────────────────────────────────────────────
+//
+// Les noms sont validés contre la liste réelle et le script REFUSE un nom
+// inconnu en le nommant. Un `--etat=vid` silencieusement ignoré ne sèmerait rien
+// et rendrait une boucle verte sur des écrans qui n'existent pas.
+const argEtat = process.argv.find((a) => a.startsWith('--etat='))
+const etatsDemandes = argEtat
+  ? argEtat.slice('--etat='.length).split(',').map((s) => s.trim()).filter(Boolean)
+  : CLES_ETATS
 
-// Montants volontairement inégaux en nombre de chiffres : c'est ce qui rend
-// visible (ou non) l'alignement des chiffres tabulaires dans les colonnes.
-const SOLDES = [
-  { reseau: 'Orange', stock: 1_250_000 },
-  { reseau: 'Moov', stock: 87_500 },
-  { reseau: 'Telecel', stock: 0 },
-  { reseau: 'Coris', stock: 940_000 },
-  { reseau: 'Sank', stock: 12_300 },
-  { reseau: 'Wave', stock: 5_000 },
-]
+const inconnus = etatsDemandes.filter((cle) => !CLES_ETATS.includes(cle))
+if (inconnus.length > 0) {
+  console.error(
+    `[seed-qa] état(s) inconnu(s) : ${inconnus.join(', ')}\n` +
+    `          états disponibles : ${CLES_ETATS.join(', ')}`,
+  )
+  process.exit(1)
+}
+
+// ── Exports historiques ───────────────────────────────────────────────────────
+// Conservés : d'autres scripts et la documentation s'y réfèrent. La source est
+// désormais `etats-du-banc.mjs`, pour que les specs Playwright lisent les mêmes
+// identifiants sans les recopier.
+export const COMPTE_QA = Object.freeze({ ...ETATS.dense.compte })
 
 const app = initializeApp({ projectId: PROJECT_ID })
 const auth = getAuth()
@@ -119,16 +131,64 @@ async function creerCompte({ email, motDePasse, boutiqueId, boutiqueNom }) {
   return utilisateur.uid
 }
 
-async function semerLesSoldes(boutiqueId, facteur = 1) {
-  // UN SEUL document `current`, contenant une map `balances` — et non un document
-  // par réseau. Première version de ce seed : six documents que l'application ne
-  // lit jamais, donc six réseaux à 0 sur le tableau de bord, sans la moindre
-  // erreur. Forme réelle attendue par normalizeNetworkBalances
-  // (src/utils/financialImpact.js:65) :
-  //     { balances: { Orange: { stock, liquidite }, ... } }
-  // ⚠ Le champ est `liquidite` SANS accent : `liquidity` est ignoré en silence.
+/**
+ * Remet une boutique du banc à zéro avant de la semer.
+ *
+ * Nécessaire pour une raison précise : l'historique est écrit avec des
+ * identifiants AUTOMATIQUES. Relancer le seed sur un émulateur déjà démarré
+ * empilait donc les transactions au lieu de les remplacer — et l'état « vide »,
+ * lui, ne pouvait tout simplement pas exister sur un émulateur réutilisé. Un
+ * état qui dépend de l'ordre des lancements n'est pas un état.
+ *
+ * Portée volontairement étroite : uniquement les boutiques du banc, uniquement
+ * sous l'émulateur (le garde en tête de fichier a déjà tranché), et refus
+ * bruyant pour tout le reste.
+ */
+async function viderLaBoutique(boutiqueId) {
+  if (!boutiqueId.startsWith(PREFIXE_BANC)) {
+    throw new Error(
+      `[SÉCURITÉ] purge refusée sur « ${boutiqueId} » : ` +
+      `seules les boutiques du banc (préfixe « ${PREFIXE_BANC} ») sont purgeables.`,
+    )
+  }
+
+  const historique = await db.collection(`clients/${boutiqueId}/history`).get()
+  const globaux = await db.collection('globalClients').where('registeredStoreId', '==', boutiqueId).get()
+
+  const aSupprimer = [
+    ...historique.docs.map((d) => d.ref),
+    ...globaux.docs.map((d) => d.ref),
+    db.doc(`clients/${boutiqueId}/networkBalances/current`),
+  ]
+
+  // Firestore plafonne un lot à 500 écritures.
+  for (let i = 0; i < aSupprimer.length; i += 450) {
+    const lot = db.batch()
+    aSupprimer.slice(i, i + 450).forEach((ref) => lot.delete(ref))
+    await lot.commit()
+  }
+
+  return { historique: historique.size, clients: globaux.size }
+}
+
+/**
+ * Écrit UN SEUL document `current` contenant une map `balances` — et non un
+ * document par réseau. Première version de ce seed : six documents que
+ * l'application ne lit jamais, donc six réseaux à 0 sur le tableau de bord, sans
+ * la moindre erreur. Forme réelle attendue par normalizeNetworkBalances
+ * (src/utils/financialImpact.js:65) :
+ *     { balances: { Orange: { stock, liquidite }, ... } }
+ * ⚠ Le champ est `liquidite` SANS accent : `liquidity` est ignoré en silence.
+ *
+ * `soldes === null` → on n'écrit RIEN. Le document n'existe pas, comme le premier
+ * jour d'une vraie boutique. Ce n'est pas la même chose que des zéros, et c'est
+ * précisément la différence que l'état « vide » sert à regarder.
+ */
+async function semerLesSoldes(boutiqueId, soldes, facteur = 1) {
+  if (soldes === null) return 0
+
   const balances = {}
-  for (const { reseau, stock } of SOLDES) {
+  for (const { reseau, stock } of soldes) {
     balances[reseau] = { stock: Math.round(stock * facteur), liquidite: 0 }
   }
 
@@ -136,113 +196,24 @@ async function semerLesSoldes(boutiqueId, facteur = 1) {
     { balances, updatedAt: FieldValue.serverTimestamp() },
     { merge: true },
   )
+  return Object.keys(balances).length
 }
 
-// Montants a nombre de chiffres DELIBEREMENT inegal : c'est la seule facon de
-// voir si les chiffres tabulaires alignent reellement les colonnes. Un jeu de
-// donnees uniforme aurait cache le defaut que la chasse fixe est censee corriger.
-// Le filet du registre n'a lui non plus rien a montrer sur un tableau vide —
-// premiere version de ce seed : des captures d'ecrans vides qui ne prouvaient rien.
-const TRANSACTIONS = [
-  { client: 'OUEDRAOGO Aminata', type: 'Depot',   reseau: 'Orange',  code: '70112233', montant: 1_250_000 },
-  { client: 'SAWADOGO Issa',     type: 'Retrait', reseau: 'Moov',    code: '60998877', montant: 87_500 },
-  { client: 'KABORE Salif',      type: 'Depot',   reseau: 'Coris',   code: '65004411', montant: 940_000 },
-  { client: 'TRAORE Mariam',     type: 'Retrait', reseau: 'Sank',    code: '55220099', montant: 12_300 },
-  { client: 'ZONGO Boukare',     type: 'Depot',   reseau: 'Wave',    code: '76543210', montant: 5_000 },
-  { client: 'COMPAORE Fatou',    type: 'Retrait', reseau: 'Orange',  code: '70445566', montant: 250 },
-  { client: 'NIKIEMA Paul',      type: 'Depot',   reseau: 'Telecel', code: '51122334', montant: 3_400_000 },
-]
+/**
+ * `globalClients` est une collection de PREMIER NIVEAU (firestore.js
+ * resolveCollectionPath la traite à part, comme `stores` et `users`) : la semer
+ * sous clients/{boutique}/ donnerait un écran vide sans la moindre erreur.
+ * L'isolation passe par `registeredStoreId`.
+ *
+ * L'écran Clients était passé au crible de la boucle QA depuis le début… À VIDE :
+ * le banc ne semait aucun client. Les captures montraient « Aucun client
+ * trouvé. », axe ne voyait aucune ligne, et la sonde de débordement n'avait
+ * aucune des quatorze colonnes à mesurer. Un test vert sur un écran vide ne
+ * prouve rien.
+ */
+async function semerLesClients(boutiqueId, liste) {
+  if (liste.length === 0) return 0
 
-// ── Clients ──────────────────────────────────────────────────────────────────
-//
-// L'ecran Clients etait passe au crible de la boucle QA depuis le debut… A VIDE :
-// le banc ne semait aucun client. Les captures montraient « Aucun client
-// trouve. », axe ne voyait aucune ligne, et la sonde de debordement n'avait
-// aucune des quatorze colonnes a mesurer. Un test vert sur un ecran vide ne
-// prouve rien — c'est la meme lecon que l'historique vide du lot 3, sous une
-// autre forme.
-//
-// `globalClients` est une collection de PREMIER NIVEAU (firestore.js
-// resolveCollectionPath la traite a part, comme `stores` et `users`) : la semer
-// sous clients/{boutique}/ donnerait un ecran vide sans la moindre erreur.
-// L'isolation passe par `registeredStoreId`.
-const PRENOMS = ['Aminata', 'Issa', 'Salif', 'Mariam', 'Boukare', 'Fatou', 'Paul', 'Alizeta', 'Rasmane', 'Kadiatou']
-const NOMS = ['OUEDRAOGO', 'SAWADOGO', 'KABORE', 'TRAORE', 'ZONGO', 'COMPAORE', 'NIKIEMA', 'ZABSONRE', 'ILBOUDO', 'SORE']
-const LOCALITES = ['Ouagadougou', 'Bobo-Dioulasso', 'Koudougou', 'Banfora', 'Ouahigouya']
-
-function clientsDuBanc(boutiqueId, boutiqueNom) {
-  const liste = []
-
-  // Les trois cas limites d'abord — ce sont eux qui cassent une mise en page.
-  liste.push({
-    // Le nom le plus long du jeu : c'est lui qui tronque « FCFA » a 390 px.
-    registeredStoreId: boutiqueId,
-    registeredStoreName: boutiqueNom,
-    nom: 'OUEDRAOGO/KABORE',
-    prenom: 'Wendkuuni Alizeta',
-    numeroIdentite: 'B10240031',
-    numeroPersonnel: '70112233',
-    orange: '1004500',
-    moov: '1004813',
-    numerosAgent: { orange: '70112233', moov: '70113344' },
-    localite: 'Ouagadougou — Zone du Bois, Secteur 13',
-    agentCommercial: 'ZABSONRE Alizeta',
-    dateAjout: '15/09/2026',
-  })
-  liste.push({
-    // Client importe avant le cloisonnement : la cellule doit rendre
-    // « Ancienne base » et non une case blanche.
-    registeredStoreId: boutiqueId,
-    registeredStoreName: null,
-    nom: 'ZONGO',
-    prenom: 'Boukare',
-    numeroIdentite: 'B10190877',
-    numeroPersonnel: '76445566',
-    sank: '1005752',
-    numerosAgent: { sank: '76445566' },
-    localite: 'Bobo-Dioulasso',
-    agentCommercial: 'SAWADOGO Issa',
-    dateAjout: '03/04/2026',
-  })
-  liste.push({
-    // Un seul reseau renseigne : cinq colonnes de code agent restent vides.
-    registeredStoreId: boutiqueId,
-    registeredStoreName: boutiqueNom,
-    nom: 'TRAORE',
-    prenom: 'Salimata',
-    numeroIdentite: 'B10221145',
-    numeroPersonnel: '70998877',
-    wave: '1006210',
-    numerosAgent: {},
-    localite: 'Koudougou',
-    agentCommercial: 'ZABSONRE Alizeta',
-    dateAjout: '15/09/2026',
-  })
-
-  // Puis du volume : la pagination par defaut est de 10 par page, donc trente
-  // lignes donnent trois pages. Un ecran verifie a trois lignes ne prouve rien.
-  for (let i = 0; i < 27; i += 1) {
-    const reseau = ['orange', 'moov', 'telecel', 'coris', 'sank', 'wave'][i % 6]
-    liste.push({
-      registeredStoreId: boutiqueId,
-      registeredStoreName: boutiqueNom,
-      nom: NOMS[i % NOMS.length],
-      prenom: PRENOMS[(i + 3) % PRENOMS.length],
-      numeroIdentite: `B102${String(40000 + i * 7).slice(0, 5)}`,
-      numeroPersonnel: `7${String(1000000 + i * 13579).slice(0, 7)}`,
-      [reseau]: String(1004000 + i * 37),
-      numerosAgent: { [reseau]: `7${String(2000000 + i * 24680).slice(0, 7)}` },
-      localite: LOCALITES[i % LOCALITES.length],
-      agentCommercial: `${NOMS[(i + 5) % NOMS.length]} ${PRENOMS[i % PRENOMS.length]}`,
-      dateAjout: `${String((i % 28) + 1).padStart(2, '0')}/0${(i % 9) + 1}/2026`,
-    })
-  }
-
-  return liste
-}
-
-async function semerLesClients(boutiqueId, boutiqueNom) {
-  const liste = clientsDuBanc(boutiqueId, boutiqueNom)
   const lot = db.batch()
   liste.forEach((client, i) => {
     lot.set(db.doc(`globalClients/${boutiqueId}-c${String(i).padStart(3, '0')}`), {
@@ -254,13 +225,15 @@ async function semerLesClients(boutiqueId, boutiqueNom) {
   return liste.length
 }
 
-async function semerLHistorique(boutiqueId, uid, email) {
+async function semerLHistorique(boutiqueId, uid, email, lignes) {
+  if (lignes.length === 0) return 0
+
   const lot = db.batch()
-  TRANSACTIONS.forEach((t, i) => {
+  lignes.forEach((t, i) => {
     const ref = db.collection(`clients/${boutiqueId}/history`).doc()
     lot.set(ref, {
       // `storeId` est OBLIGATOIRE : historyService filtre dessus
-      // (where storeId == activeStore.id). Sans lui, l'ecran reste vide.
+      // (where storeId == activeStore.id). Sans lui, l'écran reste vide.
       storeId: boutiqueId,
       clientId: `qa-client-${i}`,
       clientNom: t.client,
@@ -268,7 +241,7 @@ async function semerLHistorique(boutiqueId, uid, email) {
       reseau: t.reseau,
       code: t.code,
       montant: t.montant,
-      statut: 'Validee',
+      statut: t.statut,
       operatorName: 'QA',
       userEmail: email,
       userId: uid,
@@ -277,28 +250,54 @@ async function semerLHistorique(boutiqueId, uid, email) {
     })
   })
   await lot.commit()
+  return lignes.length
 }
 
-const uidPrincipal = await creerCompte(COMPTE_QA)
-await semerLesSoldes(COMPTE_QA.boutiqueId)
-await semerLHistorique(COMPTE_QA.boutiqueId, uidPrincipal, COMPTE_QA.email)
-const nbClients = await semerLesClients(COMPTE_QA.boutiqueId, COMPTE_QA.boutiqueNom)
+async function semerUnEtat(cle) {
+  const etat = ETATS[cle]
+  const { boutiqueId, boutiqueNom, email } = etat.compte
 
-const uidTemoin = await creerCompte(BOUTIQUE_TEMOIN)
-// Facteur différent : si un écran de la boutique QA affichait ces montants, le
-// cloisonnement serait rompu et cela se verrait immédiatement sur la capture.
-await semerLesSoldes(BOUTIQUE_TEMOIN.boutiqueId, 7)
-// Et des clients chez la témoin : `subscribeToClients` écoute la collection
-// globale SANS filtre, l'isolation venant des règles Firestore. Sans client
-// témoin, le contrôle de cloisonnement de la boucle QA n'a rien à attraper —
-// il passerait au vert en regardant une collection qui ne contient qu'un seul
-// propriétaire.
-await semerLesClients(BOUTIQUE_TEMOIN.boutiqueId, BOUTIQUE_TEMOIN.boutiqueNom)
+  const uid = await creerCompte(etat.compte)
+  const purge = await viderLaBoutique(boutiqueId)
+  const nbSoldes = await semerLesSoldes(boutiqueId, etat.soldes)
+  const nbClients = await semerLesClients(boutiqueId, etat.clients(boutiqueId, boutiqueNom))
+  const nbHistorique = await semerLHistorique(boutiqueId, uid, email, etat.historique)
 
-console.log(`[seed-qa] projet          : ${PROJECT_ID}`)
-console.log(`[seed-qa] boutique QA     : ${COMPTE_QA.boutiqueId} (uid ${uidPrincipal})`)
-console.log(`[seed-qa] boutique témoin : ${BOUTIQUE_TEMOIN.boutiqueId} (uid ${uidTemoin})`)
-console.log(`[seed-qa] clients semés   : ${nbClients} par boutique (globalClients)`)
-console.log(`[seed-qa] identifiants    : ${COMPTE_QA.email} / ${COMPTE_QA.motDePasse}`)
+  return { cle, uid, boutiqueId, purge, nbSoldes, nbClients, nbHistorique, libelle: etat.libelle }
+}
+
+// ── Exécution ─────────────────────────────────────────────────────────────────
+const releves = []
+for (const cle of etatsDemandes) {
+  releves.push(await semerUnEtat(cle))
+}
+
+// La boutique témoin est semée à chaque fois, quelle que soit la sélection : les
+// contrôles de cloisonnement sont dans TOUTES les specs, et un banc sans témoin
+// les rendrait verts en regardant une collection à propriétaire unique.
+const uidTemoin = await creerCompte(TEMOIN.compte)
+await viderLaBoutique(TEMOIN.compte.boutiqueId)
+await semerLesSoldes(TEMOIN.compte.boutiqueId, TEMOIN.soldes, TEMOIN.facteurSoldes)
+const nbClientsTemoin = await semerLesClients(
+  TEMOIN.compte.boutiqueId,
+  TEMOIN.clients(TEMOIN.compte.boutiqueId, TEMOIN.compte.boutiqueNom),
+)
+
+console.log(`[seed-qa] projet : ${PROJECT_ID}`)
+console.log('[seed-qa] ─────────────────────────────────────────────────────────────')
+for (const r of releves) {
+  console.log(`[seed-qa] ${r.cle.padEnd(17)} ${r.boutiqueId}`)
+  console.log(`[seed-qa] ${''.padEnd(17)} ${r.libelle}`)
+  console.log(
+    `[seed-qa] ${''.padEnd(17)} ${r.nbClients} client(s) · ${r.nbHistorique} opération(s) · ` +
+    `${ETATS[r.cle].soldes === null ? 'aucun document de soldes' : `${r.nbSoldes} réseau(x) garni(s)`}` +
+    (r.purge.historique + r.purge.clients > 0
+      ? ` · purge : ${r.purge.historique} opération(s), ${r.purge.clients} client(s)`
+      : ''),
+  )
+  console.log(`[seed-qa] ${''.padEnd(17)} ${ETATS[r.cle].compte.email} / ${ETATS[r.cle].compte.motDePasse}`)
+}
+console.log('[seed-qa] ─────────────────────────────────────────────────────────────')
+console.log(`[seed-qa] témoin (jamais visité) : ${TEMOIN.compte.boutiqueId} (uid ${uidTemoin}, ${nbClientsTemoin} clients)`)
 
 await deleteApp(app)
