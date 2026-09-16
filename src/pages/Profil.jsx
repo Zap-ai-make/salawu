@@ -42,7 +42,7 @@ function Profil() {
   const getRoleLabel = useCallback((role) => AUTH_ROLE_LABELS[role] || 'Utilisateur', [])
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div data-chassis className="max-w-4xl mx-auto space-y-6">
       {/* En-tête du profil */}
       <div className="bg-white rounded-lg shadow-md p-6">
         {/* Empile sous 640 px : avatar, identite et deux boutons sur une seule
@@ -54,7 +54,7 @@ function Profil() {
               {getAvatarInitial(displayName, displayEmail)}
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 break-words">
+              <h1 data-titre-ecran className="text-2xl sm:text-3xl font-bold text-gray-800 break-words">
                 {displayName}
               </h1>
               <p className="text-gray-600">{displayEmail}</p>

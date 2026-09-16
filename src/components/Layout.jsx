@@ -6,6 +6,31 @@ import NetworkCardsDrawer from './network/NetworkCardsDrawer'
 import StickyBalanceRail from './network/StickyBalanceRail'
 import { IS_REGISTRE } from '../constants/designSystem.js'
 import { APP_NAME } from '../constants/branding'
+/**
+ * La balise du wordmark — et c'est une décision d'ACCESSIBILITÉ, pas de style.
+ *
+ * Le bandeau de marque portait un `<h1>`, et chaque écran porte le sien : deux
+ * titres de niveau 1 par page, donc un plan de document qui annonce deux fois
+ * « ce document parle de… ». Un lecteur d'écran qui liste les titres commence par
+ * « ESAHAF » sur les dix écrans, et le titre utile arrive en second.
+ *
+ * La maquette tranche dans le même sens : le wordmark y est
+ * `<span class="marque__nom">`, et le seul `h1` est celui de l'écran
+ * (`.ecran h1`, maquette l.111). Le bandeau photographique, lui, est CONSERVÉ.
+ *
+ * ⚠ GARDÉ PAR `IS_REGISTRE`, et pas appliqué à tous. TAOFIC emprunte la même
+ * branche d'en-tête (son thème déclare aussi `backgroundImage`, themes.js:50) et
+ * il est en production : son arbre d'accessibilité ne doit pas bouger dans un lot
+ * de refonte visuelle. Le défaut y reste, et il est écrit dans le bilan plutôt
+ * que corrigé au passage.
+ *
+ * `IS_REGISTRE` et non un identifiant de client : c'est le même mécanisme que le
+ * rail de soldes ci-dessous — un parti pris de mise en page, porté par
+ * `profil.design`. Une constante calculée une fois, et non un `if` répété dans
+ * l'arbre JSX.
+ */
+const Marque = IS_REGISTRE ? 'span' : 'h1'
+
 function Layout({ children }) {
   const { themeClasses, backgroundImage } = useTheme()
   const [navbarHeight, setNavbarHeight] = useState(0)
@@ -86,19 +111,22 @@ function Layout({ children }) {
 
           {/* Contenu du header */}
           <div className="relative z-10 w-full px-4 py-12 flex items-center justify-center">
-            <h1
+            <Marque
+              data-marque
               className="text-4xl font-bold text-center text-white"
               style={{
                 textShadow: '0 3px 12px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.6)'
               }}
             >
               {APP_NAME}
-            </h1>
+            </Marque>
           </div>
         </header>
       ) : (
         <header className="w-full border-b border-reglure bg-papier px-4 py-3">
-          <h1 className="text-lg font-semibold tracking-tight text-encre">{APP_NAME}</h1>
+          <Marque data-marque className="text-lg font-semibold tracking-tight text-encre">
+            {APP_NAME}
+          </Marque>
         </header>
       )}
 
@@ -115,8 +143,19 @@ function Layout({ children }) {
       {/* Rideau des cartes réseau */}
       <NetworkCardsDrawer />
 
-      {/* Contenu principal avec padding top conditionnel */}
+      {/* Contenu principal avec padding top conditionnel.
+          `data-espace="boutique"` est un FAIT : ce Layout sert EXCLUSIVEMENT
+          l'espace boutique (App.jsx:125 ; l'admin a `AdminLayout`, le dealer
+          `DealerLayout`). Il n'y a donc rien à vérifier à l'exécution.
+
+          Ce marqueur existe parce que `.design-registre` ne suffit pas : posée
+          sur <html>, cette portée couvre TOUT le client ESAHAF, espaces admin et
+          dealer compris — or `PageHeader` est partagé par treize écrans, dont
+          neuf hors de ce chantier. Les restyler serait déborder du mandat.
+          Ensemble, les deux sélecteurs disent exactement « cette identité, dans
+          cet espace », et rien de plus. */}
       <main
+        data-espace="boutique"
         className="w-full px-4 py-6 transition-all duration-300"
         style={{
           paddingTop: isNavbarSticky ? `${navbarHeight + railHeight + 24}px` : '24px'

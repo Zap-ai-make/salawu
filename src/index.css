@@ -349,6 +349,81 @@ body {
   padding-left: 1rem;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE CHÂSSIS DE L'ESPACE BOUTIQUE (lot L7.1)
+   ───────────────────────────────────────────────────────────────────────────
+   POURQUOI DEUX SÉLECTEURS, ET PAS UN SEUL
+
+   `.design-registre` est posée sur <html> : elle désigne une IDENTITÉ, donc tout
+   le client — espaces admin et dealer compris. Or `PageHeader` est partagé par
+   TREIZE écrans, dont six de l'admin et trois du dealer, hors du périmètre de
+   cette refonte. Le styler sur la seule portée d'identité redessinerait deux
+   espaces sans mandat.
+
+   `[data-espace="boutique"]` complète : il désigne un ESPACE. Le Layout qui le
+   porte sert exclusivement les dix routes boutique (App.jsx:125). Ensemble, les
+   deux disent « cette identité, dans cet espace » — et rien de plus.
+
+   POURQUOI TOUT EST ICI, ET RIEN DANS LE JSX
+
+   Les dix écrans sont partagés avec TAOFIC, qui est EN PRODUCTION et doit rendre
+   au pixel près ce qu'il rend aujourd'hui. Remplacer leurs `<h1>` par un
+   composant commun l'aurait changé. Le JSX ne déclare donc que des FAITS inertes
+   — `data-chassis` (ceci est un cadre de page), `data-titre-ecran` (ceci est le
+   titre), `data-marque` (ceci est le wordmark) — qui ne modifient ni le rendu ni
+   l'arbre d'accessibilité de qui ne porte pas la portée. Toute l'apparence est
+   ici. C'est la règle déjà appliquée au filet des montants.
+
+   CE QUE MESURE LA MAQUETTE (docs/audit/maquette-espace-boutique.html)
+     .doc       max-width 1180px, padding latéral 24px → contenu ≈ 1132px
+     .ecran h1  23px / 600 / letter-spacing -.015em / line-height 1.2
+     .marque__nom  34px / 600 / letter-spacing .12em
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* UNE SEULE LARGEUR, et elle est portée par le Layout.
+   Le dépôt en déclarait QUATRE (2xl, 4xl, 6xl, 7xl), chacune décidée dans son
+   coin : d'un écran à l'autre, le contenu ne commençait pas au même endroit et
+   l'œil devait se recaler à chaque navigation.
+   72rem = 1152px, le pas Tailwind le plus proche des 1132px de la maquette. */
+.design-registre main[data-espace='boutique'] {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+/* Les cadres de page se taisent : la largeur, le centrage et le fond sont
+   désormais l'affaire du Layout. On neutralise aussi `min-height` et le fond :
+   Transactions et Historique ouvraient chacun un `min-h-screen bg-gray-100`
+   À L'INTÉRIEUR de <main>, soit un second dessin de page posé sur le premier. */
+.design-registre [data-espace='boutique'] [data-chassis] {
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: 0;
+  min-height: 0;
+  background: transparent;
+}
+
+/* Le wordmark n'est plus un titre : c'est un `span`, donc en ligne par défaut.
+   Le `display: block` qui lui rendait son centrage vient d'ici, et non d'une
+   classe ajoutée dans le JSX — TAOFIC garde son `<h1>` et son attribut `class`
+   inchangés, au caractère près. */
+.design-registre [data-marque] {
+  display: block;
+}
+
+/* Le titre d'écran : une seule graisse, une seule taille, sur les dix écrans.
+   Le dépôt en avait cinq (text-lg à text-3xl) et deux d'entre elles portaient un
+   soulignement `border-green-500` — un vert d'action sous un titre qui n'en est
+   pas une, et le seul endroit du produit où cette teinte paraissait. */
+.design-registre [data-espace='boutique'] [data-titre-ecran] {
+  font-size: 1.4375rem; /* 23px */
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--color-encre);
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 /* ── Écran de connexion ─────────────────────────────────────────────────────
    Le rendu 'legacy' sert un dégradé `from-blue-50 to-indigo-100` — le tic que
    DESIGN.md §1 désigne nommément, sur le premier écran que voit l'utilisateur.

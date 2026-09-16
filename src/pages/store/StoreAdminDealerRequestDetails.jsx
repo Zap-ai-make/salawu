@@ -472,7 +472,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
       </div>
     </div>
   ) : (
-    <div className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">{inner}</div>
+    <div data-chassis className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">{inner}</div>
   ))
 
   // ---------------------------------------------------------------------------
@@ -602,7 +602,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
         {/* En-tête */}
         <div className="flex items-start justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-lg font-bold text-gray-800">Détail de la demande</h1>
+            <h1 data-titre-ecran className="text-lg font-bold text-gray-800">Détail de la demande</h1>
           </div>
           <DealerRequestStatusBadge status={request.status} />
         </div>

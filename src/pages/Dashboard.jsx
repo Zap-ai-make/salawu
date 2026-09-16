@@ -28,7 +28,7 @@ function Dashboard() {
       <div className="space-y-8">
         {/* Titre */}
         <div className={`border-b-2 border-current pb-4 ${themeClasses.text}`}>
-          <h1 className={`text-3xl font-bold ${themeClasses.text}`}>Tableau de bord</h1>
+          <h1 data-titre-ecran className={`text-3xl font-bold ${themeClasses.text}`}>Tableau de bord</h1>
         </div>
 
         {/* Indicateur de chargement */}
@@ -46,7 +46,7 @@ function Dashboard() {
     <div className="space-y-8">
       {/* Titre */}
       <div className={`border-b-2 border-current pb-4 ${themeClasses.text}`}>
-        <h1 className={`text-3xl font-bold ${themeClasses.text}`}>Tableau de bord</h1>
+        <h1 data-titre-ecran className={`text-3xl font-bold ${themeClasses.text}`}>Tableau de bord</h1>
       </div>
 
       {/* Cartes d'informations */}

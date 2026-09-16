@@ -260,21 +260,46 @@ describe("TC-162 — le bandeau de marque et ce qu'il porte", () => {
     expect(screen.getByText('ESAHAF')).toBeInTheDocument()
   })
 
-  it('⚠ DÉFAUT FIGÉ — le bandeau est un h1, donc chaque écran en porte DEUX', async () => {
-    // État actuel : `Layout.jsx` rend le nom de l'application en `h1` (deux
-    // sites, selon la branche d'image), et l'écran rend le sien. Une page porte
-    // donc deux titres de niveau 1 — un lecteur d'écran qui liste les titres
-    // entend deux fois « le début de la page ».
+  it('un seul h1 par écran : le titre de l’écran, pas le wordmark', async () => {
+    // ⟲ RETOURNÉ AU LOT L7.1, comme annoncé.
     //
-    // ⟲ À RETOURNER AU LOT L7.1 : le wordmark cessera d'être un titre, et cette
-    // assertion deviendra `['Transactions']`.
+    // Ce test gelait un défaut : `Layout.jsx` rendait le nom de l'application en
+    // `h1`, et l'écran rendait le sien — deux titres de niveau 1 par page. Un
+    // lecteur d'écran qui liste les titres entendait « ESAHAF » sur les dix
+    // écrans avant d'arriver au titre utile. L'assertion valait
+    // `['ESAHAF', 'Transactions']` ; elle vaut maintenant `['Transactions']`.
+    //
+    // Le bandeau photographique est CONSERVÉ : seul le rôle du wordmark change,
+    // il devient un `span` (maquette l.762, `<span class="marque__nom">`). Ce
+    // n'est pas un retrait, c'est un déclassement — le nom reste lisible, il
+    // cesse seulement de se déclarer titre du document.
     await monterLeChassis(ESAHAF)
 
     const titres = screen
       .getAllByRole('heading', { level: 1 })
       .map((h) => h.textContent.trim())
 
-    expect(titres).toEqual(['ESAHAF', 'Transactions'])
+    expect(titres).toEqual(['Transactions'])
+
+    // …et le nom de la boutique n'a pas disparu pour autant.
+    expect(screen.getByText('ESAHAF')).toBeInTheDocument()
+  })
+
+  it('TAOFIC garde ses deux h1 : aucun arbre de production ne bouge dans un lot de design', async () => {
+    // Le déclassement du wordmark est gardé par `IS_REGISTRE`, et ce test est là
+    // pour que ce garde ne saute pas par inadvertance.
+    //
+    // TAOFIC est en production et emprunte la même branche d'en-tête (son thème
+    // déclare aussi `backgroundImage`). Son arbre d'accessibilité ne doit pas
+    // changer à l'occasion d'une refonte visuelle qui ne le concerne pas — le
+    // défaut y demeure, écrit dans le bilan plutôt que corrigé au passage.
+    await monterLeChassis(TAOFIC)
+
+    const titres = screen
+      .getAllByRole('heading', { level: 1 })
+      .map((h) => h.textContent.trim())
+
+    expect(titres).toEqual(['TAOFIC', 'Transactions'])
   })
 
   it('rend la bande des réserves dès le repos, sans attendre un défilement', async () => {

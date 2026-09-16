@@ -206,10 +206,10 @@ function StoreAdminDealerRequests() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="max-w-6xl mx-auto" data-testid="store-dealer-requests">
+    <div data-chassis className="max-w-6xl mx-auto" data-testid="store-dealer-requests">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <h1 className="text-xl font-bold text-gray-800">Demandes Dealer</h1>
+        <h1 data-titre-ecran className="text-xl font-bold text-gray-800">Demandes Dealer</h1>
         <button
           type="button"
           onClick={() => { setExtraRequests([]); setRefreshKey(k => k + 1) }}

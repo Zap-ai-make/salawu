@@ -127,6 +127,30 @@ const estHorsEcran = (ligne) => {
  * chrome : elles restent, et elles sont comptées à part pour que le total
  * « à traiter » ne les inclue jamais.
  */
+/**
+ * Compte un motif en IGNORANT les lignes de commentaire.
+ *
+ * ⚠ Correction d'une erreur de cette sonde, attrapée sur son propre terrain. Au
+ * lot L7.1, `Layout.jsx` a cessé de rendre des `<h1>` — et le relevé continuait
+ * d'en annoncer un. Le coupable était une phrase de commentaire expliquant le
+ * changement, qui contenait littéralement `<h1>`. La sonde comptait de la prose.
+ *
+ * Une sonde qui mesure les commentaires punit le fait d'en écrire, et elle rend
+ * un chiffre que personne ne peut recouper avec l'écran. On réutilise
+ * `estHorsEcran`, déjà écrit pour les emoji, plutôt que d'inventer une seconde
+ * règle qui divergerait de la première.
+ */
+const compterHorsCommentaire = (source, motif) =>
+  source
+    .split('\n')
+    .filter((ligne) => !estHorsEcran(ligne))
+    .reduce((n, ligne) => n + compter(ligne, motif), 0)
+
+/**
+ * Le fichier des identités d'opérateur. Ses couleurs sont des DONNÉES, pas du
+ * chrome : elles restent, et elles sont comptées à part pour que le total
+ * « à traiter » ne les inclue jamais.
+ */
 const FICHIER_IDENTITES_TIERS = 'src/constants/networkConfig.js'
 
 /** Regroupement en zones — celles du tableau de diagnostic. */
@@ -355,7 +379,7 @@ async function main() {
 
   for (const chemin of POINTS_ENTREE) {
     const source = await readFile(chemin, 'utf8')
-    const h1 = compter(source, /<h1[\s>]/g)
+    const h1 = compterHorsCommentaire(source, /<h1[\s>]/g)
     const cadres = chassisDeclares(source)
     const pageHeader = /<PageHeader[\s/>]/.test(source) ? 1 : 0
     const emptyState = /<EmptyState[\s/>]/.test(source) ? 1 : 0
@@ -387,7 +411,7 @@ async function main() {
   // est précisément la part de titres que les pages délèguent.
   const h1DansLeGraphe = []
   for (const chemin of fichiers) {
-    const n = compter(await readFile(chemin, 'utf8'), /<h1[\s>]/g)
+    const n = compterHorsCommentaire(await readFile(chemin, 'utf8'), /<h1[\s>]/g)
     if (n > 0) h1DansLeGraphe.push({ chemin, n })
   }
   const totalH1Graphe = h1DansLeGraphe.reduce((s, f) => s + f.n, 0)
@@ -408,9 +432,13 @@ async function main() {
     console.log(`         + ${f.chemin} (${f.n})`)
   }
   console.log(
-    `\n  ${largeurs.size} largeurs de châssis déclarées (${[...largeurs].sort().join(', ')})` +
+    `\n  ${largeurs.size} largeurs de châssis DÉCLARÉES (${[...largeurs].sort().join(', ')})` +
       '\n         — un châssis = un `max-w-*` porté avec `mx-auto` ; les largeurs' +
-      '\n           de modale et de cadre d\'impression sont exclues.',
+      '\n           de modale et de cadre d\'impression sont exclues.' +
+      '\n         — déclarées, pas rendues : depuis le lot L7.1, ces cadres portent' +
+      '\n           `data-chassis` et sont NEUTRALISÉS sous `.design-registre` ; la' +
+      '\n           largeur unique vient du Layout. Les déclarations restent parce' +
+      '\n           que ces dix écrans sont partagés avec TAOFIC, qui ne bouge pas.',
   )
   console.log(
     `  PageHeader : ${totalStructure.pageHeader}/11 écrans · ` +
@@ -418,7 +446,8 @@ async function main() {
       `${totalStructure.aucun} phrases « Aucun… » écrites à la main`,
   )
   console.log(
-    '\n  Cible du chantier : 1 h1 par écran, 1 largeur (portée par le Layout),\n' +
+    '\n  Cible du chantier (au RENDU, sous la portée) : 1 h1 par écran, 1 largeur\n' +
+    '  portée par le Layout,\n' +
       '  PageHeader 11/11, et zéro phrase « Aucun… » écrite à la main.\n',
   )
 
