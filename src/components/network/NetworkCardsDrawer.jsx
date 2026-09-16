@@ -162,11 +162,12 @@ function BandeDesReserves({ top = 0 }) {
       className="sticky z-30 bg-white border-b border-gray-200 shadow-sm"
       style={{ top: `${top}px` }}
     >
-      <div className="px-2 sm:px-4 py-3 sm:py-4">
+      <div data-reserve-cadre className="px-2 sm:px-4 py-3 sm:py-4">
         {/* Même exigence que partout ailleurs : une zone à défilement horizontal
             non focalisable rend ses derniers réseaux inatteignables au clavier
             (constat Q3, relevé à 375 px). */}
         <div
+          data-reserve-piste
           tabIndex={0}
           role="region"
           aria-label="Soldes par reseau, defilement horizontal"

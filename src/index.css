@@ -615,6 +615,145 @@ body {
   border-radius: 2px;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA BANDE DES RÉSERVES (lot L7.4c) — RESTYLE PUR
+   ───────────────────────────────────────────────────────────────────────────
+   SEPT PASTELS QUI N'ENCODAIENT RIEN
+
+   Chaque réserve portait un dégradé tiré de sa couleur d'opérateur : orange,
+   bleu, violet, jaune, rouge, cyan, vert. Sept fonds différents pour sept
+   lignes qui disent toutes la même chose — un nom, un montant. La couleur d'un
+   opérateur IDENTIFIE un tiers ; étalée en aplat sur toute la carte, elle
+   cesse d'identifier et devient un décor, et le montant — la seule information
+   qu'on vient chercher — se lit sur sept fonds différents.
+
+   Ils partent. La couleur d'opérateur reste, concentrée sur la pastille, à
+   côté du nom écrit en toutes lettres : c'est un repère de balayage, jamais un
+   code (DESIGN.md §5).
+
+   CE QUE LES PASTELS CACHAIENT AUSSI
+
+   `bg-gradient-to-br` émet une `background-image`, et axe REFUSE de calculer un
+   contraste sur un fond qu'il ne peut pas réduire à une couleur : il classe
+   l'élément en « incomplete » au lieu de « violation ». Toute la bande était
+   donc hors de portée du scanner. Le dégradé ne se contentait pas de ne rien
+   dire — il empêchait de mesurer ce qui s'écrivait dessus.
+
+   POURQUOI `background-image: none` ET NON LE RETRAIT DE LA CLASSE
+
+   Les classes teintées restent dans le JSX pour qu'un profil multi-réseaux sans
+   l'identité « registre » les reçoive inchangées. On neutralise donc ici, et il
+   faut viser la bonne propriété : `background-color` ne recouvre pas une
+   `background-image`, qui se peint PAR-DESSUS. Sans `none`, le dégradé resterait
+   visible et la mesure resterait impossible.
+
+   LA RÉGLURE DE L'ARGENT S'APPLIQUE ICI AUSSI
+
+   Chaque montant porte `data-montant`, donc la réglure verticale et les chiffres
+   tabulaires — la maquette la porte également sur les réserves. Ce sont des
+   montants ; ce sont même les premiers montants que l'œil rencontre.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-bande-reserves] {
+  background: var(--color-papier);
+  /* `--trait-200` (1,47:1) et non `--reglure` (1,21:1) : ce filet sépare la
+     bande de la page, il porte plus loin que ceux qui séparent les réserves
+     entre elles. Chiffres vérifiés par `npm run qa:jetons`. */
+  border-bottom: 1px solid var(--color-trait-200);
+  /* L'ombre portée disparaît : elle est le tic que DESIGN.md §1 désigne
+     nommément, et le filet dit la même chose sans flou. */
+  box-shadow: none;
+}
+
+/* Les réserves sont JOINTIVES, séparées par un trait — et non des cartes
+   flottant sur un fond. C'est ce qui fait une bande plutôt qu'une collection :
+   on la lit d'un balayage horizontal, sans que l'œil ait à franchir un vide
+   entre chaque élément. */
+.design-registre [data-reserve-cadre] {
+  padding: 0;
+}
+
+.design-registre [data-reserve-piste] {
+  gap: 0;
+  padding-bottom: 0;
+  /* `flex-start` et non `center` : centrées, sept réserves qui débordent
+     cachent la PREMIÈRE autant que la dernière, et la première est celle qu'on
+     regarde. Une piste qui défile commence à son début. */
+  justify-content: flex-start;
+}
+
+.design-registre [data-reserve] {
+  background-image: none;
+  background-color: var(--color-papier);
+  border: 0;
+  border-right: 1px solid var(--color-reglure);
+  border-radius: 0;
+  box-shadow: none;
+  flex: 1 0 auto;
+  min-width: 8.375rem;
+  max-width: none;
+  padding: 0.5625rem 0.875rem 0.625rem;
+}
+
+/* `hover:shadow-md` relève aussi de l'ombre molle, et une réserve ne se clique
+   pas : lui donner un retour au survol promet une action qui n'existe pas. */
+.design-registre [data-reserve]:hover {
+  box-shadow: none;
+}
+
+.design-registre [data-reserve]:last-child {
+  border-right: 0;
+}
+
+/* La caisse n'est pas un stock : elle ferme la bande, et son fond la détache
+   des réserves réseau sans rien ajouter de coloré. */
+.design-registre [data-reserve='caisse'] {
+  background-color: var(--color-canvas);
+}
+
+.design-registre [data-reserve] h3 {
+  color: var(--color-encre);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.design-registre [data-reserve] [data-montant] {
+  color: var(--color-encre);
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.design-registre [data-reserve] [data-reserve-mention] {
+  color: var(--color-encre-doux);
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  margin-top: 0.125rem;
+  text-align: right;
+}
+
+/* La pastille porte une couleur de TIERS (les 49 couleurs d'opérateur de
+   networkConfig.js sont des DONNÉES, pas des jetons). Plusieurs sont claires —
+   le jaune Coris #ffb300, le cyan Wave — et disparaissent sur du papier. Un
+   anneau à l'encre leur rend un bord sans toucher à la couleur elle-même, qui
+   ne nous appartient pas. */
+.design-registre [data-pastille] {
+  box-shadow: 0 0 0 1px rgb(21 32 43 / 0.3);
+}
+
+/* Sur téléphone, la bande montre trois réserves et se défile : des réserves
+   plus étroites en montreraient quatre illisibles. La maquette tranche dans le
+   même sens (110 px sous 640 px). */
+@media (max-width: 639px) {
+  .design-registre [data-reserve] {
+    min-width: 6.875rem;
+    padding: 0.5rem 0.6875rem;
+  }
+}
+
 /* ── Écran de connexion ─────────────────────────────────────────────────────
    Le rendu 'legacy' sert un dégradé `from-blue-50 to-indigo-100` — le tic que
    DESIGN.md §1 désigne nommément, sur le premier écran que voit l'utilisateur.
