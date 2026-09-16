@@ -214,13 +214,13 @@ function clientsAvecTrous(boutiqueId, boutiqueNom) {
 }
 
 const HISTORIQUE_DENSE = [
-  { client: 'OUEDRAOGO Aminata', type: TYPES.DEPOT, reseau: 'Orange', code: '70112233', montant: 1_250_000, statut: STATUTS.VALIDEE },
-  { client: 'SAWADOGO Issa', type: TYPES.RETRAIT, reseau: 'Moov', code: '60998877', montant: 87_500, statut: STATUTS.VALIDEE },
-  { client: 'KABORE Salif', type: TYPES.DEPOT, reseau: 'Coris', code: '65004411', montant: 940_000, statut: STATUTS.VALIDEE },
-  { client: 'TRAORE Mariam', type: TYPES.RETRAIT, reseau: 'Sank', code: '55220099', montant: 12_300, statut: STATUTS.VALIDEE },
-  { client: 'ZONGO Boukare', type: TYPES.DEPOT, reseau: 'Wave', code: '76543210', montant: 5_000, statut: STATUTS.VALIDEE },
-  { client: 'COMPAORE Fatou', type: TYPES.RETRAIT, reseau: 'Orange', code: '70445566', montant: 250, statut: STATUTS.VALIDEE },
-  { client: 'NIKIEMA Paul', type: TYPES.DEPOT, reseau: 'Telecel', code: '51122334', montant: 3_400_000, statut: STATUTS.VALIDEE },
+  { client: { nom: 'OUEDRAOGO', prenom: 'Aminata' }, type: TYPES.DEPOT, reseau: 'Orange', code: '70112233', montant: 1_250_000, statut: STATUTS.VALIDEE },
+  { client: { nom: 'SAWADOGO', prenom: 'Issa' }, type: TYPES.RETRAIT, reseau: 'Moov', code: '60998877', montant: 87_500, statut: STATUTS.VALIDEE },
+  { client: { nom: 'KABORE', prenom: 'Salif' }, type: TYPES.DEPOT, reseau: 'Coris', code: '65004411', montant: 940_000, statut: STATUTS.VALIDEE },
+  { client: { nom: 'TRAORE', prenom: 'Mariam' }, type: TYPES.RETRAIT, reseau: 'Sank', code: '55220099', montant: 12_300, statut: STATUTS.VALIDEE },
+  { client: { nom: 'ZONGO', prenom: 'Boukare' }, type: TYPES.DEPOT, reseau: 'Wave', code: '76543210', montant: 5_000, statut: STATUTS.VALIDEE },
+  { client: { nom: 'COMPAORE', prenom: 'Fatou' }, type: TYPES.RETRAIT, reseau: 'Orange', code: '70445566', montant: 250, statut: STATUTS.VALIDEE },
+  { client: { nom: 'NIKIEMA', prenom: 'Paul' }, type: TYPES.DEPOT, reseau: 'Telecel', code: '51122334', montant: 3_400_000, statut: STATUTS.VALIDEE },
 ]
 
 /**
@@ -233,13 +233,13 @@ const HISTORIQUE_DENSE = [
  * CONTREDIRE le mot.
  */
 const HISTORIQUE_DEGRADE = [
-  { client: 'COMPAORE Fatou', type: TYPES.DEPOT, reseau: 'Orange', code: '70112233', montant: 75_000, statut: STATUTS.VALIDEE },
-  { client: 'ZABSONRE Rasmane', type: TYPES.RETRAIT, reseau: 'Moov', code: '60998877', montant: 150_000, statut: STATUTS.ATTENTE },
-  { client: 'COMPAORE Fatou', type: TYPES.RETRAIT, reseau: 'Telecel', code: '51122334', montant: 40_000, statut: STATUTS.ANNULEE },
-  { client: 'ZABSONRE Rasmane', type: TYPES.DEPOT, reseau: 'Coris', code: '65004411', montant: 9_500, statut: STATUTS.REMBOURSEE },
+  { client: { nom: 'COMPAORE', prenom: 'Fatou' }, type: TYPES.DEPOT, reseau: 'Orange', code: '70112233', montant: 75_000, statut: STATUTS.VALIDEE },
+  { client: { nom: 'ZABSONRE', prenom: 'Rasmane' }, type: TYPES.RETRAIT, reseau: 'Moov', code: '60998877', montant: 150_000, statut: STATUTS.ATTENTE },
+  { client: { nom: 'COMPAORE', prenom: 'Fatou' }, type: TYPES.RETRAIT, reseau: 'Telecel', code: '51122334', montant: 40_000, statut: STATUTS.ANNULEE },
+  { client: { nom: 'ZABSONRE', prenom: 'Rasmane' }, type: TYPES.DEPOT, reseau: 'Coris', code: '65004411', montant: 9_500, statut: STATUTS.REMBOURSEE },
   // Ligne importée avant que le réseau ne soit obligatoire : la cellule doit
   // rendre « - » et non une case blanche au milieu du tableau.
-  { client: 'COMPAORE Fatou', type: TYPES.DEPOT, reseau: null, code: '', montant: 61_200, statut: STATUTS.VALIDEE },
+  { client: { nom: 'COMPAORE', prenom: 'Fatou' }, type: TYPES.DEPOT, reseau: null, code: '', montant: 61_200, statut: STATUTS.VALIDEE },
 ]
 
 /** Six réseaux garnis, dont un à zéro (Telecel) : la rupture de stock existe. */
@@ -267,8 +267,8 @@ const SOLDES_CLAIRSEMES = [
  * qu'on cesse de croire ne sert plus à rien.
  */
 const HISTORIQUE_CLAIRSEME = [
-  { client: 'SAWADOGO Issa', type: TYPES.DEPOT, reseau: 'Orange', code: '70000001', montant: 25_000, statut: STATUTS.VALIDEE },
-  { client: 'ILBOUDO Kadiatou', type: TYPES.RETRAIT, reseau: 'Moov', code: '70000002', montant: 3_500, statut: STATUTS.VALIDEE },
+  { client: { nom: 'SAWADOGO', prenom: 'Issa' }, type: TYPES.DEPOT, reseau: 'Orange', code: '70000001', montant: 25_000, statut: STATUTS.VALIDEE },
+  { client: { nom: 'ILBOUDO', prenom: 'Kadiatou' }, type: TYPES.RETRAIT, reseau: 'Moov', code: '70000002', montant: 3_500, statut: STATUTS.VALIDEE },
 ]
 
 /** Cinq réseaux garnis, un épuisé : la carte « Orange » doit dire la rupture. */

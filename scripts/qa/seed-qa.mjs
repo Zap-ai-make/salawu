@@ -236,7 +236,21 @@ async function semerLHistorique(boutiqueId, uid, email, lignes) {
       // (where storeId == activeStore.id). Sans lui, l'écran reste vide.
       storeId: boutiqueId,
       clientId: `qa-client-${i}`,
-      clientNom: t.client,
+      // ⚠ `client`, un OBJET — et non `clientNom`, une chaîne.
+      //
+      // C'est la forme qu'écrit réellement l'application
+      // (TransactionForm.jsx:240 : `client: transactionClient`), et
+      // `getClientName` (helpers.js:8) lit `client.prenom` / `client.nom`. Le
+      // premier jet de ce banc écrivait `clientNom`, un champ que personne ne
+      // lit : les SEPT lignes de l'historique affichaient « Client inconnu »,
+      // sur toutes les captures, depuis le début. Le repli faisait exactement
+      // son travail, et c'est pour cela que rien n'a protesté.
+      //
+      // Vu seulement en REGARDANT une capture au lot L7.2b — ni axe, ni la
+      // sonde de débordement, ni le décompte de colonnes ne pouvaient
+      // l'attraper : la cellule était remplie, lisible et contrastée. Elle
+      // disait simplement autre chose que ce qu'un utilisateur verrait.
+      client: t.client,
       type: t.type,
       reseau: t.reseau,
       code: t.code,
