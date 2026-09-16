@@ -122,9 +122,13 @@ function DealerStores() {
         </div>
       )}
 
+      {/* `role="status"` ci-dessous : ARIA n'autorise `aria-label` que sur un
+          élément dont le rôle accepte d'être nommé, et un <div> nu a le rôle
+          `generic`, qui l'interdit (axe `aria-prohibited-attr`, serious). */}
       {loading && (
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          role="status"
           aria-busy="true"
           aria-label="Chargement des boutiques"
         >

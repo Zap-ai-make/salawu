@@ -345,6 +345,15 @@ describe('TC-031-STORES — DealerStores', () => {
       const hasBusy = !!container.querySelector('[aria-busy="true"]')
       const hasSpinner = !!container.querySelector('.animate-spin')
       expect(hasBusy || hasSpinner).toBe(true)
+
+      // ARIA n'autorise `aria-label` que sur un élément dont le rôle accepte
+      // d'être nommé. Un <div> nu a le rôle `generic`, qui l'interdit : le nom
+      // était ignoré par les lecteurs d'écran (axe `aria-prohibited-attr`,
+      // impact serious). `status` est une région live discrète, qui annonce le
+      // chargement sans voler le focus.
+      const nomme = container.querySelector('[aria-busy="true"][aria-label]')
+      expect(nomme, 'le squelette de chargement doit porter un nom').not.toBeNull()
+      expect(nomme.getAttribute('role')).toBe('status')
     })
     await act(async () => { resolve(makeStoresResult([])) })
   })
@@ -642,6 +651,12 @@ describe('TC-031-REQS — DealerRequests', () => {
       const hasBusy = !!container.querySelector('[aria-busy="true"]')
       const hasSpinner = !!container.querySelector('.animate-spin')
       expect(hasBusy || hasSpinner).toBe(true)
+
+      // Même exigence que [STORES-07] : un nom ARIA posé sur un rôle qui ne
+      // l'accepte pas n'est pas un nom, c'est du bruit dans le DOM.
+      const nomme = container.querySelector('[aria-busy="true"][aria-label]')
+      expect(nomme, 'le squelette de chargement doit porter un nom').not.toBeNull()
+      expect(nomme.getAttribute('role')).toBe('status')
     })
   })
 

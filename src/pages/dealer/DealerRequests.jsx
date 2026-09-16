@@ -267,8 +267,12 @@ function DealerRequests() {
         </div>
       )}
 
+      {/* `role="status"` ci-dessous : ARIA n'autorise `aria-label` que sur un
+          élément dont le rôle accepte d'être nommé, et un <div> nu a le rôle
+          `generic`, qui l'interdit (axe `aria-prohibited-attr`, serious).
+          Même correction que l'écran boutique équivalent. */}
       {loading && (
-        <div className="space-y-3" aria-busy="true" aria-label="Chargement des demandes">
+        <div className="space-y-3" role="status" aria-busy="true" aria-label="Chargement des demandes">
           {[1, 2, 3].map(n => (
             <div key={n} className="bg-white rounded-lg shadow p-4 animate-pulse">
               <div className="flex justify-between items-center">

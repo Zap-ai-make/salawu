@@ -1,3 +1,20 @@
+/**
+ * Squelettes de chargement.
+ *
+ * ⚠ `role="status"` SUR LE CONTENEUR, et ce n'est pas décoratif. ARIA n'autorise
+ * `aria-label` que sur un élément dont le rôle accepte d'être nommé ; un <div>
+ * nu a le rôle `generic`, qui l'INTERDIT. Le libellé « Chargement… » était donc
+ * ignoré par les lecteurs d'écran — écrit pour personne — et le `aria-busy` posé
+ * au même endroit ne disait rien non plus, faute de région à laquelle
+ * l'attacher. axe le classe `aria-prohibited-attr`, impact serious.
+ *
+ * `status` est le bon rôle et pas seulement un rôle permis : une région live
+ * discrète, qui annonce le chargement sans voler le focus.
+ *
+ * Relevé sur l'espace boutique par la boucle QA, puis corrigé ici à la demande
+ * explicite du client — `SkeletonList` ne sert que les espaces admin et dealer,
+ * hors du périmètre du chantier de refonte.
+ */
 function SkeletonRow({ cols = 4 }) {
   return (
     <tr aria-hidden="true">
@@ -12,7 +29,7 @@ function SkeletonRow({ cols = 4 }) {
 
 export function SkeletonTable({ rows = 5, cols = 4 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white" aria-busy="true" aria-label="Chargement…">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white" role="status" aria-busy="true" aria-label="Chargement…">
       <table className="min-w-full divide-y divide-gray-100">
         <tbody className="divide-y divide-gray-50">
           {Array.from({ length: rows }).map((_, i) => (
@@ -26,7 +43,7 @@ export function SkeletonTable({ rows = 5, cols = 4 }) {
 
 export function SkeletonCards({ count = 4 }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" aria-busy="true" aria-label="Chargement…">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" role="status" aria-busy="true" aria-label="Chargement…">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 p-5 animate-pulse">
           <div className="h-3 w-20 bg-gray-200 rounded mb-3" />
