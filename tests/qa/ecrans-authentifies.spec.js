@@ -56,21 +56,17 @@ const ECRANS = [
   // Celui-ci est pris sur le contenu propre du tableau de bord, et sur rien
   // d'autre — c'est la regle enoncee douze lignes plus bas.
   //
-  // ⚠ DÉFAUT FIGÉ, et c'est le marqueur ci-dessus qui l'a fait apparaitre. Tant
-  // que le test s'arretait sur un tableau de bord a moitie charge, axe ne
-  // voyait jamais le tableau « Derniers clients enregistres ». Il le voit
-  // maintenant : la colonne « code agent » y est en `text-orange-600` sur blanc,
-  // soit 3,57:1, sous le seuil AA de 4,5:1 (LastClientsTable.jsx:102).
+  // ⟲ TOLERANCE RETIREE AU LOT L8.1b, et elle s'est eteinte d'elle-meme.
   //
-  // Le fichier est anterieur a ce chantier (dernier commit : « Lot 3 »), et la
-  // correction appartient au lot de l'ecran. La tolerance EXIGE que le defaut
-  // soit encore la, donc elle s'eteindra d'elle-meme.
-  // ⟲ A RETOURNER AU LOT L8.1 (tableau de bord).
-  {
-    nom: 'tableau-de-bord', lien: 'Tableau de bord', chemin: '/',
-    marqueur: /derniers clients enregistrés/i,
-    defautFige: { regle: 'color-contrast', element: /text-orange-600/ },
-  },
+  // Un `defautFige` gelait ici le contraste du code agent — `text-orange-600`
+  // sur blanc, 3,57:1 contre 4,5:1 exige. Il etait ecrit pour EXIGER que le
+  // defaut soit encore la : le jour de sa correction, il rougissait et devait
+  // etre retire. C'est ce qui vient d'arriver.
+  //
+  // Le contraste n'a pas ete repeint : la colonne qui le portait n'existe plus.
+  // Le tableau de bord ne garde que trois colonnes (nom et prenom, localite,
+  // date), et les informations de FICHE sont retournees a la fiche.
+  { nom: 'tableau-de-bord', lien: 'Tableau de bord', chemin: '/', marqueur: /derniers clients enregistrés/i },
   { nom: 'transactions', lien: 'Transactions', chemin: '/transactions', marqueur: /transaction/i },
   { nom: 'historique', lien: 'Historique', chemin: '/historique', marqueur: /historique/i },
   // ⚠ DÉBORDEMENT FIGÉ — 249 px a 375 px, cause : la rangee de pagination est un

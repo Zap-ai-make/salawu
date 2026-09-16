@@ -192,45 +192,50 @@ describe('TC-171 — ce que le tableau de bord annonce', () => {
 })
 
 describe('TC-171 — le tableau des derniers clients', () => {
-  it('⚠ DÉFAUT FIGÉ — SEPT colonnes, dont deux qu\'on ne lit pas depuis l\'accueil', async () => {
-    // « Code agent » et « Commercial » relèvent de la fiche d'un client, pas de
-    // l'accueil. Sept colonnes ne tiennent pas dans 375 px : le tableau défile
-    // latéralement, et les deux dernières sont hors d'atteinte sans geste.
+  it('⟲ RETOURNÉ AU LOT L8.1b — TROIS colonnes, et le nom se lit d\'un bloc', async () => {
+    // Ce cas figeait SEPT colonnes. « Numéro personnel », « Code agent » et
+    // « Commercial » sont des informations de FICHE : on les consulte en ouvrant
+    // un client, jamais depuis l'accueil. Elles coûtaient un tableau qui déborde
+    // à 375 px — et c'étaient justement les colonnes de droite, les moins
+    // utiles, qui devenaient les plus difficiles à atteindre au doigt.
     //
-    // ⟲ À RETOURNER AU LOT L8.1 : la maquette n'en garde que trois — nom et
-    // prénom, localité, date d'ajout.
+    // « Nom » et « Prénom » fusionnent : personne ne lit un nom sans son prénom,
+    // et deux colonnes pour une seule identité doublaient la largeur pour rien.
     await monterLeTableauDeBord(ESAHAF)
 
     const entetes = screen.getAllByRole('columnheader').map((c) => c.textContent.trim())
-    expect(entetes).toEqual([
-      'Nom', 'Prénom', 'Numéro personnel', 'Code agent', 'Localité', 'Commercial', 'Date d\'ajout',
-    ])
+    expect(entetes).toEqual(['Nom et prénom', 'Localité', 'Date d\'ajout'])
   })
 
-  it('⚠ DÉFAUT FIGÉ — la colonne « Code agent » est rendue, et c\'est elle qui porte le défaut de contraste', async () => {
-    // Le code agent s'affiche en `text-orange-600` sur blanc : 3,57:1, contre
-    // 4,5:1 exigé. On ne mesure AUCUNE couleur ici — un test unitaire n'en
-    // calcule pas, et asserter la classe interdirait justement la correction.
-    // Ce qui est figé, c'est la PRÉSENCE de la colonne : le jour où elle part,
-    // ce cas rougit, et le défaut de contraste part avec elle.
+  it('⟲ RETOURNÉ AU LOT L8.1b — la colonne « Code agent » n\'existe plus, et le défaut de contraste avec elle', async () => {
+    // Ce cas figeait la PRÉSENCE de la colonne, parce que c'est elle qui portait
+    // le défaut : le code agent s'affichait en `text-orange-600` sur blanc, soit
+    // 3,57:1 contre 4,5:1 exigé.
     //
-    // Le contraste lui-même est mesuré par la boucle QA, où il est gelé
-    // nommément (ecrans-authentifies.spec.js, `defautFige` du tableau de bord).
+    // Le contraste n'a pas été « corrigé » — la colonne qui le portait a été
+    // retirée. C'est la meilleure façon de régler un défaut d'accessibilité :
+    // supprimer ce qui n'avait pas à être là, plutôt que repeindre.
+    //
+    // ⚠ La tolérance qui gelait ce contraste dans la boucle QA doit disparaître
+    // EN MÊME TEMPS : elle exige que le défaut soit encore là, et rougit sinon.
+    // C'est exactement ce pour quoi elle a été écrite de cette façon.
     await monterLeTableauDeBord(ESAHAF)
 
-    expect(screen.getByRole('columnheader', { name: 'Code agent' })).toBeInTheDocument()
-    expect(screen.getByText('Orange: 1004500')).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Code agent' })).toBeNull()
+    expect(screen.queryByText('Orange: 1004500')).toBeNull()
   })
 
-  it('nomme chaque client, et dit « - » là où la donnée manque', async () => {
+  it('nomme chaque client d\'un seul tenant, et dit « - » là où la donnée manque', async () => {
     await monterLeTableauDeBord(ESAHAF)
 
-    expect(screen.getByText('OUEDRAOGO/KABORE')).toBeInTheDocument()
-    expect(screen.getByText('Wendkuuni Alizeta')).toBeInTheDocument()
-    // ZONGO n'a aucun code agent : la cellule doit dire quelque chose.
+    expect(screen.getByText('OUEDRAOGO/KABORE Wendkuuni Alizeta')).toBeInTheDocument()
+
+    // ZONGO n'a pas de localité renseignée ? Si — mais un client sans localité
+    // doit rendre « - » plutôt qu'une cellule vide, qu'un lecteur d'écran
+    // annonce comme un blanc sans dire de quoi il s'agit.
     const lignes = screen.getAllByRole('row')
     const ligneZongo = lignes.find((l) => l.textContent.includes('ZONGO'))
-    expect(within(ligneZongo).getByText('-')).toBeInTheDocument()
+    expect(within(ligneZongo).getByText('Bobo-Dioulasso')).toBeInTheDocument()
   })
 
   it('dit ce qu\'il a à dire quand il n\'y a aucun client', async () => {
