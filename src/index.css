@@ -735,6 +735,32 @@ body {
   text-align: right;
 }
 
+/* L'ÉTAT D'UNE RÉSERVE — la couleur REDIT le mot, elle ne le remplace pas.
+   ───────────────────────────────────────────────────────────────────────────
+   Le mot est déjà écrit dans le composant (`etat.mot`) : « Stock », « Bas »,
+   « Épuisé ». Ces trois règles ne font que lui donner le poids qui correspond.
+   Retirez-les, et rien ne se perd — c'est exactement le critère du premier
+   non-négociable du chantier : aucune couleur ne porte seule une information.
+
+   `normal` n'est PAS mis en avant, et c'est délibéré : sur sept réserves, six
+   sont normales un jour ordinaire. Les colorer toutes ferait de l'exception une
+   couleur de plus au milieu de six autres. L'état courant reste au gris du
+   texte secondaire ; seuls les deux états qui DEMANDENT UN GESTE se détachent.
+
+   Contrastes mesurés par `npm run qa:jetons`, sur --papier :
+     --alerte #8a5a00 : 5,93:1     « Bas »    → pense à te réapprovisionner
+     --echec  #a01b1b : 7,87:1     « Épuisé » → tu ne peux plus servir ce réseau
+   Les deux dépassent le seuil AA de 4,5:1 exigé pour du texte de cette taille. */
+.design-registre [data-reserve] [data-etat='bas'] {
+  color: var(--color-alerte);
+  font-weight: 600;
+}
+
+.design-registre [data-reserve] [data-etat='epuise'] {
+  color: var(--color-echec);
+  font-weight: 600;
+}
+
 /* La pastille porte une couleur de TIERS (les 49 couleurs d'opérateur de
    networkConfig.js sont des DONNÉES, pas des jetons). Plusieurs sont claires —
    le jaune Coris #ffb300, le cyan Wave — et disparaissent sur du papier. Un

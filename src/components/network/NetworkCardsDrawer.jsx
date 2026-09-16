@@ -166,11 +166,17 @@ function BandeDesReserves({ top = 0 }) {
         {/* Même exigence que partout ailleurs : une zone à défilement horizontal
             non focalisable rend ses derniers réseaux inatteignables au clavier
             (constat Q3, relevé à 375 px). */}
+        {/* ⚠ « en FCFA » dans le NOM ACCESSIBLE, parce que les réserves ont
+            cessé de l'écrire sur chaque carte : leur ligne du bas porte
+            désormais l'état (« Stock », « Bas », « Épuisé ») au lieu de
+            « Stock FCFA ». L'unité ne disparaît donc pas — elle est dite UNE
+            fois pour la bande entière, au lieu de sept fois sous sept montants.
+            C'est aussi ce que fait la maquette. */}
         <div
           data-reserve-piste
           tabIndex={0}
           role="region"
-          aria-label="Soldes par reseau, defilement horizontal"
+          aria-label="Soldes par reseau, en FCFA, defilement horizontal"
           className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 justify-center"
         >
           {visibleCards.map(([network, data]) => (

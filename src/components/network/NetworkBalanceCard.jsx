@@ -1,5 +1,18 @@
 import { memo } from 'react'
 import { NETWORK_CONFIG, formatAmountWithCurrency } from '../../constants/networkConfig'
+import { activeProfile } from '../../config/activeClientProfile.js'
+import { etatDeLaReserve } from '../../utils/etatReserve.js'
+
+/**
+ * Seuil de stock bas, en FCFA, LU UNE FOIS depuis le profil client.
+ *
+ * Absent d'un profil → `etatDeLaReserve` rend `null`, donc aucun mot. Ce n'est
+ * pas un repli de circonstance, c'est le contrat posé au lot L7.4a : aucun seuil
+ * n'est inventé par défaut, parce qu'un seuil deviné se trompe pour toutes les
+ * boutiques sauf une. TAOFIC ne le déclare pas — et n'atteint de toute façon
+ * jamais ce composant (mono-réseau → `CompactBalanceBar`).
+ */
+const SEUIL_STOCK_BAS = activeProfile.networks.seuilStockBas
 
 /**
  * NetworkBalanceCard — une réserve de la bande (affichage seul) du côté boutique
@@ -28,8 +41,17 @@ function NetworkBalanceCard({ network, stockAmount, liquiditeAmount }) {
   const displayAmount = isLiquiditeCard ? liquiditeAmount : stockAmount
   const { amount, label } = formatAmountWithCurrency(displayAmount, isLiquiditeCard)
 
+  // L'état ne concerne QUE les réserves réseau. La carte « Liquidité » est la
+  // caisse, pas un stock qu'on épuise : lui coller « Bas » ferait croire à une
+  // rupture d'approvisionnement là où il n'y a qu'un fonds de caisse bas.
+  const etat = isLiquiditeCard ? null : etatDeLaReserve(stockAmount, SEUIL_STOCK_BAS)
+
+  // Repli pour un profil multi-réseaux qui ne déclare PAS de seuil : il garde
+  // l'indicateur d'origine, strictement inchangé. Sans cela, une configuration
+  // que ce lot ne touche pas par ailleurs PERDRAIT son seul signal de rupture.
+  // Là où le mot existe, il remplace ce « ! » — c'est tout l'objet du lot.
   const stockValue = stockAmount || 0
-  const isCritical = !isLiquiditeCard && stockValue <= 0
+  const isCritical = !etat && !isLiquiditeCard && stockValue <= 0
 
   return (
     <div
@@ -71,8 +93,26 @@ function NetworkBalanceCard({ network, stockAmount, liquiditeAmount }) {
         <div data-montant className={`font-bold text-lg ${config.text} mb-1`}>
           {amount}
         </div>
-        <span data-reserve-mention className={`text-xs ${config.textLight} font-medium`}>
-          {label}
+        {/* L'ÉTAT, ÉCRIT — et il REMPLACE le libellé d'unité, il ne s'y ajoute
+            pas. Deux lignes sous un montant, dans une bande qui en montre sept,
+            c'est la moitié de la hauteur pour une information qu'on ne relit
+            jamais : tout est en FCFA dans ce produit, et l'unité est portée par
+            le nom accessible de la bande.
+
+            `data-etat` est un FAIT — « cette réserve est épuisée » — et non une
+            consigne d'apparence : la couleur qui le redouble est posée en CSS,
+            sous `.design-registre`. Un profil sans cette identité lit donc le
+            mot à l'encre du texte, et n'a rien perdu.
+
+            Quand il n'y a pas d'état — la caisse, ou un profil sans seuil — le
+            libellé d'origine reste. C'est la même règle que partout : pas de
+            seuil, pas de mot, et rien d'autre ne change. */}
+        <span
+          data-reserve-mention
+          data-etat={etat ? etat.cle : undefined}
+          className={`text-xs ${config.textLight} font-medium`}
+        >
+          {etat ? etat.mot : label}
         </span>
       </div>
     </div>
