@@ -331,6 +331,52 @@ describe('TC-171 — les cinq graphiques', () => {
   })
 })
 
+/**
+ * ⚠ DÉFAUT MÉTIER FIGÉ, PAS UN DÉFAUT DE DESSIN — relevé au lot L8.1e.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * « Répartition par réseau » n'en compte qu'UN. Le calcul est écrit en dur :
+ *
+ *   const networkCounts = { Orange: 0 }
+ *   clients.forEach(client => { if (client.orange) networkCounts.Orange++ })
+ *
+ * C'est juste pour TAOFIC, dont le profil déclare `enabled: ['Orange']`. ESAHAF
+ * en déclare SIX (`RESEAUX_SUPPORTES`), et l'écran annonce donc une répartition
+ * dont cinq parts manquent — sans message, sans zéro, sans rien. Sur le banc,
+ * 64 clients sont semés en cyclant les six réseaux, et l'anneau affiche
+ * « Orange 14 clients ».
+ *
+ * CE CAS NE CORRIGE RIEN, ET C'EST VOLONTAIRE. Le mandat de la refonte s'arrête
+ * au design : « si une correction de design semble exiger un changement
+ * fonctionnel, tu t'arrêtes et tu le signales ». Compter les six réseaux
+ * changerait ce que l'écran RAPPORTE, pas la façon dont il le montre.
+ *
+ * Ce cas EXIGE donc que le défaut soit encore là. Le jour où les six réseaux
+ * sont comptés, il rougit et doit être retourné — une tolérance qui se contente
+ * d'ignorer un défaut est un mensonge qui dure ; celle-ci a une date de
+ * péremption.
+ *
+ * ⟲ À RETOURNER AVEC LA DÉCISION DU CLIENT SUR LA RÉPARTITION MULTI-RÉSEAUX.
+ */
+describe('TC-171 — la répartition par réseau n\'en compte qu\'un', () => {
+  it('⚠ FIGÉ — Orange est compté, et le client Wave est absent de l\'anneau', async () => {
+    // Le jeu d'essai porte un client Orange (c1) et un client Wave (c3).
+    await monterLeTableauDeBord(ESAHAF)
+
+    const bloc = document.querySelector('[data-surface="graphique"]')
+    expect(bloc, 'le bloc de répartition doit être rendu').not.toBeNull()
+
+    // Orange est là, avec son compte.
+    expect(within(bloc).getByText('Orange')).toBeInTheDocument()
+    expect(within(bloc).getByText(/1 clients?/)).toBeInTheDocument()
+
+    // Wave ne l'est pas — alors qu'un client en porte un code.
+    expect(
+      within(bloc).queryByText('Wave'),
+      'si « Wave » apparaît, les réseaux sont enfin comptés : retourner ce cas',
+    ).toBeNull()
+  })
+})
+
 describe('TC-171 — TAOFIC partage cet écran, et ne doit pas bouger', () => {
   it('garde ses CINQ graphiques, que le registre n\'en rende plus qu\'un', async () => {
     // `App.jsx:129` sert le même composant à tous les clients boutique. C'est ce
