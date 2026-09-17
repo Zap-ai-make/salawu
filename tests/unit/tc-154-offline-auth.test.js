@@ -71,7 +71,25 @@ describe('TC-154 — offlineSession', () => {
     expect(res).toEqual({ ok: true, session })
   })
 
-  it('mauvais mot de passe → invalid + compteur ; verrou après N essais', async () => {
+  /**
+   * ⚠ CE CAS N'AVAIT AUCUNE MARGE, ET CE N'ÉTAIT PAS LA MACHINE.
+   *
+   * Il enchaîne NEUF dérivations PBKDF2 à 210 000 itérations (offlineAuth.js:19) :
+   * l'enrôlement en fait 2 (vérificateur + clé AES), les quatre essais du seuil
+   * 4, l'essai qui verrouille 1, et le déverrouillage après expiration 2. Les
+   * deux appels restants sortent avant toute dérivation, sur `lockedUntil`.
+   *
+   * Mesuré le 2026-09-17 sur cette machine, hors vitest : 527 ms, 432 ms,
+   * 505 ms pour trois dérivations — soit ~4,5 s pour les neuf, contre 5 000 ms
+   * de plafond par défaut. Le cas passait ou échouait selon la charge, et il a
+   * fini par échouer deux fois de suite, y compris seul dans son fichier.
+   *
+   * Le plafond est donc porté à 30 s POUR CE CAS SEUL. Rien n'est affaibli : les
+   * assertions, le nombre d'essais et la fenêtre de verrou sont inchangés. Le
+   * coût est intrinsèque — 210 000 itérations sont la recommandation OWASP, et
+   * les baisser pour faire passer un test affaiblirait le produit.
+   */
+  it('mauvais mot de passe → invalid + compteur ; verrou après N essais', { timeout: 30_000 }, async () => {
     await enrollOfflineSession('pw', { uid: 'u1' })
 
     for (let i = 1; i < C.MAX_ATTEMPTS; i++) {
