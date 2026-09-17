@@ -34,6 +34,7 @@ const TableRow = memo(({ client, index, onEdit, onAccessCode }) => {
         <div className="flex gap-2 justify-center">
           <button
             onClick={() => onEdit && onEdit(client)}
+            data-rang="second"
             className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm"
           >
             Modifier
@@ -43,6 +44,7 @@ const TableRow = memo(({ client, index, onEdit, onAccessCode }) => {
               type="button"
               onClick={() => onAccessCode(client)}
               data-testid="btn-access-code"
+              data-rang="second"
               className="bg-green-700 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
             >
               Code d'accès
@@ -52,6 +54,7 @@ const TableRow = memo(({ client, index, onEdit, onAccessCode }) => {
             type="button"
             disabled
             title="Suppression désactivée pour protéger la base clients commune"
+            data-rang="second"
             className="cursor-not-allowed bg-gray-300 text-gray-500 px-3 py-1 rounded text-sm"
           >
             Supprimer

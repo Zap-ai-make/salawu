@@ -30,9 +30,21 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode
   )
   const { themeClasses } = useTheme()
 
+  // `data-surface` : la page entiere tient dans une carte blanche arrondie a
+  // ombre portee. Sous l'identite elle devient un panneau plat borde d'un filet
+  // — meme fonction, sans les trois tics que le chantier retire partout
+  // ailleurs. La maquette, elle, ne met AUCUNE carte ici : l'ecran pose
+  // directement sur le canvas. La supprimer serait un changement de structure,
+  // pas un restylage ; l'aplatir est la mesure juste.
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className={`text-2xl font-bold ${themeClasses.text} mb-6 border-b-2 border-current pb-2`}>
+    <div data-surface className="bg-white rounded-lg shadow-md p-6">
+      {/* `data-tete-ecran` : sur cet ecran, ce h2 EST la tete de page — il n'y a
+          pas d'autre titre. Le marqueur ne touche pas au niveau du titre, qui
+          reste un h2 : la maquette le dit elle-meme (« un h2, jamais un second
+          h1 »), et changer le niveau modifierait l'arbre d'accessibilite, ce
+          qui n'est pas un restylage. Il ne retire que le trait noir de 2 px,
+          comme sur les neuf autres ecrans. */}
+      <h2 data-tete-ecran className={`text-2xl font-bold ${themeClasses.text} mb-6 border-b-2 border-current pb-2`}>
         Liste des clients
       </h2>
 
@@ -50,12 +62,14 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode
         <button 
           onClick={handleImportClick}
           disabled={isImporting}
+          data-rang="second"
           className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white px-6 py-2 rounded transition-colors"
         >
           {isImporting ? 'Import en cours...' : 'Importer (XLSM)'}
         </button>
         <button 
           onClick={() => handleExport(filteredClients)}
+          data-rang="second"
           className="bg-blue-700 hover:bg-blue-700 text-white px-6 py-2 rounded transition-colors"
         >
           Exporter (XLSM) {filteredClients.length > 0 && `(${filteredClients.length})`}

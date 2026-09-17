@@ -69,30 +69,27 @@ const ECRANS = [
   { nom: 'tableau-de-bord', lien: 'Tableau de bord', chemin: '/', marqueur: /derniers clients enregistrés/i },
   { nom: 'transactions', lien: 'Transactions', chemin: '/transactions', marqueur: /transaction/i },
   { nom: 'historique', lien: 'Historique', chemin: '/historique', marqueur: /historique/i },
-  // ⚠ DÉBORDEMENT FIGÉ — 249 px a 375 px, cause : la rangee de pagination est un
-  // `flex items-center gap-1` SANS `flex-wrap` (Pagination.jsx:74). Avec trente
-  // clients semes, « Precedent », les numeros de page et « Suivant » ne tiennent
-  // pas dans 375 px et poussent la page entiere.
+  // 〉 RETOURNÉ AU LOT L8.2 — DEUX DÉFAUTS FIGÉS ONT DISPARU ENSEMBLE.
   //
-  // ANTERIEUR A CE CHANTIER, et verifie comme tel : `git stash` sur l'arbre
-  // d'avant le lot L7.4b rend le MEME debordement, le meme bouton, le meme
-  // 624 px. `Pagination.jsx` n'a pas ete touche depuis le lot WCAG.
-  // ⚠ PAR LARGEUR, et non globalement : le defaut n'existe qu'a 375 px. Une
-  // tolerance globale serait fausse aux deux autres largeurs — elle y exigerait
-  // un debordement qui n'a aucune raison de s'y produire, et rendrait rouge un
-  // ecran sain.
-  // ⟲ A RETOURNER AU LOT L8.2 (ecran Clients).
+  // 1. Un débordement de 249 px à 375 px, causé par une rangée de pagination en
+  //    `flex` SANS `flex-wrap` (Pagination.jsx) : un flex sans wrap ne rétrécit
+  //    pas, il pousse. La barre passe désormais à la ligne.
   //
-  // ⚠ DEUXIEME DEFAUT FIGE sur le meme ecran, et il etait CACHE PAR LE PREMIER :
-  // l'assertion de debordement interrompait le test avant le scan axe. Une fois
-  // le debordement gele, le scan s'execute et trouve du blanc sur `bg-orange-500`
-  // — 2,82:1, contre 4,5:1 exige — sur le bouton d'action de chaque ligne, aux
-  // TROIS largeurs. Un defaut peut donc en masquer un autre, et c'est une raison
-  // de plus pour geler nommement plutot que de laisser rouge.
-  // ⟲ A RETOURNER AU LOT L8.2 (ecran Clients), avec le debordement.
-  { nom: 'clients', lien: 'Clients', chemin: '/clients', marqueur: /client/i,
-    debordementFige: { 'mobile-375': 249 },
-    defautFige: { regle: 'color-contrast', element: /bg-orange-500/ } },
+  // 2. Du blanc sur `bg-orange-500` — 2,82:1 contre 4,5:1 exigé — sur le bouton
+  //    « Modifier » de CHAQUE ligne, aux trois largeurs. Les actions de ligne
+  //    portent maintenant `data-rang="second"` : un contour, pas un aplat, et
+  //    du --brand-600 à 9,39:1 sur le papier.
+  //
+  // ⚠ LE SECOND ÉTAIT CACHÉ PAR LE PREMIER : l'assertion de débordement
+  // interrompait le test AVANT le scan axe. C'est ce qui justifie de geler par
+  // la VALEUR plutôt que de laisser rouge — un rouge arrête tout, un gel laisse
+  // le reste du contrôle travailler.
+  //
+  // Les deux tolérances ont ROUGI d'elles-mêmes au premier banc suivant la
+  // correction (« le débordement figé de « clients » a disparu », « le défaut
+  // figé de « clients » a disparu »), aux trois largeurs. Elles sont retirées
+  // ici : c'est la preuve que la correction a eu lieu, et non le souvenir.
+  { nom: 'clients', lien: 'Clients', chemin: '/clients', marqueur: /client/i },
   { nom: 'profil', lien: 'Profil', chemin: '/profil', marqueur: /se déconnecter/i },
   // ── Étendu de 5 à 8 écrans (lot L6.2 de la refonte) ───────────────────────
   //

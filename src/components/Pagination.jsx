@@ -48,15 +48,15 @@ function Pagination({
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex items-center justify-between bg-white px-4 py-3 border-t border-green-300">
+    <div data-pagination className="flex items-center justify-between bg-white px-4 py-3 border-t border-green-300">
       <div className="flex items-center gap-4">
-        <p className="text-sm text-gray-700">
+        <p data-pagination-compte className="text-sm text-gray-700">
           Affichage de <span className="font-medium">{startIndex}</span> à{' '}
           <span className="font-medium">{endIndex}</span> sur{' '}
           <span className="font-medium">{totalItems}</span> résultats
         </p>
         
-        <div className="flex items-center gap-2">
+        <div data-pagination-taille className="flex items-center gap-2">
           <label htmlFor={idTaillePage} className="text-sm text-gray-700">Éléments par page:</label>
           <select
             id={idTaillePage}
@@ -71,10 +71,11 @@ function Pagination({
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div data-pagination-pages className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPrevPage}
+          data-page
           className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
         >
           Précédent
@@ -85,6 +86,9 @@ function Pagination({
             key={index}
             onClick={() => typeof page === 'number' ? onPageChange(page) : null}
             disabled={page === '...'}
+            data-page
+            {...(page === currentPage ? { 'data-page-actif': '' } : {})}
+            {...(page === '...' ? { 'data-page-points': '' } : {})}
             className={`px-3 py-1 text-sm border border-gray-300 rounded ${
               page === currentPage 
                 ? 'bg-green-700 text-white border-green-500' 
@@ -100,6 +104,7 @@ function Pagination({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={!hasNextPage}
+          data-page
           className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
         >
           Suivant

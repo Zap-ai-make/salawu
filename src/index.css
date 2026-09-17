@@ -843,6 +843,118 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LA PAGINATION (lot L8.2) — RESTYLE PUR
+   ───────────────────────────────────────────────────────────────────────────
+   ⚠ CE BLOC CORRIGE UN DÉBORDEMENT DE 249 px, MESURÉ.
+
+   La boucle QA le gelait sur l'écran Clients à 375 px, en désignant
+   `Pagination.jsx:74`. La cause est une seule ligne : la barre est un
+   `flex justify-between` SANS `flex-wrap`, et elle porte deux blocs qui ne
+   tiennent pas côte à côte sur un téléphone — « Affichage de 26 à 50 sur 412
+   résultats » plus le sélecteur de taille d'un côté, dix-sept boutons de page
+   de l'autre. Un `flex` sans `wrap` ne rétrécit pas : il pousse.
+
+   Et ce débordement en CACHAIT un autre. L'assertion de débordement
+   interrompait le test AVANT le scan axe ; une fois le débordement gelé
+   nommément, le scan s'est exécuté et a trouvé du blanc sur `bg-orange-500` —
+   2,82:1 contre 4,5:1 exigé — sur le bouton « Modifier » de CHAQUE ligne, aux
+   trois largeurs. C'est la justification de la méthode : un défaut gelé par sa
+   valeur laisse le reste du contrôle travailler, là où un rouge arrête tout.
+
+   CE QUE DIT LA MAQUETTE (elle note elle-même « même découpage que le composant
+   Pagination.jsx du produit ») :
+     .pagination        flex-wrap:wrap, gap 12px, filet haut, 12,5px
+     .pagination__pages margin-left:auto, flex-wrap:wrap
+     .page              mono, min-width 30px, contour --trait-200
+     .page.actif        fond --brand-500, blanc dessus — 6,14:1
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-pagination] {
+  /* LA CORRECTION DU DÉBORDEMENT TIENT EN CE MOT. Le reste est de l'habillage. */
+  flex-wrap: wrap;
+  /* `justify-between` collait les deux blocs aux bords opposés ; une fois la
+     barre capable de passer à la ligne, c'est `margin-left:auto` sur le groupe
+     des pages qui fait le même travail sans l'imposer quand ça ne rentre pas. */
+  justify-content: flex-start;
+  gap: 0.75rem;
+  background: var(--color-papier);
+  border-top: 1px solid var(--color-trait-200);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.78125rem; /* 12,5px */
+}
+
+.design-registre [data-espace='boutique'] [data-pagination-compte],
+.design-registre [data-espace='boutique'] [data-pagination-taille] {
+  color: var(--color-encre-doux);
+  font-size: 0.78125rem;
+}
+
+/* Les trois nombres de la phrase sont des NOMBRES : ils se comparent d'une page
+   à l'autre. Chasse fixe, sans la réglure — ce ne sont pas des FCFA. */
+.design-registre [data-espace='boutique'] [data-pagination-compte] span {
+  color: var(--color-encre);
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.design-registre [data-espace='boutique'] [data-pagination-pages] {
+  margin-left: auto;
+  flex-wrap: wrap;
+  gap: 0.3125rem;
+}
+
+.design-registre [data-espace='boutique'] [data-page] {
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78125rem;
+  font-weight: 600;
+  min-width: 1.875rem; /* 30px — un « 1 » et un « 17 » occupent la même case */
+  padding: 0.3125rem 0.5rem;
+  border: 1px solid var(--color-trait-200);
+  border-radius: 2px;
+  background: var(--color-papier);
+  color: var(--color-encre);
+}
+
+/* La page courante prend la marque, comme l'onglet actif : c'est le même
+   système qui dit où l'on est. Blanc sur --brand-500 = 6,14:1. */
+.design-registre [data-espace='boutique'] [data-page-actif] {
+  background: var(--color-brand-500);
+  border-color: var(--color-brand-500);
+  color: #fff;
+}
+
+/* Les points de suspension ne sont pas une cible : ni contour, ni fond. */
+.design-registre [data-espace='boutique'] [data-page-points] {
+  border: 0;
+  background: none;
+  color: var(--color-encre-doux);
+  min-width: 0;
+  padding: 0.3125rem 0.125rem;
+}
+
+/* ⚠ « Précédent » et « Suivant » désactivés : le dépôt les rend en
+   `disabled:opacity-50`, ce qui divise le contraste par deux au lieu de le
+   choisir. Même traitement que les boutons d'action désactivés — --encre-doux
+   sur --reglure, 4,96:1, mesuré par `npm run qa:jetons`. Un contrôle désactivé
+   reste LISIBLE : sinon l'utilisateur ne sait plus ce qu'il fera une fois
+   redevenu possible. */
+.design-registre [data-espace='boutique'] [data-page]:disabled {
+  opacity: 1;
+  background: var(--color-reglure);
+  border-color: var(--color-filet);
+  color: var(--color-encre-doux);
+}
+
+/* Sauf les points : ils sont `disabled` pour n'être pas cliquables, pas pour
+   paraître éteints. La règle ci-dessus leur redonnerait un fond. */
+.design-registre [data-espace='boutique'] [data-page-points]:disabled {
+  background: none;
+  border: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LES TUILES ET LES SURFACES DU TABLEAU DE BORD (lot L8.1d) — RESTYLE PUR
    ───────────────────────────────────────────────────────────────────────────
    Aucun texte n'est ajouté, retiré ni déplacé par ce bloc. Ce qui change est ce
