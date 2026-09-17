@@ -65,11 +65,11 @@ function LastClientsTable({ clients = [] }) {
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-sm border border-gray-100">
+    <div data-surface className="bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-sm border border-gray-100">
       {/* En-tête avec design moderne */}
-      <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white rounded-t-xl">
+      <div data-bloc-titre className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white rounded-t-xl">
         <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+          <div data-vignette className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
             <div className="h-4 w-4 bg-blue-500 rounded-sm"></div>
           </div>
           <h2 className="text-xl font-bold text-gray-800">Derniers clients enregistrés</h2>

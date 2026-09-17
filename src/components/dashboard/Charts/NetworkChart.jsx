@@ -64,9 +64,16 @@ function NetworkChart() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-green-50 to-white rounded-xl shadow-sm border border-green-100 p-6 h-64">
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+    // `data-surface` : un bloc de contenu, par opposition à une tuile qui porte
+    // un seul chiffre. Les classes vertes restent pour TAOFIC — ce composant
+    // n'est pas gardé par `IS_REGISTRE`, les deux identités le rendent.
+    // `data-surface="graphique"` et non `data-surface` tout court : ce bloc se
+    // rembourre LUI-MÊME (`p-6`), là où celui des derniers clients laisse ses
+    // enfants le faire. Ce n'est pas le même objet, et son bandeau de titre ne
+    // se pose pas de la même façon — src/index.css en tient compte.
+    <div data-surface="graphique" className="bg-gradient-to-br from-green-50 to-white rounded-xl shadow-sm border border-green-100 p-6 h-64">
+      <div data-bloc-titre className="flex items-center space-x-3 mb-4">
+        <div data-vignette className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
           <div className="h-4 w-4 bg-green-500 rounded-sm"></div>
         </div>
         <h3 className="text-green-800 text-lg font-semibold">Répartition par réseau</h3>

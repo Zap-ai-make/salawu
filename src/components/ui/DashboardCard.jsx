@@ -15,7 +15,12 @@ function DashboardCard({
   const hoverClass = hover ? 'hover:shadow-md transition-all duration-200' : ''
 
   return (
-    <div className={`bg-gradient-to-br ${colors.background} rounded-xl shadow-sm border ${colors.border} p-6 ${height} ${hoverClass} ${className}`}>
+    // `data-tuile` est un FAIT : cette boîte porte UN chiffre de synthèse. Les
+    // classes de dégradé, d'arrondi et d'ombre restent, parce que ce composant
+    // sert aussi TAOFIC, qui est en production et n'a rien demandé. Sous
+    // `.design-registre`, src/index.css les neutralise — aucun `if` de client
+    // dans ce JSX, donc aucune occasion d'en oublier un.
+    <div data-tuile className={`bg-gradient-to-br ${colors.background} rounded-xl shadow-sm border ${colors.border} p-6 ${height} ${hoverClass} ${className}`}>
       {title && (
         <CardHeader
           title={title}

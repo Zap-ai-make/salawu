@@ -424,6 +424,24 @@ body {
   padding-bottom: 0;
 }
 
+/* ⚠ RETIRER LE TRAIT DU TITRE NE SUFFISAIT PAS — ajouté au lot L8.1d.
+   La règle ci-dessus vise le `<h1>`, parce que c'est lui qui portait le
+   soulignement sur les écrans passés par `PageHeader`. Le tableau de bord, lui,
+   compose son en-tête à la main : le trait est sur le DIV qui enveloppe le
+   titre (`border-b-2 border-current`, Dashboard.jsx). Il a donc survécu au lot
+   L7.1, et c'était le seul des dix écrans à garder une barre noire de 2 px sous
+   son titre — celle-là même que le reste du chantier retire.
+
+   `data-tete-ecran` reprend le nom de la maquette (`.ecran__tete`). Il est posé
+   sur les DEUX branches de Dashboard.jsx : celle du chargement et celle de
+   l'écran chargé. N'en marquer qu'une aurait fait apparaître le trait pendant
+   le chargement puis disparaître — un clignotement, et une correction qu'on
+   croit faite. */
+.design-registre [data-espace='boutique'] [data-tete-ecran] {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    LE TABLEAU : DES FILETS HORIZONTAUX, PLUS DE QUADRILLAGE (lot L7.2b)
    ───────────────────────────────────────────────────────────────────────────
@@ -822,6 +840,137 @@ body {
 .design-registre .auth-sidebar {
   background-image: none;
   background-color: var(--color-encre);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES TUILES ET LES SURFACES DU TABLEAU DE BORD (lot L8.1d) — RESTYLE PUR
+   ───────────────────────────────────────────────────────────────────────────
+   Aucun texte n'est ajouté, retiré ni déplacé par ce bloc. Ce qui change est ce
+   dont les boîtes sont FAITES.
+
+   TROIS TICS PARTENT ENSEMBLE, ET ILS N'ÉTAIENT PAS INDÉPENDANTS
+
+   • LE DÉGRADÉ. `bg-gradient-to-br from-*-50 to-white` n'est pas une couleur :
+     c'est une IMAGE de fond, peinte PAR-DESSUS la couleur. `background-color`
+     seul ne l'enlève pas — il faut `background-image: none`. Et tant qu'elle est
+     là, axe classe l'élément « incomplete » au lieu de « violation » : il ne
+     sait pas calculer un contraste sur un dégradé. Chaque dégradé retiré rend
+     donc une zone MESURABLE, en plus de la rendre sobre. C'est ce qui a fait
+     apparaître les défauts de la bande des réserves au lot L7.4c.
+
+   • L'ARRONDI. `rounded-xl`, c'est 12 px. La maquette ne met aucun rayon sur
+     `.tuile` ni sur `.surface` : un registre est fait de traits droits, et un
+     angle vif dit « ceci est un cadre », là où un angle rond dit « ceci est une
+     vignette ».
+
+   • L'OMBRE PORTÉE. DESIGN.md §1 la nomme comme le tic à retirer. Elle simule
+     une profondeur que le papier n'a pas, et elle le fait en floutant le bord —
+     c'est-à-dire en rendant indécise la seule chose qui sépare deux blocs. Un
+     filet de 1 px à 1,47:1 dit la même chose, nettement.
+
+   ⚠ LES CLASSES RESTENT DANS LE JSX, ET C'EST LA CONDITION DE TOUT CECI.
+   `DashboardCard`, `NetworkChart` et `LastClientsTable` servent AUSSI TAOFIC,
+   qui est en production. Les composants déclarent un FAIT — `data-tuile`,
+   `data-surface` — et c'est l'identité qui décide du rendu. Sans la classe de
+   portée, pas une de ces règles ne s'applique : TAOFIC ne bouge pas d'un pixel,
+   sans qu'un seul `if` de client ait été écrit dans du JSX.
+
+   ⚠ POURQUOI `[data-espace='boutique']` EN PLUS DE L'IDENTITÉ.
+   `.design-registre` est posée sur <html> : elle couvre TOUT le client ESAHAF,
+   espaces admin et dealer compris, alors que le mandat s'arrête au Layout de la
+   boutique et à ses dix routes. Les quatre marqueurs ci-dessous ne vivent
+   aujourd'hui que sur des composants du tableau de bord, mais ce sont des FAITS
+   destinés à se répandre — `data-tuile` ira sur toute tuile, `data-surface` sur
+   tout bloc. Le jour où l'un d'eux atteint un composant partagé avec l'admin ou
+   le dealer, ce bloc les restylerait sans qu'une ligne ne le dise. Le marqueur
+   d'espace ferme cela d'avance, au lieu d'espérer s'en souvenir.
+
+   Le Layout de la boutique est le seul à poser `data-espace="boutique"`
+   (Layout.jsx:160) ; l'admin a `AdminLayout`, le dealer `DealerLayout`.
+
+   ⚠ `StatCard` N'EST PAS CONCERNÉ, ET J'AI CRU L'INVERSE.
+   Une recherche du mot « DashboardCard » le fait remonter — mais dans son
+   COMMENTAIRE d'en-tête (« Alignée sur l'esthétique […] (DashboardCard) »), pas
+   dans un import : `StatCard` porte ses propres classes. `DashboardCard` ne sort
+   donc jamais du tableau de bord (CAChart, ChiffresDuJour, InfoCards). Les
+   tuiles de « Dettes internes » gardent leur `rounded-2xl` et leur ombre pour le
+   moment ; elles relèvent du lot de cet écran-là.
+
+   ⚠ SPÉCIFICITÉ. Une utilitaire Tailwind pèse (0,1,0). `.design-registre
+   [data-espace='boutique'] [data-tuile]` pèse (0,3,0) et l'emporte quelle que
+   soit sa place dans le fichier. Aucun `!important` n'est nécessaire, et aucun
+   n'est écrit.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-tuile],
+.design-registre [data-espace='boutique'] [data-surface] {
+  background-image: none;
+  background-color: var(--color-papier);
+  /* `--trait-200` (1,47:1) et non `--reglure` (1,21:1) : ce filet sépare un bloc
+     de la page, pas deux lignes d'un même tableau. Chiffres vérifiés par
+     `npm run qa:jetons`. */
+  border: 1px solid var(--color-trait-200);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* L'ombre au survol part avec les autres. Ces boîtes ne sont ni des liens ni des
+   boutons : un effet de survol sur une zone qu'on ne peut pas actionner promet
+   une action qui n'existe pas. Les vraies cibles, elles, gardent leur état —
+   c'est le bloc « LE RANG DES ACTIONS » qui s'en charge. */
+.design-registre [data-espace='boutique'] [data-tuile]:hover,
+.design-registre [data-espace='boutique'] [data-surface]:hover {
+  box-shadow: none;
+}
+
+/* La tuile resserre : 24 px de marge intérieure pour trois lignes de texte,
+   c'est une carte ; la maquette en met 13 et 15. Sur le téléphone du caissier,
+   ces 11 px repris par tuile font une tuile de plus dans l'écran. */
+.design-registre [data-espace='boutique'] [data-tuile] {
+  padding: 0.8125rem 0.9375rem;
+}
+
+/* L'en-tête d'une surface tient par son fond et son filet bas, comme l'en-tête
+   d'un tableau — et pour la même raison : c'est la même fonction. */
+.design-registre [data-espace='boutique'] [data-bloc-titre] {
+  background-image: none;
+  background-color: var(--color-surface-100);
+  border-bottom: 1px solid var(--color-trait-200);
+  border-radius: 0;
+}
+
+/* ⚠ UN BANDEAU DE TITRE NE SE POSE PAS PAREIL DANS LES DEUX SURFACES.
+   Le bloc des derniers clients ne se rembourre pas : son bandeau est un enfant
+   direct qui touche déjà les bords. Le bloc de graphique, lui, porte `p-6` —
+   son bandeau se retrouvait enfoncé de 24 px de chaque côté et flottait au
+   milieu de la surface comme un libellé surligné, au lieu de la coiffer.
+
+   Les -1.5rem SONT les 24 px de `p-6`, et rien d'autre. Ce couplage est la
+   raison d'être de `data-surface="graphique"` : sans lui, cette compensation
+   s'appliquerait aussi au bloc non rembourré, dont le bandeau déborderait alors
+   de la surface. */
+.design-registre [data-espace='boutique'] [data-surface='graphique'] > [data-bloc-titre] {
+  margin: -1.5rem -1.5rem 1rem;
+  padding: 0.75rem 0.875rem;
+}
+
+.design-registre [data-espace='boutique'] [data-bloc-titre] h2,
+.design-registre [data-espace='boutique'] [data-bloc-titre] h3 {
+  color: var(--color-encre);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* ⚠ RETIRÉE, PAS REPEINTE.
+   Ces pastilles ne portent aucun texte et ne disent rien que le titre à côté
+   d'elles ne dise déjà. Sous l'identité, les six teintes du chrome deviennent
+   une seule : les quatre tuiles de tête affichaient alors le MÊME rond noir,
+   quatre fois, comme si elles se distinguaient par là. Une décoration qui a
+   perdu ce qu'elle distinguait n'est plus une décoration, c'est du bruit.
+   `display: none` et non `visibility: hidden` : il ne doit pas rester la place
+   d'un carré de 32 px au bout de chaque titre. */
+.design-registre [data-espace='boutique'] [data-vignette] {
+  display: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

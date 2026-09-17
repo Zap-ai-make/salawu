@@ -44,11 +44,23 @@ function InfoCards({ totalClients, monthlyClients, dailyClients, topClient }) {
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-medium ${colors.accent} mb-0`}>{card.title}</h3>
-              <div className={`h-8 w-8 ${colors.iconBg} rounded-lg flex items-center justify-center`}>
+              {/* `data-vignette` : une pastille DÉCORATIVE. Elle ne dit rien que
+                  le titre ne dise déjà — sous l'identité, quatre couleurs
+                  devenues une seule n'en font plus qu'un rond noir répété quatre
+                  fois. src/index.css la retire ; TAOFIC la garde. */}
+              <div data-vignette className={`h-8 w-8 ${colors.iconBg} rounded-lg flex items-center justify-center`}>
                 <div className={`h-4 w-4 ${colors.iconColor} rounded-full`}></div>
               </div>
             </div>
-            <div className={`${card.isText ? 'text-base' : 'text-3xl'} font-bold ${colors.title} ${card.isText ? 'leading-tight' : ''}`}>
+            {/* `data-nombre` et non `data-montant` : ce sont des DÉCOMPTES de
+                clients, pas de l'argent. Chiffres tabulaires et alignement à
+                droite, sans la réglure — qui ne va qu'aux FCFA. « Top client du
+                jour » est du TEXTE et n'en porte aucun : un nom en chasse fixe
+                alignée à droite ne se compare à rien. */}
+            <div
+              {...(card.isText ? {} : { 'data-nombre': '' })}
+              className={`${card.isText ? 'text-base' : 'text-3xl'} font-bold ${colors.title} ${card.isText ? 'leading-tight' : ''}`}
+            >
               {card.value}
             </div>
             <p className={`text-xs ${colors.accent} mt-1`}>{card.subtitle}</p>
