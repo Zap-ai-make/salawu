@@ -10,6 +10,25 @@ import AgentsChart from '../components/dashboard/Charts/AgentsChart'
 import LoyaltyChart from '../components/dashboard/Charts/LoyaltyChart'
 import TransactionsTodayChart from '../components/dashboard/TransactionsTodayChart'
 import LastClientsTable from '../components/dashboard/LastClientsTable'
+import ChiffresDuJour from '../components/dashboard/ChiffresDuJour'
+import { IS_REGISTRE } from '../constants/designSystem.js'
+
+/**
+ * ⚠ LES QUATRE GRAPHIQUES RESTENT IMPORTÉS, ET CE N'EST PAS UN OUBLI.
+ *
+ * `App.jsx:129` sert ce même tableau de bord à TOUS les clients boutique, TAOFIC
+ * compris — qui est en production. Un profil sans l'identité « registre » les
+ * rend donc toujours : les retirer du fichier les lui retirerait aussi.
+ *
+ * Ce que l'identité « registre » écarte — « Évolution du CA (14 jours) »,
+ * « Top agents », « Fidèles clients », « Transactions du jour » — ce sont des
+ * questions d'ANALYSE, posées une fois par mois par un gérant. Pas au comptoir,
+ * où l'on veut savoir combien on a vendu aujourd'hui et combien il reste. Elles
+ * occupaient précisément la hauteur d'écran de ces deux réponses-là.
+ *
+ * TC-171 monte cet écran avec les deux profils : l'un exige les cinq graphiques,
+ * l'autre le seul qui reste. Le cloisonnement est prouvé, pas espéré.
+ */
 
 function Dashboard() {
   const { clients, loading: clientsLoading } = useContext(ClientsContext)
@@ -57,21 +76,41 @@ function Dashboard() {
         topClient={stats.topClient}
       />
 
-      {/* Première ligne de graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CAChart />
-        <NetworkChart />
-      </div>
+      {IS_REGISTRE ? (
+        <>
+          {/* Les deux nombres qu'un gérant demande en fin de journée. Ils ne
+              figuraient nulle part sur l'accueil : il fallait aller les chercher
+              dans l'historique. */}
+          <ChiffresDuJour transactions={allTransactions} />
 
-      {/* Deuxième ligne de graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AgentsChart />
-        <LoyaltyChart />
-        <TransactionsTodayChart />
-      </div>
+          {/* « Répartition par réseau » est le seul graphique conservé, et il
+              tient à côté des derniers clients au lieu d'occuper sa propre
+              rangée. C'est ce que fait la maquette, et cela tient : l'un se
+              regarde, l'autre se lit. */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <NetworkChart />
+            <LastClientsTable clients={clients} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Première ligne de graphiques */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CAChart />
+            <NetworkChart />
+          </div>
 
-      {/* Tableau des derniers clients */}
-      <LastClientsTable clients={clients} />
+          {/* Deuxième ligne de graphiques */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <AgentsChart />
+            <LoyaltyChart />
+            <TransactionsTodayChart />
+          </div>
+
+          {/* Tableau des derniers clients */}
+          <LastClientsTable clients={clients} />
+        </>
+      )}
     </div>
   )
 }
