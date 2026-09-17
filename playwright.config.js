@@ -35,12 +35,25 @@ export default defineConfig({
   // Aucun `retries` : un test visuel qui ne passe qu'à la seconde tentative
   // cache un vrai problème de timing plutôt qu'il ne le corrige.
   retries: 0,
-  // 60 s et non les 30 s par défaut : le PREMIER test d'un run paie la
-  // compilation à froid de Vite (~25 s mesurées), et il échouait pour cette
-  // seule raison. Relever le délai traite la lenteur réelle du démarrage ; ce
-  // n'est pas la même chose que d'autoriser une nouvelle tentative, qui aurait
-  // masqué le problème au lieu de l'expliquer.
+  // ⚠ CE PLAFOND NE PAIE PLUS LA COMPILATION À FROID — cf. `globalSetup`.
+  //
+  // Il était passé de 30 s à 60 s parce que le PREMIER test d'un run payait,
+  // seul, la compilation de tout le graphe (~25 s mesurées alors). Le défaut est
+  // revenu dès que le graphe a grossi : le 2026-09-17, sur la boucle
+  // `-g tableau`, mobile-375 — premier projet — a échoué deux fois de suite sur
+  // `nav` absent au bout de 60 000 ms, pendant que tablette et bureau passaient
+  // en 17,8 s et 17,6 s. Ce n'est pas la largeur qui échouait, c'est le RANG.
+  //
+  // Relever encore aurait rendu ce plafond muet : à 120 s, plus aucun test ne
+  // peut signaler un rendu devenu réellement lent, ce pour quoi il existe. La
+  // dépense est donc déplacée au RUN, dans `globalSetup`, et 60 s redevient un
+  // budget de RENDU — mesurable, et dépassé seulement par un vrai défaut.
   timeout: 60_000,
+
+  // Paie la compilation du graphe avant le premier test, et n'échoue jamais la
+  // boucle s'il n'y parvient pas : un réchauffage est une optimisation, pas un
+  // contrôle.
+  globalSetup: './tests/qa/lib/rechauffage.mjs',
   reporter: [['list'], ['html', { outputFolder: 'docs/audit/qa-report', open: 'never' }]],
   outputDir: 'docs/audit/qa-artefacts',
 
