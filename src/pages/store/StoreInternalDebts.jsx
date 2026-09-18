@@ -170,6 +170,7 @@ function DebtRow({ debt, credits, tbl }) {
           <div className="flex flex-wrap items-center gap-2">
             {compensable > 0 && (
               <button type="button" disabled={busy} onClick={compenser}
+                data-rang="accent"
                 className="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                 title="Solder avec la créance opposée de cette boutique">
                 Compenser {fmt(compensable)}
@@ -188,6 +189,7 @@ function DebtRow({ debt, credits, tbl }) {
               })}
             </select>
             <button type="button" disabled={busy || available <= 0} onClick={rembourser}
+              data-rang="accent"
               className="rounded-lg bg-green-700 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Rembourser</button>
             {pending > 0 && <p className="w-full text-xs text-gray-500">Déjà en attente : {fmt(pending)}</p>}
             {msg && <p className="w-full text-xs text-green-700">{msg}</p>}
@@ -251,8 +253,10 @@ function CreditRow({ debt, tbl }) {
                   {actionable && (
                     <span className="flex gap-1">
                       <button type="button" disabled={busy === s.id} onClick={() => act(() => confirmTranche(s), s.id)}
+                        data-rang="accent"
                         className="rounded bg-green-700 px-2 py-0.5 text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
                       <button type="button" disabled={busy === s.id} onClick={() => act(() => rejectTranche(s), s.id)}
+                        data-rang="danger"
                         className="rounded border border-red-200 px-2 py-0.5 text-red-600 hover:bg-red-50 disabled:opacity-50">Rejeter</button>
                     </span>
                   )}

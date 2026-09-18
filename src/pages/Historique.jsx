@@ -166,7 +166,7 @@ function Historique() {
 
         <div className="space-y-6">
           {/* Filtres — partagés par les trois onglets */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div data-surface className="bg-white rounded-lg shadow-md p-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
               <div className="lg:col-span-1">
                 <DateFilter onDateChange={applyDateFilter} onResetToToday={resetToToday} />
@@ -205,7 +205,7 @@ function Historique() {
           {tab === 'clients' && (
             <>
               <DailyPagination transactions={allTransactions} onDateSelect={applyDateFilter} />
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div data-surface className="bg-white rounded-lg shadow-md p-6">
                 <HistoriqueTable transactions={filteredTransactions} />
                 {canLoadMore && (
                   <div className="mt-4 flex justify-center">

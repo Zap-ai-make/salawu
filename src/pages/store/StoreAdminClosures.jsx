@@ -83,6 +83,7 @@ function RejectModal({ closureId, onSuccess, onClose }) {
           {err && <p className="text-sm text-red-600">{err}</p>}
           <div className="flex justify-end gap-3">
             <button
+              data-rang="second"
               type="button"
               onClick={onClose}
               disabled={submitting}
@@ -91,6 +92,7 @@ function RejectModal({ closureId, onSuccess, onClose }) {
               Annuler
             </button>
             <button
+              data-rang="danger"
               type="submit"
               disabled={submitting}
               className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
@@ -179,6 +181,7 @@ function StoreAdminClosures() {
         subtitle="Clôtures soumises pour votre boutique"
         actions={
           <button
+            data-rang="second"
             type="button"
             onClick={() => loadClosures(true)}
             disabled={loading}
@@ -273,6 +276,7 @@ function StoreAdminClosures() {
                 {c.status === 'pending' && (
                   <div className="flex gap-3 pt-2 border-t border-gray-100">
                     <button
+                      data-rang="accent"
                       type="button"
                       onClick={() => handleConfirm(c.id)}
                       disabled={isActing}
@@ -282,6 +286,7 @@ function StoreAdminClosures() {
                       {isActing ? 'Traitement…' : 'Confirmer'}
                     </button>
                     <button
+                      data-rang="danger"
                       type="button"
                       onClick={() => setRejectTarget(c.id)}
                       disabled={isActing}
@@ -299,6 +304,7 @@ function StoreAdminClosures() {
           {hasMore && (
             <div className="text-center pt-2">
               <button
+                data-rang="second"
                 type="button"
                 onClick={() => loadClosures(false)}
                 disabled={loading}

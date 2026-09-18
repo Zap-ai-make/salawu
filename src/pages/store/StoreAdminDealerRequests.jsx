@@ -211,6 +211,7 @@ function StoreAdminDealerRequests() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <h1 data-titre-ecran className="text-xl font-bold text-gray-800">Demandes Dealer</h1>
         <button
+          data-rang="second"
           type="button"
           onClick={() => { setExtraRequests([]); setRefreshKey(k => k + 1) }}
           disabled={loading}
@@ -312,6 +313,7 @@ function StoreAdminDealerRequests() {
           <p className="font-medium mb-1">Erreur</p>
           <p className="text-sm">{error}</p>
           <button
+            data-rang="second"
             type="button"
             onClick={() => setRefreshKey(k => k + 1)}
             className="mt-3 rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
@@ -387,6 +389,7 @@ function StoreAdminDealerRequests() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <button
+                        data-rang="second"
                         type="button"
                         onClick={() => setSelectedRequestId(req.id)}
                         className="text-blue-600 hover:text-blue-800 text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
@@ -406,6 +409,7 @@ function StoreAdminDealerRequests() {
           {hasMore && (
             <div className="mt-4 text-center">
               <button
+                data-rang="second"
                 type="button"
                 onClick={loadMore}
                 disabled={loadingMore}

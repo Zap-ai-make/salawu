@@ -305,6 +305,7 @@ const TransactionTable = memo(function TransactionTable() {
                             <button
                               onClick={(e) => handleActionClick(transaction.id, 'modifier', e)}
                               disabled={isProcessingTransaction}
+                              data-rang="second"
                               className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                             >
                               Modifier
@@ -315,6 +316,7 @@ const TransactionTable = memo(function TransactionTable() {
                             <button
                               onClick={(e) => handleActionClick(transaction.id, 'encaisser', e)}
                               disabled={isProcessingTransaction}
+                              data-rang="accent"
                               className="bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
                             >
                               Encaisser
@@ -325,6 +327,7 @@ const TransactionTable = memo(function TransactionTable() {
                             <button
                               onClick={(e) => handleActionClick(transaction.id, 'payerPar', e)}
                               disabled={isProcessingTransaction}
+                              data-rang="accent"
                               className="bg-green-700 hover:bg-green-800 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
                             >
                               Payer par
@@ -335,6 +338,7 @@ const TransactionTable = memo(function TransactionTable() {
                             <button
                               onClick={(e) => handleActionClick(transaction.id, 'rembourser', e)}
                               disabled={isProcessingTransaction}
+                              data-rang="accent"
                               className="bg-green-700 hover:bg-green-800 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs font-medium transition-colors dropdown-trigger"
                             >
                               Rembourser
@@ -493,6 +497,7 @@ const TransactionTable = memo(function TransactionTable() {
                 <button
                   onClick={handleConfirmPayment}
                   disabled={processingKeys.some(k => k.startsWith(`${activeDropdown}-`))}
+                  data-rang="primaire"
                   className="mt-3 w-full bg-blue-700 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 rounded transition-colors"
                 >
                   {processingKeys.some(k => k.startsWith(`${activeDropdown}-`)) ? 'Traitement...' : 'Confirmer'}

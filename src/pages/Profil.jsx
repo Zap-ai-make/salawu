@@ -44,7 +44,7 @@ function Profil() {
   return (
     <div data-chassis className="max-w-4xl mx-auto space-y-6">
       {/* En-tête du profil */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div data-surface className="bg-white rounded-lg shadow-md p-6">
         {/* Empile sous 640 px : avatar, identite et deux boutons sur une seule
             rangee depassaient de 187 px a 375 px (constat Q6). `gap-4` remplace
             `space-x-4`, qui n'espace pas les rangees une fois le repli actif. */}
@@ -69,12 +69,14 @@ function Profil() {
 
           <div className="flex flex-wrap gap-3">
             <button
+              data-rang="second"
               onClick={() => setShowChangePassword(true)}
               className={AUTH_STYLES.button.primary}
             >
               {AUTH_LABELS.CHANGE_PASSWORD}
             </button>
             <button
+              data-rang="danger"
               onClick={() => setShowLogoutConfirm(true)}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md transition-colors"
             >
@@ -85,7 +87,7 @@ function Profil() {
       </div>
 
       {/* Informations du compte */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div data-surface className="bg-white rounded-lg shadow-md p-6">
         <h2 className={`text-xl font-bold ${themeClasses.text} mb-6`}>
           Informations du compte
         </h2>
@@ -143,7 +145,7 @@ function Profil() {
       </div>
 
       {/* Statistiques rapides */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div data-surface className="bg-white rounded-lg shadow-md p-6">
         <h2 className={`text-xl font-bold ${themeClasses.text} mb-6`}>
           Activité
         </h2>
@@ -215,12 +217,14 @@ function Profil() {
             </p>
             <div className={AUTH_STYLES.modal.footer}>
               <button
+                data-rang="second"
                 onClick={() => setShowLogoutConfirm(false)}
                 className={`flex-1 ${AUTH_STYLES.button.tertiary}`}
               >
                 {AUTH_LABELS.CANCEL}
               </button>
               <button
+                data-rang="danger"
                 onClick={handleLogout}
                 disabled={loading}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition-colors disabled:opacity-50"

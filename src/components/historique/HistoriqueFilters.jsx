@@ -39,7 +39,7 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
   const hasActiveFilters = startDate || endDate || selectedClient
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div data-surface className="bg-white rounded-lg shadow-md p-6 mb-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
         Filtrer l'historique
       </h3>

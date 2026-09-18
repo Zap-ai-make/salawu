@@ -102,7 +102,7 @@ function DealerTransferForm() {
   const confirmDialogRef = useDialog({ isOpen: Boolean(pending), onClose: () => setPending(null) })
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div data-surface className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-bold text-gray-800 mb-1">Opération dealer</h2>
       <p className="text-sm text-gray-500 mb-5">
         Renvoyer une ressource au dealer. Le solde est débité immédiatement et restauré si le dealer rejette.
@@ -170,6 +170,7 @@ function DealerTransferForm() {
         </div>
 
         <button
+          data-rang="primaire"
           type="button"
           onClick={openConfirm}
           disabled={!validation.ok || isSubmitting}
@@ -253,6 +254,7 @@ function DealerTransferForm() {
                 Annuler
               </button>
               <button
+                data-rang="primaire"
                 type="button"
                 onClick={confirmSubmit}
                 disabled={isSubmitting}

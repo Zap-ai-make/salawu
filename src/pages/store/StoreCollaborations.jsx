@@ -43,7 +43,9 @@ function RejectModal({ onSubmit, onClose }) {
         {err && <p className="mt-2 text-xs text-red-600">{err}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm">Annuler</button>
+            data-rang="second"
           <button type="button" disabled={busy}
+            data-rang="danger"
             onClick={async () => { setBusy(true); setErr(null); try { await onSubmit(reason.trim()) } catch (e) { setErr(e.message); setBusy(false) } }}
             className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
             {busy ? 'Rejet…' : 'Rejeter'}
@@ -108,6 +110,7 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
 
   const newButton = (
     <button type="button" onClick={() => setShowNew(true)}
+      data-rang="primaire"
       className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700">
       Nouvelle collaboration
     </button>
@@ -181,8 +184,10 @@ function StoreCollaborations({ embedded = false, initialTab = 'outgoing' }) {
                       <td className={tbl.cell}>
                         <div className="flex justify-center gap-2">
                           <button type="button" disabled={actioning === c.id} onClick={() => handleConfirm(c.id)}
+                            data-rang="accent"
                             className="rounded-lg bg-green-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Confirmer</button>
                           <button type="button" onClick={() => setRejectId(c.id)}
+                            data-rang="danger"
                             className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Rejeter</button>
                         </div>
                       </td>

@@ -139,6 +139,7 @@ function ConfirmModal({ request, processing, onConfirm, onClose, initialFocusRef
         {/* Actions */}
         <div className="flex justify-end gap-3">
           <button
+            data-rang="second"
             type="button"
             onClick={onClose}
             disabled={processing}
@@ -148,6 +149,7 @@ function ConfirmModal({ request, processing, onConfirm, onClose, initialFocusRef
             Annuler
           </button>
           <button
+            data-rang="primaire"
             type="button"
             onClick={onConfirm}
             disabled={!canSubmit}
@@ -265,6 +267,7 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
         {/* Actions */}
         <div className="flex justify-end gap-3">
           <button
+            data-rang="second"
             type="button"
             onClick={onClose}
             disabled={processing}
@@ -274,6 +277,7 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
             Annuler
           </button>
           <button
+            data-rang="danger"
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit}
@@ -504,6 +508,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
         <p className="text-sm">{error}</p>
         <div className="mt-3 flex gap-3">
           <button
+            data-rang="second"
             type="button"
             onClick={closeView}
             className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
@@ -552,6 +557,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
       {/* Retour / Fermeture */}
       <div className="mb-5">
         <button
+          data-rang="second"
           type="button"
           onClick={closeView}
           className="inline-flex items-center gap-1.5 rounded text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -635,6 +641,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
         {isPending && (
           <div className="mt-6 pt-5 border-t border-gray-100 flex flex-wrap gap-3" data-testid="action-buttons">
             <button
+              data-rang="second"
               ref={confirmTriggerRef}
               type="button"
               onClick={() => { setActionError(null); setActionSuccess(null); setRefreshError(null); setConfirmModalOpen(true) }}
@@ -646,6 +653,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
               {processingAction === 'confirm' ? 'Confirmation…' : 'Confirmer la demande'}
             </button>
             <button
+              data-rang="second"
               ref={rejectTriggerRef}
               type="button"
               onClick={() => { setActionError(null); setActionSuccess(null); setRefreshError(null); setRejectModalOpen(true) }}

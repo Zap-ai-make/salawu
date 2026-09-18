@@ -336,7 +336,7 @@ function TransactionForm({ clients }) {
   const confirmDialogRef = useDialog({ isOpen: Boolean(pendingConfirmation), onClose: cancelPendingSubmit })
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div data-surface className="bg-white rounded-lg shadow-md p-6">
       {editingTransaction && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
           <h3 className="text-lg font-medium text-blue-800">
@@ -531,6 +531,7 @@ function TransactionForm({ clients }) {
           {editingTransaction ? (
             <>
               <button
+                data-rang="primaire"
                 onClick={() => handleSubmit('Non Terminées')}
                 disabled={!formValidation.isFormValid || isSubmitting}
                 className={`px-6 py-2 rounded font-medium transition-colors ${
@@ -551,6 +552,7 @@ function TransactionForm({ clients }) {
           ) : (
             <>
               <button
+                data-rang="second"
                 onClick={() => handleSubmit('Non Terminées')}
                 disabled={!formValidation.actionStates.canMarkAsNonTermine || !formValidation.isFormValid || isSubmitting}
                 className={`px-6 py-2 rounded font-medium transition-colors ${
@@ -572,6 +574,7 @@ function TransactionForm({ clients }) {
               </button>
 
               <button
+                data-rang="primaire"
                 onClick={() => handleSubmit('Validée')}
                 disabled={!formValidation.actionStates.canValidate || !formValidation.isFormValid || isSubmitting}
                 className={`px-6 py-2 rounded font-medium transition-colors ${
@@ -623,6 +626,7 @@ function TransactionForm({ clients }) {
                 Annuler
               </button>
               <button
+                data-rang="primaire"
                 type="button"
                 onClick={confirmPendingSubmit}
                 disabled={isSubmitting}

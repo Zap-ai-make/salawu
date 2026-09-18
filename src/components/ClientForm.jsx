@@ -177,7 +177,7 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client',
   const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 w-full">
+    <div data-surface className="bg-white rounded-lg shadow-md p-6 w-full">
       <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-green-500 pb-2">
         {title}
       </h2>
@@ -319,6 +319,7 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client',
         </div>
 
         <button
+          data-rang="primaire"
           type="submit"
           disabled={isSubmitting}
           className="bg-green-700 hover:bg-green-700 disabled:bg-green-300 text-white font-medium py-2 px-6 rounded mt-6"

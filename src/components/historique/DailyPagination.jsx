@@ -75,7 +75,7 @@ function DailyPagination({ transactions, onDateSelect }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div data-surface className="bg-white rounded-lg shadow-md p-6">
       {/* `flex-wrap` + `gap-3` : le titre et les deux boutons tenaient sur une
           rangee unique et depassaient de 40 px a 375 px. `justify-between` seul
           ne replie pas — il repartit l'espace, y compris negatif. */}
