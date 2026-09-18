@@ -3,6 +3,8 @@ import { useTheme } from '../../context/ThemeContext.jsx'
 import { getClientName, formatTransactionDateTime } from '../../utils/helpers.js'
 import { directionFromType, directionStyles } from '../../utils/transactionDirection.js'
 import DirectionBadge from '../ui/DirectionBadge.jsx'
+import { sensDuStock, montantSigne } from '../../utils/signeDuStock.js'
+import { IS_REGISTRE } from '../../constants/designSystem.js'
 import { useWindowedRows } from '../../hooks/useWindowedRows.js'
 import ReceiptModal from '../receipt/ReceiptModal.jsx'
 
@@ -66,12 +68,21 @@ function HistoriqueTable({ transactions = [] }) {
             chiffres tabulaires sont appliques par src/index.css sous la portee
             `.design-registre`. TAOFIC ne porte pas cette portee et reste
             inchange, sans qu'aucune condition n'apparaisse ici. */}
+        {/* ⚠ LE SIGNE SUIT LE STOCK ÉLECTRONIQUE (décision client, 2026-09-18).
+            `data-sens` est un FAIT — ce mouvement sort du stock ou y rentre — et
+            la couleur vient de src/index.css sous la portée. TAOFIC garde son
+            montant sans signe : `montantSigne` n'est appelé que sous l'identité,
+            et la règle vit dans `utils/signeDuStock.js` (TC-174). */}
         <td
           data-montant
+          data-sens={IS_REGISTRE ? sensDuStock(transaction.type).cle : undefined}
           className="border border-gray-200 px-4 py-3 text-base font-medium whitespace-nowrap"
         >
-          {transaction.montant ? `${(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA` :
-           transaction.amount ? `${transaction.amount} FCFA` : '-'}
+          {IS_REGISTRE
+            ? (montantSigne(transaction.montant ?? transaction.amount, transaction.type) || '-')
+              + (transaction.montant || transaction.amount ? ' FCFA' : '')
+            : (transaction.montant ? `${(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA` :
+               transaction.amount ? `${transaction.amount} FCFA` : '-')}
         </td>
         <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
           <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">

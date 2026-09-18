@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import ConventionDeSigne from '../components/ui/ConventionDeSigne.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { IS_MULTI_NETWORK } from '../constants/navigation'
@@ -163,6 +164,7 @@ function Historique() {
         <h1 data-titre-ecran className="text-3xl font-bold text-gray-800 mb-8 border-b-2 border-green-500 pb-2">
           Historique
         </h1>
+        <ConventionDeSigne />
 
         <div className="space-y-6">
           {/* Filtres — partagés par les trois onglets */}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import ConventionDeSigne from '../components/ui/ConventionDeSigne.jsx'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '../hooks/useClients'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -53,6 +54,7 @@ function Transactions() {
         <h1 data-titre-ecran className="text-3xl font-bold text-gray-800 mb-6 border-b-2 border-green-500 pb-2">
           Transactions
         </h1>
+        <ConventionDeSigne />
 
         {/* Basculeur de mode */}
         <div className="mb-6 flex flex-wrap gap-2">

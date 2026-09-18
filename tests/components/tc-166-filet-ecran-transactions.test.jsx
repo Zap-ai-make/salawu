@@ -204,12 +204,37 @@ describe('TC-166 — les colonnes du tableau « Non Terminées »', () => {
     expect(cellules.filter((td) => td.hasAttribute('data-montant'))).toHaveLength(1)
   })
 
-  it('rend le montant groupé par milliers et suivi de sa devise', async () => {
+  it('⟲ RETOURNÉ — le montant porte le signe de son effet sur le STOCK', async () => {
+    // Ce cas gelait « 1 250 000 FCFA », sans signe. Décision du client,
+    // 2026-09-18 : le signe suit le stock électronique, sur Transactions comme
+    // sur Historique. ZONGO est un RETRAIT — le stock RENTRE, donc « + ».
     await monterLeTableau()
 
     const ligne = screen.getByText(/ZONGO/).closest('tr')
     const montant = ligne.querySelector('[data-montant]').textContent.replace(/\s+/g, ' ')
-    expect(montant).toBe('1 250 000 FCFA')
+    expect(montant).toBe('+1 250 000 FCFA')
+  })
+
+  it("⚠ un DÉPÔT porte un MOINS, et c'est l'inverse de la lecture « caisse »", async () => {
+    // Un dépôt fait entrer des espèces ET sortir du stock. Le produit affiche
+    // désormais la seconde grandeur : la ligne « − Dépôt » peut donc porter un
+    // bouton « Encaisser » sans se contredire. Ce cas existe pour que personne
+    // ne « corrige » ce qui ressemble à une erreur de signe.
+    await monterLeTableau()
+
+    const ligne = screen.getByText(/OUEDRAOGO/).closest('tr')
+    const montant = ligne.querySelector('[data-montant]').textContent.replace(/\s+/g, ' ')
+    expect(montant.startsWith('−'), `attendu un moins, reçu « ${montant} »`).toBe(true)
+  })
+
+  it('⚠ LE SIGNE NE REMPLACE PAS LE MOT, il le précède', async () => {
+    // « − » seul ne dirait rien à qui ne connaît pas la convention, et « moins »
+    // à un lecteur d'écran. Le mot reste la lecture principale ; le signe et la
+    // couleur ne font que la redire plus vite (premier non-négociable).
+    await monterLeTableau()
+
+    const ligne = screen.getByText(/ZONGO/).closest('tr')
+    expect(ligne.textContent).toContain('Retrait')
   })
 
   it('nomme le réseau ET son code sur la même ligne', async () => {

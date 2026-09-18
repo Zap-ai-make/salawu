@@ -1,4 +1,6 @@
 ﻿import { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react'
+import { IS_REGISTRE } from '../../constants/designSystem.js'
+import { sensDuStock, montantSigne } from '../../utils/signeDuStock.js'
 import { createPortal } from 'react-dom'
 import { useTransactions } from '../../context/transactions.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
@@ -282,8 +284,18 @@ const TransactionTable = memo(function TransactionTable() {
                       <td className={`${tbl.cell} font-medium ${styles.textColor}`}>
                         {getClientName(transaction.client)}
                       </td>
-                      <td className={`${tbl.cell} font-medium ${styles.textColor}`}>
-                        {transaction.type}
+                      {/* ⚠ LE SIGNE SUIT LE STOCK ÉLECTRONIQUE (décision client,
+                          2026-09-18) : − pour un dépôt, + pour un retrait. Le
+                          signe PRÉCÈDE le mot, il ne le remplace pas — « − »
+                          seul ne dirait rien à qui ne connaît pas la convention,
+                          et « moins » à un lecteur d'écran. */}
+                      <td
+                        data-sens={IS_REGISTRE ? sensDuStock(transaction.type).cle : undefined}
+                        className={`${tbl.cell} font-medium ${styles.textColor}`}
+                      >
+                        {IS_REGISTRE && sensDuStock(transaction.type).signe
+                          ? `${sensDuStock(transaction.type).signe} ${transaction.type}`
+                          : transaction.type}
                       </td>
                       <td className={`${tbl.cell} ${styles.textColor}`}>
                         {transaction.reseau} ({transaction.code})
@@ -291,8 +303,16 @@ const TransactionTable = memo(function TransactionTable() {
                       {/* Voir HistoriqueTable : `data-montant` est une declaration,
                           pas un style. Le filet et l'alignement viennent de
                           src/index.css, sous la seule portee `.design-registre`. */}
-                      <td data-montant className={`${tbl.cell} font-medium ${styles.textColor}`}>
-                        <span>{(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA</span>
+                      <td
+                        data-montant
+                        data-sens={IS_REGISTRE ? sensDuStock(transaction.type).cle : undefined}
+                        className={`${tbl.cell} font-medium ${styles.textColor}`}
+                      >
+                        <span>
+                          {IS_REGISTRE
+                            ? montantSigne(transaction.montant, transaction.type)
+                            : (Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA
+                        </span>
                         {transaction.settlementStatus === 'partial' && transaction.remainingAmount != null && (
                           <div className="text-xs font-normal text-orange-600 mt-0.5">
                             Reste : {Number(transaction.remainingAmount).toLocaleString('fr-FR')} FCFA

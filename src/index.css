@@ -888,6 +888,66 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LE SIGNE, ET LA GRANDEUR QU'IL MESURE
+   ───────────────────────────────────────────────────────────────────────────
+   Décision du client, 2026-09-18 : le signe suit le STOCK ÉLECTRONIQUE, sur
+   Transactions ET sur Historique.
+
+     − Dépôt      le stock sort
+     + Retrait    le stock rentre
+
+   ⚠ C'EST L'INVERSE DE LA COULEUR HISTORIQUE, et ce n'est pas une inversion de
+   teintes. `transactionDirection.js` lit la CAISSE — un dépôt y fait entrer des
+   espèces, d'où son vert. Le produit affiche désormais l'autre grandeur, et la
+   même opération change donc de camp. Les deux lectures sont vraies ; ce qui
+   serait faux, c'est d'en afficher une sans dire laquelle.
+
+   ⚠ D'OÙ LA PHRASE DE CONVENTION, obligatoire sur chaque écran qui montre ces
+   signes (`[data-convention]`). Sans elle, la ligne « − Dépôt » portant un
+   bouton « Encaisser » se lit comme une contradiction, alors qu'elle est
+   exacte : on encaisse des espèces pendant que le stock baisse.
+
+   ⚠ ET LA COULEUR NE PORTE RIEN SEULE. Le signe est doublé du MOT (« Dépôt »,
+   « Retrait »), qui reste la lecture principale — la couleur et le signe ne font
+   que la redire plus vite. C'est le premier des quatre non-négociables.
+
+   --sortie (#b3400f) tient 6,48:1 sur le papier, --entree (#0f6e3f) 6,26:1 :
+   mesurés par `npm run qa:jetons`, tous deux au-dessus des 4,5:1 exigés.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-sens='sortie'] {
+  color: var(--color-sortie);
+}
+
+.design-registre [data-espace='boutique'] [data-sens='entree'] {
+  color: var(--color-entree);
+}
+
+/* Un crédit ne déplace pas de stock : il garde l'encre, sans signe ni couleur.
+   Le teinter en neutre aurait fait croire à un troisième sens de mouvement. */
+.design-registre [data-espace='boutique'] [data-sens='neutre'] {
+  color: var(--color-encre);
+}
+
+/* La phrase qui dit de quelle grandeur le signe parle. Reprise de la maquette
+   (`.convention`) : filet de marque à gauche, pas d'aplat, largeur de lecture
+   bornée — une règle qu'on lit une fois et qu'on retrouve au même endroit. */
+.design-registre [data-espace='boutique'] [data-convention] {
+  font-size: 0.78125rem; /* 12,5px */
+  color: var(--color-encre-doux);
+  background: var(--color-papier);
+  border-left: 3px solid var(--color-brand-500);
+  padding: 0.5625rem 0.8125rem;
+  margin: 0 0 0.875rem;
+  max-width: 92ch;
+}
+
+.design-registre [data-espace='boutique'] [data-convention] b {
+  color: var(--color-encre);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LA PAGINATION (lot L8.2) — RESTYLE PUR
    ───────────────────────────────────────────────────────────────────────────
    ⚠ CE BLOC CORRIGE UN DÉBORDEMENT DE 249 px, MESURÉ.
