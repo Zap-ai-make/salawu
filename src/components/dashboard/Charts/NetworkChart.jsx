@@ -77,10 +77,10 @@ function NetworkChart() {
       return (
         <div className="bg-gray-900 border border-gray-600 rounded-lg p-3 shadow-lg">
           <p className="text-white font-semibold">{data.name}</p>
-          <p className="text-encre-doux">
+          <p className="text-gray-300">
             <span className="text-blue-400">{data.value}</span> clients
           </p>
-          <p className="text-encre-doux text-sm">
+          <p className="text-gray-400 text-sm">
             {data.value > 0 ? `${((data.value / clients.length) * 100).toFixed(1)}% du total` : 'Aucun client'}
           </p>
         </div>

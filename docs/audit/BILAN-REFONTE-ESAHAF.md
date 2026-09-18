@@ -162,9 +162,51 @@ réellement — la bordure d'une tuile témoin passe à `rgb(192, 215, 245)`, so
 l'identité n'était **pas servie du tout** sur ce montage : verts par absence, et
 non par cloisonnement. Un banc qui ne peut pas rougir ne prouve rien.
 
+**Comparé au CSS construit de `main` — et cela a trouvé une vraie fuite.**
+
+Plutôt que de comparer une capture, on a comparé ce que TAOFIC peut *recevoir* :
+la feuille construite, privée de toute règle dont le sélecteur contient
+`.design-registre`. Ce résidu couvre **tous** les écrans à la fois, là où une
+capture ne parlerait que de l'écran capturé.
+
+```
+VITE_CLIENT_ID=taofic-ajagbe npm run build     (sur chaque révision)
+  main     868 règles non portées
+  branche  922 règles, dont 71 portées → 851 non portées
+```
+
+Les variables de `:root` d'abord, qui décident de tout le reste :
+**17 ajoutées, zéro retirée, zéro modifiée.** Aucune variable consommée par
+TAOFIC n'a changé de valeur.
+
+Les règles disparues sont des utilitaires que plus aucune source ne mentionne —
+le système de thèmes mort retiré au lot 4 (`bg-theme-primary`, `border-theme`…).
+Une classe cesse d'être émise seulement si plus rien ne l'écrit : aucun élément
+ne peut donc la porter.
+
+⚠ **MAIS UNE RÈGLE AJOUTÉE ATTEIGNAIT BIEN TAOFIC.** `text-encre-doux` est un
+utilitaire **non porté**, et un remplacement global de la refonte l'avait posé
+sur les trois infobulles de graphique — composants rendus par les deux profils,
+sur fond `bg-gray-900` :
+
+```
+main      text-gray-300 sur gray-900   12,05:1
+main      text-gray-400 sur gray-900    6,82:1
+branche   --encre-doux  sur gray-900    2,96:1   ✗ sous les 4,5:1 exigés
+```
+
+Le remplacement était juste partout ailleurs (`text-gray-400` sur blanc ne tient
+que 2,54:1, `--encre-doux` en tient 6,00). Il ne l'était pas là, parce que le
+fond est l'inverse.
+
+**Ni la suite ni le banc ne pouvaient le voir** : jsdom ne calcule aucune
+couleur, et une infobulle n'apparaît qu'au *survol* alors que le scan axe lit la
+page statique. Les gris d'origine sont restaurés, et `tc-175` garde désormais la
+classe de faute — vérifié capable de rougir en réintroduisant le défaut.
+
 **Toujours NON prouvé :** ce n'est pas une **comparaison de pixels avant/après**.
-Le banc vérifie le *mécanisme* qui garantit l'absence de changement, pas
-l'égalité de deux captures prises depuis deux révisions.
+Le différentiel porte sur le CSS, pas sur le rendu : un changement venu du JSX
+lui échapperait.
 
 C'est un choix, et il est défendable : une comparaison de captures serait vraie
 le jour où on la fait, tandis que cette garde rougira au premier lot qui écrira
