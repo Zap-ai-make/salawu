@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cahier des charges — Dealer Mobile Money multi-réseaux</title>
+  <style>
+    :root{--green:#0c6b3b;--deep:#073d25;--gold:#e9a22b;--ink:#172033;--muted:#5e6877;--line:#dfe5ec;--paper:#fff;--bg:#f4f7f8}
+    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",Arial,sans-serif}
+    header{background:linear-gradient(135deg,var(--green),var(--deep));color:#fff;padding:52px 24px 46px;text-align:center}.tag{font-size:.74rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.84}.hero-title{max-width:840px;margin:12px auto 0;font-size:2rem;line-height:1.25}.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:20px}.chip{border:1px solid #ffffff55;border-radius:999px;padding:5px 12px;font-size:.82rem;background:#ffffff18}
+    .layout{max-width:1160px;margin:-22px auto 64px;padding:0 20px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px}.toc,.doc{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 30px #24334a12}.toc{height:max-content;padding:20px;position:sticky;top:18px}.toc h2{margin:0 0 10px;font-size:1rem;color:var(--deep)}.toc a{display:block;padding:5px 0;color:var(--muted);font-size:.88rem;text-decoration:none}.toc a:hover{color:var(--green)}.doc{padding:38px 44px}h2{color:var(--deep);font-size:1.4rem;border-bottom:2px solid var(--line);padding-bottom:8px;margin:48px 0 18px;scroll-margin-top:20px}h2:first-child{margin-top:0}h3{font-size:1.06rem;color:var(--green);margin:28px 0 8px}p{margin:10px 0}ul,ol{padding-left:22px}li{margin:5px 0}.note{background:#fff8e9;border-left:4px solid var(--gold);border-radius:8px;padding:13px 16px;color:#6b5221}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}.panel{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fbfcfd}.panel h3{margin:0 0 6px}.panel p{margin:0;font-size:.94rem}table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.93rem}th,td{border:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}th{background:#edf7f0;color:var(--deep)}.flow{background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-weight:600;color:var(--deep)}.footer{text-align:center;color:var(--muted);font-size:.84rem;margin:24px 0}.top{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:50%;background:var(--green);color:#fff;text-decoration:none;text-align:center;line-height:44px;box-shadow:0 6px 18px #073d2570}@media(max-width:800px){.layout{grid-template-columns:1fr}.toc{display:none}.doc{padding:26px 20px}.hero-title{font-size:1.55rem}.grid{grid-template-columns:1fr}table{font-size:.84rem}}
+    @media print{body{background:#fff}.layout{display:block;margin:0}.toc,.top{display:none}.doc{box-shadow:none;border:none;padding:0}.hero-title{font-size:1.55rem}header{padding:28px}}
+  </style>
+</head>
+<body id="haut">
+  <header>
+    <div class="tag">Cahier des charges fonctionnel</div>
+    <h1 class="hero-title">Plateforme Dealer Mobile Money multi-réseaux</h1>
+    <div class="chips"><span class="chip">Moov</span><span class="chip">Orange Money</span><span class="chip">Telecel Money</span><span class="chip">Wave</span><span class="chip">Coris Money</span><span class="chip">Sank</span></div>
+  </header>
+  <main class="layout">
+    <nav class="toc"><h2>Sommaire</h2><a href="#intro">1. Introduction</a><a href="#vision">2. Vision</a><a href="#organisation">3. Organisation</a><a href="#espaces">4. Espaces</a><a href="#reseaux">5. Règles par réseau</a><a href="#agents">6. Agents & transactions</a><a href="#collab">7. Collaborations</a><a href="#app">8. Application agent</a><a href="#rh">9. RH</a><a href="#pilotage">10. Pilotage & sécurité</a><a href="#mvp">11. MVP</a></nav>
+    <article class="doc">
+      <div class="note">Document de travail à relire et valider avec le client avant l’implémentation. Les opérations réelles restent réalisées dans les applications officielles des opérateurs ; le logiciel les enregistre et les trace.</div>
+
+      <h2 id="intro">1. Introduction</h2>
+      <p>La plateforme gère l’activité réelle du dealer : boutiques, agents, stocks électroniques, liquidité, approvisionnements, collaborations entre boutiques, avances, reçus, RH et application mobile agent. Elle remplace les cahiers, appels et reçus papier par des opérations traçables, sans imposer une même hiérarchie à tous les réseaux.</p>
+
+      <h2 id="vision">2. Vision générale</h2>
+      <p>Le système fournit une vision des opérations, des rôles réseau, des stocks, de la caisse, des dettes internes, des avances et des historiques. Il n’y a pas d’intégration API opérateur dans le MVP.</p>
+      <ul><li>Opérations de dépôt, retrait, avance et remboursement.</li><li>Suivi de six réseaux aux règles différentes.</li><li>Reçus numériques, QR code, PDF et impression.</li><li>Tableaux de bord, historique, audit, RH et application agent.</li></ul>
+
+      <h2 id="organisation">3. Organisation du réseau</h2>
+      <p>Une boutique physique possède une caisse de liquidité commune à tous les réseaux. Elle possède au plus une carte ou un compte par réseau. Les stocks électroniques restent séparés par réseau et par carte.</p>
+      <table><thead><tr><th>Espace</th><th>Responsabilité</th></tr></thead><tbody><tr><td>Superviseur / Gérant global</td><td>Super Dealer Moov, paramétrage Boutique × Réseau, RH, vision et historique consolidés.</td></tr><tr><td>Dealer</td><td>Niveaux centraux alimentant des boutiques : Telecel et Wave. Il ne consulte pas les opérations Boutique–Agent.</td></tr><tr><td>Boutique / caissière</td><td>Toutes les opérations directes avec les agents et les cartes qui les réalisent.</td></tr><tr><td>Application agent</td><td>Activité B2C privée des agents.</td></tr></tbody></table>
+      <p>Le Gérant global et le Superviseur sont la même personne. Lui seul configure le rôle d’une boutique pour chaque réseau.</p>
+
+      <h2 id="espaces">4. Règles des espaces</h2>
+      <div class="grid"><div class="panel"><h3>Super Dealer Moov</h3><p>Gérée par le Gérant global. Elle alimente Dealer et Dealer de zone sur demande ou proactivement. Le bénéficiaire confirme ou rejette. C’est une allocation interne, sans dette et sans retour de stock vers la Super Dealer.</p></div><div class="panel"><h3>Espace Dealer</h3><p>Il voit demandes, allocations, retours et soldes des boutiques alimentées pour Telecel et Wave ; il ne voit pas les transactions avec les agents.</p></div><div class="panel"><h3>Espace Boutique</h3><p>La caissière traite les transactions directes. La boutique peut jouer plusieurs rôles, selon le réseau.</p></div><div class="panel"><h3>Ajustement de stock</h3><p>Caissière, Dealer et Gérant peuvent saisir directement le nouveau stock d’une carte. L’audit conserve automatiquement ancien et nouveau solde, auteur et date. La caisse de liquidité ne s’ajuste pas directement.</p></div></div>
+
+      <h2 id="reseaux">5. Fonctionnement par réseau</h2>
+      <table><thead><tr><th>Réseau</th><th>Hiérarchie et fonctionnement</th><th>Opérations agent</th></tr></thead><tbody><tr><td>Moov</td><td>Super Dealer → Dealer Zone / Dealer → Agents. Dealer et Dealer Zone sont gérés dans Boutique lorsqu’ils servent directement les agents.</td><td>Envoi de stock uniquement ; jamais de retour de stock Moov de l’agent.</td></tr><tr><td>Orange</td><td>Le client est sous-dealer alimenté par un partenaire externe. Deux SIM sous-dealer couvrent les boutiques ; les autres collaborent avec elles.</td><td>Dépôt et retrait.</td></tr><tr><td>Telecel</td><td>Banque → Dealer → sous-dealers/boutiques. Certaines boutiques sont couvertes ; le Dealer alimente les autres.</td><td>Dépôt et retrait.</td></tr><tr><td>Wave</td><td>Dealer → compte Assistant par boutique. Les mouvements sont faits dans Wave puis saisis manuellement dans le logiciel.</td><td>Dépôt et retrait.</td></tr><tr><td>Coris & Sank</td><td>Une carte Dealer dans chaque boutique, sans collaboration nécessaire.</td><td>Dépôt et retrait.</td></tr></tbody></table>
+      <p>Pour Orange, les approvisionnements et retours avec le partenaire externe sont saisis manuellement par le Gérant. Pour Telecel et Wave, les transferts Dealer–Boutique sont des allocations de stock sans dette financière ; les retours sont possibles après confirmation du Dealer.</p>
+
+      <h2 id="agents">6. Agents, transactions et avances</h2>
+      <p>La base des agents est commune à tout le réseau. Une fiche contient notamment l’identité, le téléphone et les couples réseau / code agent / numéro agent.</p>
+      <h3>Agents non enregistrés</h3><p>Ils sont autorisés uniquement pour le Dealer de zone Moov et l’Assistant Wave. La transaction est payée immédiatement et conserve code agent, nom, prénom, téléphone personnel et montant. Aucune fiche, avance ou opération à distance n’est créée.</p>
+      <h3>Transactions à distance et avances</h3><p>Les opérations à distance sont possibles sur les six réseaux et restent « non terminées » jusqu’à réception de la contrepartie. Les avances sont possibles pour tout rôle servant directement les agents. Elles sont remboursables en espèces ou avec le stock d’un autre réseau, à équivalence FCFA, dans la boutique qui détient la créance.</p>
+
+      <h2 id="collab">7. Collaborations entre boutiques et dettes internes</h2>
+      <p>Une boutique sans SIM Moov, Orange ou Telecel crée une demande ciblée vers un fournisseur précis ou ouverte à tous les fournisseurs disponibles. Une demande peut être satisfaite partiellement par plusieurs fournisseurs.</p>
+      <div class="flow">Dépôt : boutique encaisseuse → dette envers la boutique dont la SIM a envoyé le stock.<br>Retrait : boutique dont la SIM reçoit le stock → dette envers la boutique qui a remis les espèces.</div>
+      <p>Le règlement est saisi manuellement : espèces, dépôt bancaire, transfert, compensation ou retour de stock. La boutique débitrice le déclare et la créancière le confirme. Une dette ne bloque jamais un nouvel approvisionnement.</p>
+
+      <h2 id="app">8. Application mobile agent</h2>
+      <p>L’application agent présente les six soldes, les transactions avec le dealer et l’activité B2C privée. Elle inclut dépôts/retraits B2C, scan de pièce d’identité, réutilisation des clients fidèles, reçus PDF partageables sur WhatsApp, QR code, historique, statistiques et formations par réseau.</p>
+
+      <h2 id="rh">9. RH et paie</h2>
+      <p>Le Gérant gère les employés, les affectations, le pointage QR code et NFC ainsi que le suivi de la paie. La paie est préparée et suivie dans le logiciel ; aucun paiement Mobile Money n’est déclenché dans le MVP.</p>
+
+      <h2 id="pilotage">10. Pilotage, audit et sécurité</h2>
+      <p>Le Gérant global voit l’activité consolidée. Chaque mouvement critique garde son auteur, sa date, son réseau, sa boutique, son montant, son statut et les soldes concernés. Les reçus numériques sont téléchargeables, imprimables et vérifiables par QR code.</p>
+
+      <h2 id="mvp">11. Périmètre MVP</h2>
+      <p>Le MVP couvre les six réseaux, leurs rôles réels, les approvisionnements, collaborations, dettes internes, avances, opérations à distance, reçus, application agent et RH de suivi.</p>
+      <p><strong>Hors périmètre :</strong> API opérateurs, paiements RH depuis le logiciel, gestion bancaire détaillée, commissions, accès Dealer aux opérations Boutique–Agent et accès dealer aux données B2C.</p>
+      <div class="footer">Document de travail — à relire, préciser et valider avec le client avant l’implémentation.</div>
+    </article>
+  </main>
+  <a class="top" href="#haut" title="Haut de page">↑</a>
+</body>
+</html>
