@@ -360,6 +360,87 @@ test.describe('Écrans de travail', () => {
     expect(rendu.chiffres, 'chiffres tabulaires').toContain('tabular-nums')
   })
 
+  test('les champs de saisie sont bornes et montrent ou lon tape', async ({ page }) => {
+    // ⚠ CE CONTROLE NE PEUT PAS ETRE UN TEST UNITAIRE, et c'est le coeur de son
+    // interet. jsdom ne calcule aucune couleur, aucune specificite, aucun
+    // `outline`. Or tout le lot L9.2 repose sur une course de specificite : une
+    // regle a (0,5,1) doit battre dix-huit `focus:outline-none` a (0,2,0). Seul
+    // un vrai moteur tranche cela, et il faut un champ REELLEMENT rendu.
+    //
+    // CE QUE LE LOT CORRIGE, mesure sur les onze points d'entree de l'espace :
+    //   26 champs sur 43 portaient une bordure sous 3:1  (WCAG 1.4.11)
+    //   18 retiraient l'anneau de focus du navigateur    (WCAG 2.4.7)
+    //   11 ne le remplacaient QUE par une bordure verte  — une couleur seule
+    //
+    // axe ne voit ni l'un ni l'autre : 1.4.11 sur une bordure n'est pas
+    // automatisable, et un anneau de focus n'existe qu'une fois le champ focus,
+    // alors que le scan lit la page au repos. D'ou ces assertions nommees.
+    await allerA(page, ECRANS[5]) // formulaire
+
+    const champ = page.locator('input[name="nom"]').first()
+    await expect(champ).toBeVisible({ timeout: 30_000 })
+
+    const auRepos = await champ.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return { bordure: cs.borderTopColor, rayon: cs.borderTopLeftRadius }
+    })
+
+    // #778495 — le jeton --filet, 3,81:1 sur papier. C'est la valeur que WCAG
+    // 1.4.11 exige (3:1) et que `border-gray-300` (1,47:1) ne tenait pas.
+    expect(auRepos.bordure, 'la bordure du champ doit porter --filet')
+      .toBe('rgb(119, 132, 149)')
+    expect(auRepos.rayon, 'le registre est carre').toBe('2px')
+
+    // `focus()` et non `click()` : on veut le focus programmatique, celui que
+    // recoit aussi la navigation au clavier. C'est le cas que
+    // `focus:outline-none` cassait.
+    await champ.focus()
+    const auFocus = await champ.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return {
+        style: cs.outlineStyle,
+        largeur: cs.outlineWidth,
+        couleur: cs.outlineColor,
+      }
+    })
+
+    expect(auFocus.style, 'l anneau de focus ne doit pas etre supprime')
+      .not.toBe('none')
+    expect(parseFloat(auFocus.largeur), 'l anneau doit etre visible au soleil')
+      .toBeGreaterThanOrEqual(3)
+    // #2a75ca — le jeton --brand-400, 4,67:1 sur papier.
+    expect(auFocus.couleur, 'l anneau prend la marque').toBe('rgb(42, 117, 202)')
+  })
+
+  test('une liste deroulante recoit le meme traitement qu un champ', async ({ page }) => {
+    // Un `<select>` n'est pas un `<input>` : il a ses propres regles par defaut,
+    // et c'est sur lui que le choix `:focus` plutot que `:focus-visible` se
+    // joue. Le verifier sur le seul champ texte du formulaire aurait laisse la
+    // moitie des controles de filtre de cet espace hors du controle.
+    await allerA(page, ECRANS[3]) // clients
+
+    // ⚠ `main[data-espace="boutique"]` ET NON `select` SEUL. Premier jet rouge :
+    // `page.locator('select').first()` accroche la liste de NAVIGATION de la
+    // barre, qui est masquee au-dessus de 768 px — donc jamais visible a la
+    // largeur du bureau. Elle vit hors de `<main>`, elle n'est pas dans la
+    // portee du lot, et elle n'avait rien a faire dans ce controle.
+    const liste = page.locator('main[data-espace="boutique"] select').first()
+    await expect(liste).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await liste.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return { bordure: cs.borderTopColor, rayon: cs.borderTopLeftRadius }
+    })
+    expect(rendu.bordure, 'la bordure de la liste doit porter --filet')
+      .toBe('rgb(119, 132, 149)')
+    expect(rendu.rayon, 'le registre est carre').toBe('2px')
+
+    await liste.focus()
+    const anneau = await liste.evaluate((el) => getComputedStyle(el).outlineStyle)
+    expect(anneau, 'une liste deroulante aussi doit montrer ou lon est')
+      .not.toBe('none')
+  })
+
   test('la bande des reserves ne s en va jamais, meme au defilement', async ({ page }) => {
     // ⟲ RETOURNE AU LOT L7.4b. Ce controle exigeait l'inverse : un rail qui
     // apparaissait au defilement pour COMPENSER la disparition du rideau. La

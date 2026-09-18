@@ -1239,6 +1239,173 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LES CHAMPS DE SAISIE (lot L9.2)
+   ───────────────────────────────────────────────────────────────────────────
+   C'EST LE PLUS GROS TROU DU CHANTIER, ET IL N'EST PAS DÉCORATIF.
+
+   Avant ce lot, `src/index.css` ne contenait AUCUNE règle pour `input`, `select`
+   ou `textarea` — zéro. Les huit écrans dessinaient chacun leurs champs avec les
+   utilitaires de Tailwind, écrits à la main, à des dates différentes.
+
+   RELEVÉ DU 2026-09-18, sur les onze points d'entrée de l'espace boutique,
+   imports suivis (135 fichiers, 43 champs) :
+
+       43   champs dans le périmètre
+       26   avec une bordure sous 3:1        → WCAG 1.4.11 non tenu
+       18   avec `focus:outline-none`        → WCAG 2.4.7 en jeu
+       11   dont le focus n'est plus dit QUE par une couleur de bordure verte
+        4   avec une bordure d'erreur à 1,90:1
+        3   cases à cocher ou boutons radio  → exclus, voir plus bas
+        1   champ caché (`hidden`)
+
+   Les deux premières lignes sont des défauts d'ACCESSIBILITÉ, pas de goût.
+   Mesurés sur papier blanc par la formule WCAG 2.x :
+
+       border-gray-300  #cfd5dd   1,48:1   ✗   la bordure de champ la plus
+       border-gray-200  #e5e7eb   1,24:1   ✗   répandue du produit
+       border-red-300   #fca5a5   1,90:1   ✗   la bordure d'erreur
+       --filet          #778495   3,81:1   ✓   ce que ce lot pose
+       --echec          #a01b1b   7,87:1   ✓   l'erreur, repeinte et non effacée
+       --brand-400      #2a75ca   4,67:1   ✓   l'anneau de focus
+
+   ⚠ #cfd5dd ET NON #d1d5db, qui est la valeur que tout le monde cite pour
+   `gray-300`. Ce dépôt REDESSINE sa rampe de neutres (`--color-gray-300`,
+   ligne 232 de ce fichier) : les gris du produit ne sont pas ceux de Tailwind.
+   Le chiffre ci-dessus est celui que le banc a LU dans le navigateur avant ce
+   lot — rgb(207, 213, 221) — et `npm run qa:jetons` le confirme de son côté.
+   L'écart avec la valeur citée est d'un centième et ne change rien au verdict ;
+   il change ce qu'on a le droit d'écrire.
+
+   ⚠ `focus:outline-none` EST LE PLUS GRAVE DES DEUX. Onze champs retiraient
+   l'anneau du navigateur et le remplaçaient par `focus:border-green-500` : un
+   changement de COULEUR de bordure, et rien d'autre. Qui ne distingue pas le
+   gris du vert ne sait plus où il tape. Les sept autres ne le remplaçaient par
+   rien du tout.
+
+   POURQUOI UN SÉLECTEUR D'ÉLÉMENT, ET NON UN `data-*` DE PLUS
+
+   Même raison qu'au lot L7.2b pour le tableau, et elle se chiffre : 43 champs
+   dans 19 fichiers. Poser un attribut sur chacun, c'est en oublier — et obtenir
+   un formulaire à moitié conforme, ce qui est pire qu'un formulaire uniformément
+   non conforme, parce que ça ressemble à du travail fini. La règle porte sur les
+   BALISES : elle vaut pour tous les champs de cet espace, y compris ceux qui
+   seront écrits demain, sans liste à tenir à jour.
+
+   CE QUE LA RÈGLE NE FIXE PAS, ET C'EST DÉLIBÉRÉ
+
+   Ni largeur, ni marge intérieure, ni taille de police, ni alignement. La
+   maquette dit `padding:9px 11px`, le produit écrit `px-3 py-2` (12/8) : l'écart
+   est de trois pixels, et l'uniformiser écraserait au passage les champs
+   volontairement compacts — le sélecteur de taille de page (`px-2 py-1`, c'est
+   le `.saisie--mini` de la maquette) et le champ de règlement centré entre ses
+   deux boutons. On pose la LIMITE du contrôle et son ÉTAT DE FOCUS, qui sont
+   des questions de conformité ; on laisse la mise en page où elle est, qui est
+   une question de disposition.
+
+   CE QUI EST HORS DE PORTÉE, ET N'AVAIT DONC RIEN À EXCLURE
+
+   Deux champs risqués vivent hors de `<main data-espace="boutique">` et ne sont
+   pas touchés : la liste déroulante de navigation (NavBar, dans la barre, avec
+   son propre anneau blanc — déjà traitée au lot L7.1) et le champ de saisie en
+   ligne de la bande des réserves (NetworkCard : `bg-transparent`, un trait sous
+   le chiffre, aucune boîte). Les encadrer aurait détruit les deux. Le Layout les
+   place au-dessus de `<main>` — la portée règle la question toute seule, et
+   c'est précisément ce qu'on attend d'une portée.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ⚠ LES TROIS `:not()` NE SONT PAS DE LA PRÉCAUTION.
+   · case à cocher et bouton radio : ce sont des contrôles de 13 px dessinés par
+     le système. Leur poser une bordure et un fond, c'est les remplacer par deux
+     carrés vides — le produit en compte trois, dont la confirmation renforcée
+     d'une demande dealer, où la case EST la garde.
+   · `type="file"` : celui de l'import de clients est `hidden`, déclenché par un
+     bouton. Il n'a pas à exister visuellement, même une fois.
+
+   ⚠ `:not([class*='border-red'])` NON PLUS — C'EST UNE GARDE FONCTIONNELLE.
+   Quatre champs signalent une saisie invalide en passant leur bordure au rouge.
+   Cette règle pèse (0,5,1), l'utilitaire `border-red-300` pèse (0,1,0) : sans
+   l'exclusion, elle ÉCRASERAIT le signal d'erreur. Repeindre un champ en trois
+   pixels de plus ne vaut pas de faire disparaître un avertissement. Les quatre
+   sont repris juste en dessous, où leur rouge est mis à niveau au lieu d'être
+   effacé.
+
+   Spécificité : `.design-registre` (0,1,0) + `[data-espace]` (0,1,0) + trois
+   `:not()` d'attribut (0,3,0) + la balise (0,0,1) = (0,5,1). Aucun `!important`. */
+.design-registre
+  [data-espace='boutique']
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([class*='border-red']),
+.design-registre [data-espace='boutique'] select:not([class*='border-red']),
+.design-registre [data-espace='boutique'] textarea:not([class*='border-red']) {
+  border: 1px solid var(--color-filet);
+  border-radius: 2px;
+  background-color: var(--color-papier);
+  color: var(--color-encre);
+  font-family: inherit;
+}
+
+/* L'erreur est MISE À NIVEAU, pas effacée : 1,90:1 → 7,87:1. Le champ reste
+   rouge, il le devient seulement assez pour être vu. La sélection par
+   `[class*='border-red']` est grossière et c'est assumé : le produit n'écrit
+   `aria-invalid` sur aucun champ de cet espace (une seule occurrence dans tout
+   `src/`, et elle est sur un écran dealer). Le jour où il le fera, ce sélecteur
+   deviendra `[aria-invalid='true']`, qui dit la même chose en mieux. */
+.design-registre [data-espace='boutique'] input[class*='border-red'],
+.design-registre [data-espace='boutique'] select[class*='border-red'],
+.design-registre [data-espace='boutique'] textarea[class*='border-red'] {
+  border: 1px solid var(--color-echec);
+  border-radius: 2px;
+  background-color: var(--color-papier);
+  color: var(--color-encre);
+  font-family: inherit;
+}
+
+/* ⚠ `:focus` ET NON `:focus-visible`, et c'est mesuré sur le comportement des
+   navigateurs, pas choisi par goût. Sur un `<select>`, Chrome ne fait PAS
+   correspondre `:focus-visible` à un focus pris à la souris : la moitié des
+   champs de filtre de cet espace sont des listes déroulantes, et elles
+   n'auraient rien montré au clic. Sur un champ de texte, les deux se valent, et
+   un anneau au clic n'a jamais gêné personne — contrairement à un bouton, un
+   champ de saisie garde le focus pendant qu'on y travaille.
+
+   C'est cette règle qui ANNULE les dix-huit `focus:outline-none`. Ils pèsent
+   (0,2,0) ; celle-ci pèse (0,5,1) avec sa pseudo-classe. Le JSX n'est pas
+   touché : TAOFIC garde ses champs au caractère près.
+
+   Trois pixels et non deux, comme dans la maquette : l'anneau doit rester
+   lisible sur un écran d'entrée de gamme en plein soleil, ce qui est la
+   condition de travail réelle. `outline-offset` positif pour qu'il ne se
+   confonde pas avec la bordure du champ qu'il entoure. */
+.design-registre [data-espace='boutique'] input:focus,
+.design-registre [data-espace='boutique'] select:focus,
+.design-registre [data-espace='boutique'] textarea:focus {
+  outline: 3px solid var(--color-brand-400);
+  outline-offset: 2px;
+  border-color: var(--color-brand-400);
+}
+
+/* L'erreur garde sa bordure rouge MÊME AU FOCUS : l'anneau dit où l'on est, la
+   bordure dit ce qui ne va pas. Ce sont deux informations, elles ne se
+   remplacent pas. Sans cette règle, la précédente repeindrait la bordure en
+   bleu dès qu'on revient corriger le champ — c'est-à-dire exactement au moment
+   où le signal sert. */
+.design-registre [data-espace='boutique'] input[class*='border-red']:focus,
+.design-registre [data-espace='boutique'] select[class*='border-red']:focus,
+.design-registre [data-espace='boutique'] textarea[class*='border-red']:focus {
+  border-color: var(--color-echec);
+}
+
+/* Le libellé d'un champ : une seule graisse, une seule taille. Le produit en
+   écrit trois (`text-sm`, `text-xs`, `text-base`) selon l'écran. C'est
+   `.champ>label` dans la maquette. Restreint aux `<form>` : hors formulaire, un
+   `<label>` sert aussi de légende à un filtre ou à une case à cocher, et ceux-là
+   ne sont pas dans ce lot. */
+.design-registre [data-espace='boutique'] form label {
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 600;
+  color: var(--color-encre);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    Montants — chiffres tabulaires
    ───────────────────────────────────────────────────────────────────────────
    Cette application est financière : ses montants s'alignent en colonne et se
