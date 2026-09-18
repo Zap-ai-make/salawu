@@ -142,14 +142,38 @@ Exemple : `tc-171` exige que TAOFIC garde ses **cinq** graphiques là où le
 registre n'en rend plus qu'un, et que sa répartition mono-réseau compte
 exactement comme avant.
 
-**NON prouvé :** il n'existe **aucune comparaison de pixels** du rendu TAOFIC
-avant/après. La boucle QA ne capture que le profil ESAHAF. « Inchangé bit pour
-bit » est donc une affirmation appuyée sur la portée CSS et sur huit filets, pas
-sur une capture différentielle.
+**Mesuré dans un vrai moteur de rendu** — ajouté après la première rédaction de ce
+bilan, qui signalait cette lacune :
 
-> **Recommandation.** Avant toute mise en production, faire tourner la boucle QA
-> sur le profil `taofic-ajagbe` et comparer les captures à celles de `main`.
-> C'est le seul contrôle qui transformerait l'argument en preuve.
+```
+npm run qa:taofic
+  5 passed (1,1 min)
+```
+
+`playwright.taofic.config.js` rend le profil **`taofic-ajagbe`** et vérifie sur
+les valeurs **calculées** que : `<html>` ne porte pas `design-registre` ; la page
+n'affiche pas la marque ESAHAF ; le corps n'est pas en IBM Plex ; le canvas
+bleuté de l'identité ne le peint pas.
+
+Le cinquième cas est celui qui donne sa valeur aux quatre autres. Il pose la
+classe de portée **à la main** sur `<html>` et exige qu'une propriété change
+réellement — la bordure d'une tuile témoin passe à `rgb(192, 215, 245)`, soit
+`--trait-200`. Sans lui, les quatre premiers cas seraient verts si la feuille de
+l'identité n'était **pas servie du tout** sur ce montage : verts par absence, et
+non par cloisonnement. Un banc qui ne peut pas rougir ne prouve rien.
+
+**Toujours NON prouvé :** ce n'est pas une **comparaison de pixels avant/après**.
+Le banc vérifie le *mécanisme* qui garantit l'absence de changement, pas
+l'égalité de deux captures prises depuis deux révisions.
+
+C'est un choix, et il est défendable : une comparaison de captures serait vraie
+le jour où on la fait, tandis que cette garde rougira au premier lot qui écrira
+une règle hors portée — dans six mois, et écrite par quelqu'un d'autre.
+
+> **Recommandation maintenue, mais allégée.** Une capture différentielle de
+> `taofic-ajagbe` entre `main` et cette branche resterait le contrôle le plus
+> direct avant mise en production. Elle n'est plus le *seul* filet : `qa:taofic`
+> couvre désormais le mécanisme en continu.
 
 ---
 
@@ -203,7 +227,7 @@ npm run qa:comptage
 | 4 largeurs de châssis, 8 `<h1>` déclarés | **neutralisés au rendu** depuis L7.1 | déclarations, pas pixels |
 | Bandeau photo de 200 px à 375 px | signalé, non traité | la maquette répond 172 / 116 px |
 | Convention de signe (Transactions = stock, Historique = caisse) | signalée, non traitée | décision **métier** |
-| Rendu TAOFIC | non capturé | voir §4 |
+| Rendu TAOFIC | mécanisme gardé (`qa:taofic`), capture différentielle non faite | voir §4 |
 
 Les deux premières lignes sont liées : unifier les phrases de vide demande de
 choisir **ce que chaque écran propose** quand il n'a rien à montrer. Un état vide
@@ -263,7 +287,8 @@ les autres vérifiables.
 npm run qa:jetons        les contrastes de la palette, mesurés
 npm run qa:comptage      la dispersion de la couleur dans le code (voir §3)
 npm run qa:vocabulaire   les verbes d'action et les phrases de vide
-npm run qa:full          la boucle navigateur complète
+npm run qa:full          la boucle navigateur complète (profil salawu)
+npm run qa:taofic        la garde du profil en production (voir §4)
 ```
 
 Elles existent pour que le lot suivant puisse s'opposer à celui-ci avec des
