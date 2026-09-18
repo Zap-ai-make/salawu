@@ -178,7 +178,13 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client',
 
   return (
     <div data-surface className="bg-white rounded-lg shadow-md p-6 w-full">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-green-500 pb-2">
+      {/* `data-titre-ecran` est un FAIT : sur /formulaire, ce `h2` EST le titre de
+          l'écran — la page ne rend que ce composant. Sans ce marqueur, la portée
+          `.design-registre [data-espace="boutique"]` ne pouvait pas l'atteindre,
+          et le soulignement vert a survécu aux lots L7.1 et L8.1d (cf. TC-176).
+          La balise reste un `h2` : TAOFIC est en production, et changer son
+          niveau de titre changerait l'arbre d'accessibilité de ses écrans. */}
+      <h2 data-titre-ecran className="text-2xl font-bold text-gray-800 mb-6 border-b-2 border-green-500 pb-2">
         {title}
       </h2>
 
