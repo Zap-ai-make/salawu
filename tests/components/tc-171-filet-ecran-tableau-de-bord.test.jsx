@@ -241,7 +241,20 @@ describe('TC-171 — le tableau des derniers clients', () => {
     // et deux colonnes pour une seule identité doublaient la largeur pour rien.
     await monterLeTableauDeBord(ESAHAF)
 
-    const entetes = screen.getAllByRole('columnheader').map((c) => c.textContent.trim())
+    // ⚠ CE CAS LISAIT TOUS LES EN-TETES DE L'ECRAN, et il n'y avait alors qu'un
+    // seul tableau. Le lot L8.1e en a ajoute un second — celui qui double
+    // l'anneau de repartition (Reseau / Clients / Part) — et le cas a rougi en
+    // annoncant six colonnes. Il avait RAISON de rougir : il ne disait pas DE
+    // QUEL tableau il parlait. On le lui fait dire, plutot que d'elargir la
+    // liste attendue — ce qui l'aurait rendu vrai pour de mauvaises raisons.
+    const derniersClients = screen
+      .getAllByRole('table')
+      .find((t) => t.textContent.includes('Nom et prénom'))
+    expect(derniersClients, 'le tableau des derniers clients doit être rendu').toBeTruthy()
+
+    const entetes = within(derniersClients)
+      .getAllByRole('columnheader')
+      .map((c) => c.textContent.trim())
     expect(entetes).toEqual(['Nom et prénom', 'Localité', 'Date d\'ajout'])
   })
 
@@ -332,48 +345,92 @@ describe('TC-171 — les cinq graphiques', () => {
 })
 
 /**
- * ⚠ DÉFAUT MÉTIER FIGÉ, PAS UN DÉFAUT DE DESSIN — relevé au lot L8.1e.
+ * ⟲ RETOURNÉ AU LOT L8.1e — LES SIX RÉSEAUX SONT COMPTÉS.
  * ─────────────────────────────────────────────────────────────────────────────
- * « Répartition par réseau » n'en compte qu'UN. Le calcul est écrit en dur :
+ * CE QUE CES CAS REMPLACENT. Un défaut y était figé : « Répartition par réseau »
+ * n'en comptait qu'UN, parce que le calcul était écrit en dur dans le composant
+ * (`if (client.orange) networkCounts.Orange++`). C'était juste pour TAOFIC, dont
+ * le profil déclare `enabled: ['Orange']`, et faux pour ESAHAF qui en déclare
+ * SIX : l'écran annonçait une répartition dont cinq parts manquaient.
  *
- *   const networkCounts = { Orange: 0 }
- *   clients.forEach(client => { if (client.orange) networkCounts.Orange++ })
+ * Le cas gelé exigeait que « Wave » soit ABSENT, alors qu'un client du jeu
+ * d'essai en porte le code. Il a rougi dès la correction, exactement comme il
+ * avait été écrit pour le faire — une tolérance qui se contente d'ignorer un
+ * défaut est un mensonge qui dure ; celle-ci avait une date de péremption.
  *
- * C'est juste pour TAOFIC, dont le profil déclare `enabled: ['Orange']`. ESAHAF
- * en déclare SIX (`RESEAUX_SUPPORTES`), et l'écran annonce donc une répartition
- * dont cinq parts manquent — sans message, sans zéro, sans rien. Sur le banc,
- * 64 clients sont semés en cyclant les six réseaux, et l'anneau affiche
- * « Orange 14 clients ».
+ * Décision du client, 2026-09-18 : « taofic n'est pas concerné par cela, tout
+ * doit être limité ici à salawu qui est multi-réseaux, tous les réseaux ».
  *
- * CE CAS NE CORRIGE RIEN, ET C'EST VOLONTAIRE. Le mandat de la refonte s'arrête
- * au design : « si une correction de design semble exiger un changement
- * fonctionnel, tu t'arrêtes et tu le signales ». Compter les six réseaux
- * changerait ce que l'écran RAPPORTE, pas la façon dont il le montre.
- *
- * Ce cas EXIGE donc que le défaut soit encore là. Le jour où les six réseaux
- * sont comptés, il rougit et doit être retourné — une tolérance qui se contente
- * d'ignorer un défaut est un mensonge qui dure ; celle-ci a une date de
- * péremption.
- *
- * ⟲ À RETOURNER AVEC LA DÉCISION DU CLIENT SUR LA RÉPARTITION MULTI-RÉSEAUX.
+ * La règle vit désormais dans `utils/repartitionReseaux.js` (TC-173, 16 cas).
+ * Elle parcourt les réseaux DU PROFIL : le dernier bloc de ce fichier vérifie
+ * qu'un profil mono-réseau obtient toujours exactement ce qu'il obtenait.
  */
-describe('TC-171 — la répartition par réseau n\'en compte qu\'un', () => {
-  it('⚠ FIGÉ — Orange est compté, et le client Wave est absent de l\'anneau', async () => {
+describe('TC-171 — la répartition compte les six réseaux du profil', () => {
+  it("⟲ RETOURNÉ — Wave est compté, alors qu'il était tu", async () => {
     // Le jeu d'essai porte un client Orange (c1) et un client Wave (c3).
     await monterLeTableauDeBord(ESAHAF)
 
     const bloc = document.querySelector('[data-surface="graphique"]')
     expect(bloc, 'le bloc de répartition doit être rendu').not.toBeNull()
 
-    // Orange est là, avec son compte.
     expect(within(bloc).getByText('Orange')).toBeInTheDocument()
-    expect(within(bloc).getByText(/1 clients?/)).toBeInTheDocument()
-
-    // Wave ne l'est pas — alors qu'un client en porte un code.
     expect(
-      within(bloc).queryByText('Wave'),
-      'si « Wave » apparaît, les réseaux sont enfin comptés : retourner ce cas',
-    ).toBeNull()
+      within(bloc).getByText('Wave'),
+      'Wave était le réseau tu par le calcul en dur',
+    ).toBeInTheDocument()
+  })
+
+  it('nomme LES SIX réseaux déclarés, y compris ceux à zéro', async () => {
+    // Un réseau sans client est l'information qui fait AGIR. L'ancien calcul
+    // filtrait `value > 0` : il effaçait la question au lieu d'y répondre.
+    await monterLeTableauDeBord(ESAHAF)
+    const bloc = document.querySelector('[data-surface="graphique"]')
+
+    for (const reseau of RESEAUX_ESAHAF) {
+      expect(
+        within(bloc).getByText(reseau),
+        `${reseau} doit être nommé, même à zéro`,
+      ).toBeInTheDocument()
+    }
+  })
+
+  it("DOUBLE chaque part d'un nom et d'un compte — l'anneau n'est jamais seul", async () => {
+    // C'est « aucune couleur ne porte seule une information », appliquée au seul
+    // endroit du produit où elle est difficile : un graphique EST une couleur.
+    await monterLeTableauDeBord(ESAHAF)
+    const bloc = document.querySelector('[data-surface="graphique"]')
+
+    const tableau = within(bloc).getByRole('table')
+    const entetes = within(tableau)
+      .getAllByRole('columnheader')
+      .map((c) => c.textContent.trim())
+    expect(entetes).toEqual(['Réseau', 'Clients', 'Part'])
+  })
+
+  it("décrit la répartition ENTIÈRE à qui n'a pas d'écran", async () => {
+    // L'étiquette énumère tout, zéros compris : taire un réseau ici rendrait
+    // l'anneau plus informatif que sa description, ce qui est l'inverse du but.
+    await monterLeTableauDeBord(ESAHAF)
+
+    const anneau = screen.getByRole('img')
+    const etiquette = anneau.getAttribute('aria-label')
+    for (const reseau of RESEAUX_ESAHAF) {
+      expect(etiquette).toContain(reseau)
+    }
+    expect(etiquette).toContain('Orange 1')
+    expect(etiquette).toContain('Wave 1')
+    expect(etiquette).toContain('Telecel 0')
+  })
+
+  it("AVERTIT qu'un client multi-réseaux est compté dans chacun", async () => {
+    // Sans cette phrase, un gérant qui additionne les parts et tombe au-dessus
+    // de son nombre de clients croit à une erreur de comptage.
+    await monterLeTableauDeBord(ESAHAF)
+    const bloc = document.querySelector('[data-surface="graphique"]')
+
+    expect(
+      within(bloc).getByText(/compté dans chacun/i),
+    ).toBeInTheDocument()
   })
 })
 

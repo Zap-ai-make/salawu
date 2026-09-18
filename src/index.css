@@ -1096,19 +1096,25 @@ body {
   border-radius: 0;
 }
 
-/* ⚠ UN BANDEAU DE TITRE NE SE POSE PAS PAREIL DANS LES DEUX SURFACES.
-   Le bloc des derniers clients ne se rembourre pas : son bandeau est un enfant
-   direct qui touche déjà les bords. Le bloc de graphique, lui, porte `p-6` —
-   son bandeau se retrouvait enfoncé de 24 px de chaque côté et flottait au
-   milieu de la surface comme un libellé surligné, au lieu de la coiffer.
+/* ⟲ LA COMPENSATION NÉGATIVE A ÉTÉ RETIRÉE AU LOT L8.1e, et il fallait la
+   retirer, pas l'ajuster.
+   ───────────────────────────────────────────────────────────────────────────
+   Elle valait `margin: -1.5rem` et compensait exactement les 24 px de `p-6` que
+   portait la surface du graphique : son bandeau s'y retrouvait sinon enfoncé de
+   24 px de chaque côté et flottait comme un libellé surligné au lieu de coiffer
+   le bloc.
 
-   Les -1.5rem SONT les 24 px de `p-6`, et rien d'autre. Ce couplage est la
-   raison d'être de `data-surface="graphique"` : sans lui, cette compensation
-   s'appliquerait aussi au bloc non rembourré, dont le bandeau déborderait alors
-   de la surface. */
+   Le bloc « registre » n'a plus `p-6` : l'anneau se rembourre lui-même, et le
+   `h-64` qui rognait le graphique de recharts a disparu avec lui. La
+   compensation aurait donc tiré le bandeau HORS de la surface — un couplage à
+   une valeur qui n'existe plus est pire que pas de règle du tout, parce qu'il
+   continue de s'appliquer en silence.
+
+   Le bandeau touche désormais les bords de lui-même, comme celui des derniers
+   clients, et n'a plus besoin que de son propre rembourrage. */
 .design-registre [data-espace='boutique'] [data-surface='graphique'] > [data-bloc-titre] {
-  margin: -1.5rem -1.5rem 1rem;
   padding: 0.75rem 0.875rem;
+  margin-bottom: 0;
 }
 
 .design-registre [data-espace='boutique'] [data-bloc-titre] h2,
@@ -1116,6 +1122,48 @@ body {
   color: var(--color-encre);
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+/* ── L'ANNEAU DE RÉPARTITION ET SON TABLEAU (lot L8.1e) ────────────────────
+   Le bloc se rembourre lui-même ici (`p-4` sur l'anneau, le bandeau touchant
+   les bords), donc PAS de compensation négative : c'est la raison pour laquelle
+   `data-surface="graphique"` ne porte plus `p-6` sous cette identité. */
+.design-registre [data-espace='boutique'] [data-anneau] {
+  padding: 0.875rem;
+}
+
+/* Le nombre au centre de l'anneau : c'est un DÉCOMPTE de clients. Chasse fixe,
+   comme tous les nombres qui se comparent. `fill` et non `color` — dans un SVG,
+   c'est le remplissage qui peint le texte. */
+.design-registre [data-espace='boutique'] [data-anneau-nombre] {
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.625rem; /* 26px */
+  font-weight: 600;
+  fill: var(--color-encre);
+}
+
+.design-registre [data-espace='boutique'] [data-anneau-mot] {
+  font-size: 0.6875rem; /* 11px */
+  fill: var(--color-encre-doux);
+}
+
+/* La pastille de couleur DOUBLE le nom du réseau, elle ne le remplace pas :
+   elle est `aria-hidden`, et la cellule d'à côté écrit « Orange » en toutes
+   lettres. C'est ce qui rend l'anneau lisible sans distinguer les teintes. */
+.design-registre [data-espace='boutique'] [data-anneau] [data-pastille] {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* La note sous le bloc, reprise de la maquette (`.bloc__note`). */
+.design-registre [data-espace='boutique'] [data-bloc-note] {
+  font-size: 0.75rem;
+  color: var(--color-encre-doux);
+  margin: 0;
+  padding: 0 0.875rem 0.75rem;
 }
 
 /* ⚠ RETIRÉE, PAS REPEINTE.
