@@ -33,6 +33,7 @@
     "qa:report": "playwright show-report docs/audit/qa-report",
     "qa:jetons": "node scripts/qa/contraste-jetons.mjs",
     "qa:comptage": "node scripts/qa/comptage-espace-boutique.mjs",
+    "qa:vocabulaire": "node scripts/qa/vocabulaire-espace-boutique.mjs",
     "test:commands": "vitest run --config vitest.config.js tests/unit/tc-034-dealer-request-commands.test.js",
     "test:functions": "firebase emulators:exec --only firestore --project demo-akayis-test \"npx vitest run --config vitest.functions.config.js\"",
     "test:functions:e2e": "firebase emulators:exec --only auth,firestore,functions --project demo-akayis-test \"npx vitest run --config vitest.functions-e2e.config.js\"",

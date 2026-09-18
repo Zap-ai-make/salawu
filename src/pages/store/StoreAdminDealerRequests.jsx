@@ -416,7 +416,7 @@ function StoreAdminDealerRequests() {
                 className="rounded bg-gray-100 border border-gray-300 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 transition-colors"
                 data-testid="btn-load-more"
               >
-                {loadingMore ? 'Chargement…' : 'Charger plus'}
+                {loadingMore ? 'Chargement…' : 'Voir plus'}
               </button>
             </div>
           )}

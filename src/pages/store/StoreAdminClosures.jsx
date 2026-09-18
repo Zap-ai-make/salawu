@@ -310,7 +310,7 @@ function StoreAdminClosures() {
                 disabled={loading}
                 className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
-                {loading ? 'Chargement…' : 'Charger plus'}
+                {loading ? 'Chargement…' : 'Voir plus'}
               </button>
             </div>
           )}
