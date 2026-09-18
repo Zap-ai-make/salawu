@@ -16,19 +16,14 @@ import { chiffresDuJour } from '../../utils/chiffresDuJour.js'
  * composant ne s'éprouve pas : on ne peut ni lui passer un jour, ni vérifier
  * qu'il compte les bons statuts.
  *
- * ⚠ RELEVÉ POUR LE POINT 9 (LA SIGNATURE), PAS CORRIGÉ ICI.
- * Sur une tuile large, la réglure de `data-montant` tombe au bord gauche du
- * bloc pendant que le nombre est aligné à droite. L'écart entre les deux vaut
- * donc la largeur de la tuile moins celle du nombre — il CROÎT avec l'écran, au
- * lieu de rester constant comme dans une colonne de tableau, où la cellule a la
- * largeur de ce qu'elle contient. Sur les captures de ce lot le trait se lit
- * comme une marque isolée, et non comme le bord d'une colonne de montants.
- * Ce n'est PAS un écart à la maquette — elle applique la même
- * règle (`.tuile__valeur--argent` et `.reserve__montant` : `display:block`,
- * `text-align:right`, `border-left`). La question est donc celle de la
- * signature elle-même, sur tous ses porteurs à la fois, et c'est le point 9
- * qui la tranche. La corriger ici mêlerait un restylage global à un lot qui
- * déclare un changement de contenu.
+ * ⟲ RELEVÉ AU LOT L8.1c, TRANCHÉ AU POINT 9 (LA SIGNATURE).
+ * Sur une tuile large, la réglure tombait au bord gauche du bloc pendant que le
+ * nombre restait aligné à droite : l'écart valait la largeur de la tuile moins
+ * celle du nombre, et CROISSAIT avec l'écran. Le trait ne bordait plus une
+ * colonne de montants, il flottait seul. `src/index.css` donne désormais aux
+ * porteurs hors tableau la largeur de leur contenu
+ * (`[data-montant]:not(td):not(th)`), ce qui rend au trait sa distance de
+ * cellule à toutes les largeurs.
  *
  * ⚠ LES DEUX NOMBRES NE SE DÉDUISENT PAS L'UN DE L'AUTRE, et c'est voulu.
  * L'activité compte tout ce qui s'est passé au comptoir sauf les annulations ;

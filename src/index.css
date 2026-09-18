@@ -349,6 +349,38 @@ body {
   padding-left: 1rem;
 }
 
+/* ⚠ HORS D'UN TABLEAU, LE TRAIT DEVENAIT ORPHELIN — corrigé au POINT 9.
+   ───────────────────────────────────────────────────────────────────────────
+   Dans une cellule, la règle ci-dessus marche parce que la CELLULE EST LA
+   COLONNE : sa largeur est celle de son contenu, le trait tombe donc à quelques
+   pixels du nombre, et de ligne en ligne les traits s'empilent en une réglure
+   continue. C'est tout le geste.
+
+   Hors d'un tableau, le porteur est un bloc qui prend TOUTE la largeur
+   disponible — une tuile du tableau de bord, une réserve de la bande. Le nombre
+   est aligné à droite, le trait reste au bord gauche, et l'écart entre les deux
+   vaut la largeur du bloc moins celle du nombre : il CROÎT avec l'écran. Le
+   trait ne borde plus une colonne de montants, il flotte seul au milieu d'une
+   tuile. Relevé au lot L8.1c, tranché ici.
+
+   ⚠ CE N'EST PAS UN ÉCART À LA MAQUETTE — elle applique exactement la même règle
+   (`.tuile__valeur--argent` et `.reserve__montant` : display:block,
+   text-align:right, border-left). Elle ne s'en aperçoit pas parce que ses tuiles
+   sont étroites. Le produit, lui, les étale sur un poste de gérant à 1440 px.
+   Suivre la maquette à la lettre aurait ici trahi son intention.
+
+   `width: fit-content` rend au bloc la largeur de son contenu ; `margin-left:
+   auto` le repousse à droite, là où `text-align: right` le plaçait déjà. Le
+   trait retrouve donc sa distance de cellule, à toutes les largeurs.
+
+   `:not(td):not(th)` et non une classe à poser : un porteur oublié garderait le
+   défaut en silence, alors que la négation couvre par construction tout ce qui
+   n'est pas une cellule — y compris les porteurs qui n'existent pas encore. */
+.design-registre [data-montant]:not(td):not(th) {
+  width: fit-content;
+  margin-left: auto;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    LE CHÂSSIS DE L'ESPACE BOUTIQUE (lot L7.1)
    ───────────────────────────────────────────────────────────────────────────
@@ -506,14 +538,27 @@ body {
   vertical-align: top;
 }
 
-/* ⟲ LA ZÉBRURE DE LA MAQUETTE N'EST PAS ENCORE POSÉE — LOT L8.4.
-   Elle teinte une ligne sur deux en `rgba(240,246,254,.55)`. Or l'historique
-   peint aujourd'hui ses lignes PAR SENS (`bg-green-50` pour une entrée,
-   `bg-orange-50` pour une sortie) : ajouter la zébrure maintenant donnerait une
-   ligne paire bleutée et une ligne impaire verte, soit deux systèmes qui se
-   contredisent au lieu d'un seul qui s'efface. La zébrure viendra avec la
-   suppression du fond sémantique, quand le sens sera porté par le signe, le mot
-   et la couleur du MONTANT — jamais par la ligne entière. */
+/* ⟲ LA ZÉBRURE EST POSÉE — LOT L8.4, et elle attendait une condition, pas une
+   occasion.
+   ───────────────────────────────────────────────────────────────────────────
+   Elle était différée depuis le lot L7.2b avec cette raison écrite : l'historique
+   peignait ses lignes PAR SENS (`bg-green-50` pour une entrée, `bg-orange-50`
+   pour une sortie), et poser la zébrure là-dessus aurait donné une ligne paire
+   bleutée et une ligne impaire verte — DEUX systèmes qui se contredisent au lieu
+   d'un seul qui s'efface.
+
+   Le fond sémantique est retiré au même lot (`utils/transactionDirection.js`),
+   avec le liseré de 4 px qui l'accompagnait : tous deux ne disaient le sens que
+   par la COULEUR. La pastille « Dépôt » / « Retrait » reste, et c'est elle qui
+   le dit — avec son mot.
+
+   La zébrure, elle, ne dit RIEN. C'est sa fonction : sur une ligne de dix-sept
+   colonnes, elle empêche l'œil de sauter d'une ligne à l'autre en suivant une
+   colonne. `rgba(240,246,254,.55)` — le canvas à 55 %, soit moins de 1,05:1
+   contre le papier : assez pour guider, trop peu pour teinter. */
+.design-registre [data-espace='boutique'] table tbody tr:nth-child(even) {
+  background-color: rgba(240, 246, 254, 0.55);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LE RANG DES ACTIONS (lot L7.3)
