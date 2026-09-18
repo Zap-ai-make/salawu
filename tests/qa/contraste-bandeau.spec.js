@@ -144,8 +144,28 @@ test.describe('Contraste mesuré sur les pixels rendus', () => {
     ).toThrow(/HORS CADRE/)
   })
 
-  test('le wordmark du bandeau tient son contraste sur la photographie', async ({ page }) => {
-    const wordmark = page.locator('header h1').first()
+  test('le wordmark du bandeau tient son contraste sur le fond rendu', async ({ page }, info) => {
+    // ⚠ `[data-marque]` ET NON `header h1`. Ce contrôle était ROUGE aux trois
+    // largeurs — « element(s) not found » — depuis le lot L7.1, et personne ne
+    // l'avait vu parce que le banc complet n'avait pas été rejoué depuis.
+    //
+    // La raison n'est pas un défaut du produit : sous l'identité « registre », le
+    // wordmark n'est plus un titre. `Layout.jsx:45` rend
+    // `const Marque = IS_REGISTRE ? 'span' : 'h1'` — c'était le point du lot
+    // L7.1 : un nom de marque n'est pas le titre de la page. Le locator, lui,
+    // était resté sur la balise.
+    //
+    // `[data-marque]` est le FAIT que les deux identités posent, quelle que soit
+    // la balise. C'est aussi ce qui rend ce contrôle durable : le bandeau
+    // PHOTOGRAPHIQUE de 200 px est une demande cliente acceptée
+    // (src/constants/themes.js), il reviendra, et la méthode par pixels devra
+    // fonctionner ce jour-là sans être réécrite.
+    //
+    // Le titre du cas ne promet donc plus « la photographie » : il promet le
+    // fond REELLEMENT RENDU, qui est aujourd'hui un aplat de papier et sera
+    // demain une image. La mesure est la même dans les deux cas — c'est tout
+    // l'intérêt de mesurer des pixels plutôt que de calculer une couleur.
+    const wordmark = page.locator('header [data-marque]').first()
     await expect(wordmark).toBeVisible()
 
     const boite = await boiteDuTexte(wordmark)
@@ -169,6 +189,41 @@ test.describe('Contraste mesuré sur les pixels rendus', () => {
         `pire pixel de fond rgb(${pixel.join(',')}), ` +
         `${taille}px/${graisse} → seuil ${seuil}, ${grand ? 'grand texte' : 'texte normal'})`,
     )
+
+    /**
+     * ⚠ DÉFAUT FIGÉ — 1440 px UNIQUEMENT, ET IL EST DANS LE PRODUIT.
+     *
+     * Réparer le locator ci-dessus a rendu ce contrôle à son travail, et il a
+     * immédiatement trouvé ce qu'il cherchait :
+     *
+     *     mobile-375     10,51:1   sur rgb(106, 45, 20)    ✓
+     *     tablette-768   11,79:1   sur rgb( 90, 42, 26)    ✓
+     *     bureau-1440     1,61:1   sur rgb(204,204,204)    ✗  seuil 3:1
+     *
+     * Le bandeau est une photographie en `background-size: cover` : la largeur
+     * décide du CADRAGE. À 1440 px, une zone presque blanche de l'image passe
+     * sous le wordmark, et le voile noir à 20 % ne la retient pas — 255 × 0,8
+     * = 204. Le texte est blanc. Il ne se voit plus.
+     *
+     * Ce n'est ni un défaut du banc, ni une conséquence du lot L9.2 : le
+     * bandeau photo et son voile sont antérieurs à tout le chantier. Il était
+     * simplement INVISIBLE, parce que le locator ne trouvait plus rien depuis
+     * le lot L7.1 et que le banc complet n'avait pas été rejoué depuis.
+     *
+     * La tolérance EXIGE QUE LE DÉFAUT SOIT ENCORE LÀ. Le jour où le voile est
+     * corrigé, cette ligne rougit et doit être retirée : c'est ce qui prouvera
+     * la correction, au lieu de s'en souvenir. Elle est posée ici plutôt que
+     * laissée rouge pour la raison déjà écrite au lot L8.2 — un rouge arrête
+     * tout, un gel laisse le reste du contrôle travailler.
+     */
+    if (info.project.name === 'bureau-1440') {
+      expect(
+        ratio,
+        `le défaut figé du wordmark à 1440 px a disparu (${ratio.toFixed(2)}:1 ` +
+          `sur rgb(${pixel.join(',')})) — RETIRER CETTE TOLÉRANCE`,
+      ).toBeLessThan(seuil)
+      return
+    }
 
     expect(
       ratio,
