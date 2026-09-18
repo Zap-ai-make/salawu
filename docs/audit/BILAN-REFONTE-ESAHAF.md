@@ -225,7 +225,7 @@ npm run qa:comptage
 | `ui/EmptyState` : 0 écran boutique sur 11 (9 en admin et dealer) | non adopté | décision de **contenu** |
 | `PageHeader` : 2 écrans sur 11 | déclarations conservées pour TAOFIC | structurel |
 | 4 largeurs de châssis, 8 `<h1>` déclarés | **neutralisés au rendu** depuis L7.1 | déclarations, pas pixels |
-| Bandeau photo de 200 px à 375 px | signalé, non traité | la maquette répond 172 / 116 px |
+| Bandeau photo de 200 px à 375 px | **DÉCIDÉ, pas en attente** — rétabli à la demande explicite du client le 2026-09-04, après l'avoir vu retiré (`src/constants/themes.js:35`) | arbitrage client, clos |
 | Convention de signe (Transactions = stock, Historique = caisse) | signalée, non traitée | décision **métier** |
 | Rendu TAOFIC | mécanisme gardé (`qa:taofic`), capture différentielle non faite | voir §4 |
 
