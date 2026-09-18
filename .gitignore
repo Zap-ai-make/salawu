@@ -68,3 +68,8 @@ backups/
 # comparees d'un lot a l'autre.
 docs/audit/qa-report
 docs/audit/qa-artefacts
+# Meme traitement pour la garde du profil en production (npm run qa:taofic) :
+# les motifs ci-dessus ne couvrent PAS les suffixes, et ces deux dossiers se
+# seraient retrouves versionnes a la premiere execution.
+docs/audit/qa-report-taofic
+docs/audit/qa-artefacts-taofic
