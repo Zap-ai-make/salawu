@@ -1239,6 +1239,57 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LES LIBELLÉS (lot L9.7)
+   ───────────────────────────────────────────────────────────────────────────
+   « DU : » ÉTAIT ÉCRIT PLUS GROS QUE LA MOITIÉ DES TITRES DU PRODUIT.
+
+   Relevé sur les onze points d'entrée, imports suivis — 39 balises `<label>` :
+
+       TAILLES                        GRAISSES
+       22   text-sm    (14px)         23   font-medium
+        7   aucune     (16px)          8   aucune
+        5   text-xs    (12px)          8   font-semibold
+        5   text-lg    (18px)
+
+   Quatre tailles pour la même chose. Les cinq `text-lg` sont les légendes de
+   filtre de l'historique — « Du : », « Au : », « Rechercher un client » — à
+   18 px et en gras, c'est-à-dire plus lourdes que le texte des lignes qu'elles
+   servent à filtrer. Une légende de contrôle n'est pas un titre.
+
+   POURQUOI UNE SEULE TAILLE, ET NON LES DEUX DE LA MAQUETTE
+
+   La maquette distingue `.champ>label` (13px, encre) de `.filtre__bloc>label`
+   (12px, encre-doux). L'écart est d'un pixel et d'un ton. Le tenir demanderait
+   de marquer chaque bloc pour dire s'il est un champ ou un filtre — trente-neuf
+   décisions à prendre et à maintenir, pour une différence qu'aucun utilisateur
+   ne nommera. On pose 13px/600, qui est la valeur des champs, et c'est tout.
+
+   ⚠ `:has()` N'EST PAS UNE COQUETTERIE — TROIS LABELS ENVELOPPENT LEUR CONTRÔLE
+
+   Un `<label>` a deux usages, et ils n'ont rien à voir :
+
+     · la LÉGENDE, posée à côté du contrôle (`<label for>`), qui doit être
+       petite et grasse ;
+     · l'ENVELOPPE, qui contient le contrôle ET sa phrase — le motif des cases
+       à cocher.
+
+   Le produit en compte trois du second type, dont la case de confirmation
+   renforcée d'une demande dealer, où le texte est une phrase complète :
+   « Je confirme avoir vérifié le montant et le type de demande ». La passer en
+   13px gras aurait mis un paragraphe d'avertissement en gras, dans la seule
+   modale où l'on demande à quelqu'un de relire avant de valider.
+
+   `:not(:has(input, select, textarea))` dit exactement « une légende, pas une
+   enveloppe ». Aucun attribut à poser, aucune liste à tenir.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] label:not(:has(input, select, textarea)) {
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 600;
+  color: var(--color-encre);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LA MODALE (lot L9.6)
    ───────────────────────────────────────────────────────────────────────────
    DOUZE MODALES, CHACUNE DESSINÉE À LA MAIN, À DES DATES DIFFÉRENTES.
@@ -1673,16 +1724,12 @@ body {
   border-color: var(--color-echec);
 }
 
-/* Le libellé d'un champ : une seule graisse, une seule taille. Le produit en
-   écrit trois (`text-sm`, `text-xs`, `text-base`) selon l'écran. C'est
-   `.champ>label` dans la maquette. Restreint aux `<form>` : hors formulaire, un
-   `<label>` sert aussi de légende à un filtre ou à une case à cocher, et ceux-là
-   ne sont pas dans ce lot. */
-.design-registre [data-espace='boutique'] form label {
-  font-size: 0.8125rem; /* 13px */
-  font-weight: 600;
-  color: var(--color-encre);
-}
+/* ⚠ CETTE RÈGLE A ÉTÉ ÉLARGIE AU LOT L9.7 — voir le bloc « LES LIBELLÉS » plus
+   haut. Elle ne visait que les `<form>`, ce qui laissait dehors les légendes de
+   filtre, c'est-à-dire précisément les plus grosses (18 px). L'ancienne
+   formulation est remplacée, pas doublée : deux règles concurrentes sur le même
+   élément se seraient départagées par l'ordre du fichier, ce qui n'est pas une
+   décision, c'est un accident. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Montants — chiffres tabulaires

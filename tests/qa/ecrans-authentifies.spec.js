@@ -441,6 +441,66 @@ test.describe('Écrans de travail', () => {
       .not.toBe('none')
   })
 
+  test('une legende de filtre n est pas un titre', async ({ page }) => {
+    // ⚠ CE CONTROLE VISE LA PIRE DES TRENTE-NEUF, PAS UNE AU HASARD.
+    //
+    // Releve sur les onze points d'entree : 39 balises <label>, QUATRE tailles
+    // (text-sm x22, aucune x7, text-xs x5, text-lg x5) et trois graisses. Les
+    // cinq `text-lg` sont les legendes de filtre de l'historique — « Du : »,
+    // « Au : », « Rechercher un client » — a 18 px et en gras, c'est-a-dire
+    // plus lourdes que le texte des lignes qu'elles servent a filtrer.
+    //
+    // Une legende de controle n'est pas un titre. 13 px / 600, comme les
+    // libelles de champ : c'est la valeur retenue pour les trente-neuf.
+    await allerA(page, ECRANS[2]) // historique
+
+    const legende = page.locator('label', { hasText: /^Du\s*:/ }).first()
+    await expect(legende).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await legende.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return { taille: cs.fontSize, graisse: cs.fontWeight }
+    })
+
+    expect(rendu.taille, 'une legende de filtre doit faire 13 px').toBe('13px')
+    expect(parseInt(rendu.graisse, 10), 'et rester grasse').toBeGreaterThanOrEqual(600)
+  })
+
+  test('⚠ un label qui ENVELOPPE son controle n est pas mis en gras', async ({ page }) => {
+    // LE CAS QUE `:not(:has(input, select, textarea))` PROTEGE, et sans lequel
+    // le lot L9.7 aurait mis en gras des textes qui ne sont pas des legendes.
+    //
+    // Un <label> a deux usages, et ils n'ont rien a voir :
+    //   · la LEGENDE, posee a cote du controle (`<label for>`) — petite, grasse ;
+    //   · l'ENVELOPPE, qui contient le controle ET sa phrase.
+    //
+    // Le produit en compte quatre du second type, dont trois dans l'espace
+    // boutique. Le plus grave est la case de confirmation renforcee d'une
+    // demande dealer — « Je confirme avoir verifie le montant et le type de
+    // demande » — dans la seule modale qui demande a quelqu'un de RELIRE avant
+    // de valider. Elle n'est pas semee par le banc, donc non mesurable ici.
+    //
+    // Celui-ci l'est : les boutons radio « Nature » de l'ecran Transactions
+    // (TransactionForm.jsx) enveloppent leur <input type="radio">. Ils sont
+    // affiches au repos, sans rien a semer.
+    await allerA(page, ECRANS[1]) // transactions
+
+    const enveloppe = page
+      .locator('main[data-espace="boutique"] label')
+      .filter({ has: page.locator('input[type="radio"]') })
+      .first()
+    await expect(enveloppe).toBeVisible({ timeout: 30_000 })
+
+    const graisse = await enveloppe.evaluate((el) =>
+      parseInt(getComputedStyle(el).fontWeight, 10),
+    )
+
+    // La regle des legendes pose 600. Si l'exclusion `:has()` disparaissait, ce
+    // label la recevrait et ce controle rougirait — c'est exactement son role.
+    expect(graisse, 'une enveloppe de controle ne doit pas heriter du gras des legendes')
+      .toBeLessThan(600)
+  })
+
   test('la modale du recu porte le voile du registre, et reste hors de main', async ({ page }) => {
     // ⚠ C'EST LA MODALE PAR PORTAIL QUI EST CHOISIE ICI, ET CE N'EST PAS UN
     // HASARD. `ReceiptModal` rend par `createPortal` dans `document.body` : elle
