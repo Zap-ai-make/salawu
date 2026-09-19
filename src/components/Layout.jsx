@@ -110,8 +110,12 @@ function Layout({ children }) {
             minHeight: '200px'
           }}
         >
-          {/* Overlay pour garder la visibilité */}
-          <div className="absolute inset-0 bg-black/20"></div>
+          {/* Le voile qui rend le wordmark lisible sur la photographie.
+              `data-voile` est un FAIT, et il n'existe que dans ce Layout — donc
+              dans l'espace boutique. La classe `bg-black/20` reste : ce bandeau
+              sert aussi TAOFIC, qui est en production. Sous `.design-registre`,
+              src/index.css la renforce (cf. le bloc du lot L9.4). */}
+          <div data-voile className="absolute inset-0 bg-black/20"></div>
 
           {/* Contenu du header */}
           <div className="relative z-10 w-full px-4 py-12 flex items-center justify-center">

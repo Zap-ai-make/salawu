@@ -144,7 +144,7 @@ test.describe('Contraste mesuré sur les pixels rendus', () => {
     ).toThrow(/HORS CADRE/)
   })
 
-  test('le wordmark du bandeau tient son contraste sur le fond rendu', async ({ page }, info) => {
+  test('le wordmark du bandeau tient son contraste sur le fond rendu', async ({ page }) => {
     // ⚠ `[data-marque]` ET NON `header h1`. Ce contrôle était ROUGE aux trois
     // largeurs — « element(s) not found » — depuis le lot L7.1, et personne ne
     // l'avait vu parce que le banc complet n'avait pas été rejoué depuis.
@@ -191,40 +191,25 @@ test.describe('Contraste mesuré sur les pixels rendus', () => {
     )
 
     /**
-     * ⚠ DÉFAUT FIGÉ — 1440 px UNIQUEMENT, ET IL EST DANS LE PRODUIT.
+     * ⟲ TOLÉRANCE RETIRÉE AU LOT L9.4, ET ELLE S'EST ÉTEINTE D'ELLE-MÊME.
      *
-     * Réparer le locator ci-dessus a rendu ce contrôle à son travail, et il a
-     * immédiatement trouvé ce qu'il cherchait :
+     * Un défaut était gelé ici : à 1440 px, le wordmark tombait à 1,61:1 sur un
+     * pixel de photographie à rgb(204,204,204), sous un voile noir de 20 %. La
+     * tolérance EXIGEAIT que le défaut soit encore là. Au premier banc suivant
+     * la correction, elle a rougi d'elle-même :
      *
-     *     mobile-375     10,51:1   sur rgb(106, 45, 20)    ✓
-     *     tablette-768   11,79:1   sur rgb( 90, 42, 26)    ✓
-     *     bureau-1440     1,61:1   sur rgb(204,204,204)    ✗  seuil 3:1
+     *     « le défaut figé du wordmark à 1440 px a disparu
+     *       (16.04:1 sur rgb(57,24,11)) — RETIRER CETTE TOLÉRANCE »
      *
-     * Le bandeau est une photographie en `background-size: cover` : la largeur
-     * décide du CADRAGE. À 1440 px, une zone presque blanche de l'image passe
-     * sous le wordmark, et le voile noir à 20 % ne la retient pas — 255 × 0,8
-     * = 204. Le texte est blanc. Il ne se voit plus.
+     * Elle est retirée ici. C'est la PREUVE que la correction a eu lieu, et non
+     * le souvenir qu'on l'a faite.
      *
-     * Ce n'est ni un défaut du banc, ni une conséquence du lot L9.2 : le
-     * bandeau photo et son voile sont antérieurs à tout le chantier. Il était
-     * simplement INVISIBLE, parce que le locator ne trouvait plus rien depuis
-     * le lot L7.1 et que le banc complet n'avait pas été rejoué depuis.
-     *
-     * La tolérance EXIGE QUE LE DÉFAUT SOIT ENCORE LÀ. Le jour où le voile est
-     * corrigé, cette ligne rougit et doit être retirée : c'est ce qui prouvera
-     * la correction, au lieu de s'en souvenir. Elle est posée ici plutôt que
-     * laissée rouge pour la raison déjà écrite au lot L8.2 — un rouge arrête
-     * tout, un gel laisse le reste du contrôle travailler.
+     * Le voile est passé à 55 % sous l'identité « registre » (src/index.css,
+     * bloc du lot L9.4). Le pire pixel des trois largeurs est désormais
+     * rgb(115,115,115), soit 4,74:1 — la valeur que l'arithmétique du voile
+     * annonçait à deux centièmes près, et qui franchit même le seuil du texte
+     * normal.
      */
-    if (info.project.name === 'bureau-1440') {
-      expect(
-        ratio,
-        `le défaut figé du wordmark à 1440 px a disparu (${ratio.toFixed(2)}:1 ` +
-          `sur rgb(${pixel.join(',')})) — RETIRER CETTE TOLÉRANCE`,
-      ).toBeLessThan(seuil)
-      return
-    }
-
     expect(
       ratio,
       `le wordmark tombe à ${ratio.toFixed(2)}:1 sur le pixel le plus clair du bandeau ` +

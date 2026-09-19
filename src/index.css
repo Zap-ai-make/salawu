@@ -1239,6 +1239,66 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LE VOILE DU BANDEAU (lot L9.4)
+   ───────────────────────────────────────────────────────────────────────────
+   LE WORDMARK TOMBAIT À 1,61:1, ET SEULEMENT À 1440 px.
+
+   Le bandeau de marque est une PHOTOGRAPHIE (`/bg-noir.png`) en
+   `background-size: cover`. La largeur de la fenêtre décide donc du CADRAGE :
+   ce n'est pas la même partie de l'image qui passe sous le nom selon l'écran.
+
+   Mesuré sur les pixels rendus (`tests/qa/contraste-bandeau.spec.js`) :
+
+       mobile-375     10,51:1   pire pixel rgb(106,  45,  20)   ✓
+       tablette-768   11,79:1   pire pixel rgb( 90,  42,  26)   ✓
+       bureau-1440     1,61:1   pire pixel rgb(204, 204, 204)   ✗   seuil 3:1
+
+   À 1440 px, une zone presque blanche de la photographie arrive sous le
+   wordmark. Le voile noir à 20 % ne la retient pas — 255 × 0,8 = 204 — et le
+   texte est blanc. Le nom du logiciel disparaît dans sa propre image.
+
+   ⚠ L'OMBRE PORTÉE NE COMPTE PAS, et c'est pour cela qu'elle n'a rien sauvé.
+   Le `textShadow` du wordmark est retiré avant la mesure, parce que WCAG mesure
+   le texte contre son FOND : une ombre adoucit les bords, elle ne relève pas la
+   luminance du pixel sur lequel la lettre est posée.
+
+   L'ARITHMÉTIQUE DU VOILE
+
+   Le voile compose du noir sur l'image : pixel_rendu = pixel_photo × (1 − α).
+   Le pire pixel rendu valant 204 à α = 0,20, le pixel de la photographie y vaut
+   255 — du blanc franc. Pour que du texte blanc tienne 3:1, il faut un fond
+   d'au plus 148 (luminance 0,30), donc α ≥ 0,42.
+
+   On pose α = 0,55, ce qui donne 255 × 0,45 = 115, soit 4,76:1. Le choix n'est
+   pas timide : 0,45 rendrait 3,35:1, c'est-à-dire trois centièmes de marge sur
+   un cadrage qui change avec chaque largeur d'écran. 4,76:1 franchit même le
+   seuil du texte NORMAL (4,5:1) — si le wordmark rapetissait un jour, il
+   tiendrait encore.
+
+   CE QUE CELA COÛTE, ET POURQUOI C'EST LE BON ARBITRAGE
+
+   La photographie s'assombrit, visiblement. Le client a demandé le bandeau
+   photo — explicitement, le 2026-09-04, après l'avoir vu retiré (themes.js).
+   Il n'a pas demandé un nom de logiciel illisible. L'image reste ; elle est
+   seulement voilée assez pour que la marque se lise par-dessus.
+
+   POURQUOI `.design-registre` SEUL, SANS `[data-espace='boutique']`
+
+   Le bandeau vit dans le Layout, AU-DESSUS de `<main>` : la portée d'espace ne
+   l'atteint pas. `.design-registre` seule couvre tout ESAHAF, admin et dealer
+   compris — mais `data-voile` n'est posé QUE dans `src/components/Layout.jsx`,
+   qui ne sert que l'espace boutique. C'est le marqueur qui borne la portée ici,
+   pas le sélecteur, et c'est écrit des deux côtés.
+
+   TAOFIC garde son bandeau au caractère près : il n'a pas `.design-registre`,
+   et la classe `bg-black/20` reste sur l'élément.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-voile] {
+  background-color: rgb(0 0 0 / 0.55);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LES CHAMPS DE SAISIE (lot L9.2)
    ───────────────────────────────────────────────────────────────────────────
    C'EST LE PLUS GROS TROU DU CHANTIER, ET IL N'EST PAS DÉCORATIF.
