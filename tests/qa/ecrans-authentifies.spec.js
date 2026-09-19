@@ -441,6 +441,74 @@ test.describe('Écrans de travail', () => {
       .not.toBe('none')
   })
 
+  test('la modale du recu porte le voile du registre, et reste hors de main', async ({ page }) => {
+    // ⚠ C'EST LA MODALE PAR PORTAIL QUI EST CHOISIE ICI, ET CE N'EST PAS UN
+    // HASARD. `ReceiptModal` rend par `createPortal` dans `document.body` : elle
+    // vit HORS de `<main data-espace="boutique">`. Une regle portee par l'espace
+    // l'aurait manquee — onze modales habillees sur douze, en silence. C'est ce
+    // qui justifie que le lot L9.6 porte sur `.design-registre` + un marqueur.
+    //
+    // Le premier controle VERIFIE CE FAIT plutot que de le croire : si la modale
+    // cesse un jour d'etre portalisee, il rougit, et l'argument de portee ecrit
+    // dans src/index.css devra etre relu.
+    await allerA(page, ECRANS[2]) // historique
+
+    await page.getByRole('button', { name: 'Reçu' }).first().click()
+
+    const voile = page.locator('[data-testid="receipt-modal"]')
+    await expect(voile).toBeVisible({ timeout: 30_000 })
+
+    const horsDeMain = await voile.evaluate((el) => !el.closest('main[data-espace]'))
+    expect(horsDeMain, 'la modale du recu doit rester hors de <main> (createPortal)')
+      .toBe(true)
+
+    // rgb(9 20 33 / .55) — l'encre du registre, pas un noir pur. Le produit
+    // ecrivait `bg-black/40` sur sept modales et `bg-black/50` sur quatre.
+    const fond = await voile.evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(fond, 'le voile doit porter l encre du registre a 55 %')
+      .toBe('rgba(9, 20, 33, 0.55)')
+
+    // Le panneau de CETTE modale n'est volontairement pas marque : son enfant
+    // direct n'est qu'une enveloppe de largeur, qui contient un recu deja
+    // dessine. Le panneau est mesure par le test suivant.
+  })
+
+  test('le panneau d une modale est carre et porte le filet de marque', async ({ page }) => {
+    // La modale de code d'acces est la seule qu'on puisse ouvrir d'un seul clic,
+    // sans remplir de formulaire et sans donnee particuliere a semer : le bouton
+    // est sur chaque ligne de la liste des clients. Son panneau porte
+    // `data-modale`, contrairement a celui du recu.
+    //
+    // ⚠ Elle n'existe que si le profil declare `mobileApp.enabled` — c'est le
+    // cas de salawu (config/clients/salawu.js). On ne met PAS de `test.skip`
+    // ici : un controle qui s'absente quand sa cible disparait ne garde rien,
+    // et si ce bouton s'en va, ce test doit le dire.
+    await allerA(page, ECRANS[3]) // clients
+
+    await page.locator('[data-testid="btn-access-code"]').first().click()
+
+    const panneau = page.locator('[data-modale]').first()
+    await expect(panneau).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await panneau.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return {
+        rayon: cs.borderTopLeftRadius,
+        filet: cs.borderTopWidth,
+        couleurFilet: cs.borderTopColor,
+        fond: cs.backgroundColor,
+      }
+    })
+
+    expect(rendu.rayon, 'le registre est carre').toBe('2px')
+    expect(parseFloat(rendu.filet), 'le filet de tete doit faire 3 px')
+      .toBeGreaterThanOrEqual(3)
+    // #1b62b0 — le jeton --brand-500.
+    expect(rendu.couleurFilet, 'le filet de tete prend la marque')
+      .toBe('rgb(27, 98, 176)')
+    expect(rendu.fond, 'le panneau est pose sur le papier').toBe('rgb(255, 255, 255)')
+  })
+
   test('la bande des reserves ne s en va jamais, meme au defilement', async ({ page }) => {
     // ⟲ RETOURNE AU LOT L7.4b. Ce controle exigeait l'inverse : un rail qui
     // apparaissait au defilement pour COMPENSER la disparition du rideau. La

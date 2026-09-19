@@ -1239,6 +1239,104 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LA MODALE (lot L9.6)
+   ───────────────────────────────────────────────────────────────────────────
+   DOUZE MODALES, CHACUNE DESSINÉE À LA MAIN, À DES DATES DIFFÉRENTES.
+
+   Relevé sur les neuf fichiers de modale du graphe boutique :
+
+       2   voiles distincts     `bg-black/40` (×7) et `bg-black/50` (×4)
+       3   arrondis de panneau  `rounded-lg`, `rounded-xl`, `rounded-2xl`
+       3   ombres               `shadow-xl`, `shadow-2xl`, `shadow-md`
+
+   Aucune n'est fausse ; aucune ne ressemble à sa voisine. La modale de
+   transaction — le geste le plus fréquent du logiciel — et celle du reçu qui la
+   suit immédiatement n'ont ni le même coin, ni la même ombre, ni le même voile.
+
+   ⚠ DEUX SÉLECTEURS PAR RÈGLE, ET CHACUN CORRIGE UNE ERREUR QUE J'AI FAITE
+
+   Première version : `[data-espace='boutique'] [data-modale]`. Elle habillait
+   ONZE modales sur douze, en silence. `ReceiptModal` passe par `createPortal` :
+   il rend dans `document.body`, HORS de `<main>`. La portée d'espace ne
+   l'atteint pas. D'où le second sélecteur, et le fait `data-portail` posé là où
+   cette modale est écrite — même piege que le bandeau au lot L9.4.
+
+   Deuxième version : `.design-registre [data-modale]`, sans portée d'espace.
+   Elle réglait le portail et en cassait autre chose. `.design-registre` est posée
+   sur `<html>` : elle couvre TOUT ESAHAF, espaces dealer et gérant compris. Or
+   `RejectionRemarkButton` — dont la modale est marquée — est rendu par
+   `DealerDashboard`, `DealerHistory` ET `DealerRequests`. La règle serait donc
+   allée restyler trois écrans que la consigne du client met hors chantier.
+
+   La forme retenue dit exactement ce qu'on veut : DANS l'espace boutique, OU
+   BIEN sorti du DOM par un portail depuis cet espace. Le même composant garde
+   son apparence actuelle quand un écran dealer l'affiche, sans aucun `if`.
+
+   TAOFIC ne porte ni `.design-registre` ni les attributs : il est hors de
+   portee deux fois.
+
+   ⚠ POURQUOI PAS `[role='dialog']`, QUI AURAIT ÉTÉ PLUS PROPRE
+
+   C'était le meilleur ancrage possible — un fait sémantique déjà présent, et
+   pas un accident d'implémentation. Il ne tient pas : le produit ne le pose pas
+   au même endroit d'une modale à l'autre. Sur `TransactionForm` il est sur le
+   PANNEAU ; sur `ReceiptModal` et `RejectionRemarkButton`, sur le VOILE. Les
+   habiller par le même sélecteur aurait peint un voile plein écran comme s'il
+   était une boîte de 560 px.
+
+   C'est un désaccord de structure à régler un jour, et il est noté ici plutôt
+   que corrigé en passant : déplacer `role="dialog"` touche au piège de focus et
+   à l'arbre d'accessibilité, ce qui n'est pas un lot de design.
+
+   DEUX MODALES N'ONT PAS DE PANNEAU MARQUÉ, ET C'EST VOULU
+
+   `ReceiptModal` et la vue de détail d'une demande n'ont pour enfant direct
+   qu'une enveloppe de largeur (`my-8 w-full max-w-sm`), qui contient des
+   surfaces déjà dessinées. Lui poser un fond et une bordure ajouterait une
+   boîte autour d'une boîte. Onze voiles sont marqués, neuf panneaux.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Le voile. Une seule valeur, et elle est plus dense que les deux qu'elle
+   remplace : le contenu derrière une modale ne doit pas se lire, sinon l'œil y
+   retourne. `rgb(9 20 33 / .55)` est l'encre du registre, pas un noir pur — le
+   produit a une teinte, y compris quand il s'efface. */
+.design-registre [data-espace='boutique'] [data-modale-voile],
+.design-registre [data-modale-voile][data-portail] {
+  background-color: rgb(9 20 33 / 0.55);
+}
+
+/* Le panneau. Carré comme le reste du registre, avec le filet de marque en
+   tête : c'est ce qui dit « ceci est au-dessus du reste », à la place de
+   l'ombre portée que les écrans se disputaient.
+
+   `border-radius: 2px` neutralise `rounded-lg`, `-xl` et `-2xl` d'un coup.
+   L'ombre est unifiée et ADOUCIE — `shadow-2xl` posait une ombre de 25 px sur
+   un panneau de 448 px, ce qui donne au dialogue l'air de flotter très haut
+   au-dessus d'une page qu'il ne recouvre pourtant pas. */
+.design-registre [data-espace='boutique'] [data-modale],
+.design-registre [data-portail] [data-modale] {
+  border: 1px solid var(--color-trait-200);
+  border-top: 3px solid var(--color-brand-500);
+  border-radius: 2px;
+  background-color: var(--color-papier);
+  box-shadow: 0 18px 44px rgb(9 20 33 / 0.28);
+}
+
+/* Le titre d'une modale : il n'est pas un titre d'écran, et il ne doit pas en
+   avoir la taille. Le produit en écrit quatre (`text-base`, `text-lg`,
+   `text-xl`, `text-2xl`) selon la modale. 17px, comme `.modal__tete h2` de la
+   maquette. On ne touche ni au niveau de la balise ni à l'ordre des titres :
+   c'est l'arbre d'accessibilité, pas du dessin. */
+.design-registre [data-espace='boutique'] [data-modale] h2,
+.design-registre [data-espace='boutique'] [data-modale] h3,
+.design-registre [data-portail] [data-modale] h2,
+.design-registre [data-portail] [data-modale] h3 {
+  font-size: 1.0625rem; /* 17px */
+  font-weight: 600;
+  color: var(--color-encre);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LA PASTILLE DE STATUT (lot L9.5)
    ───────────────────────────────────────────────────────────────────────────
    ELLE ÉTAIT VERTE QUEL QUE SOIT LE MOT QU'ELLE ENTOURAIT.

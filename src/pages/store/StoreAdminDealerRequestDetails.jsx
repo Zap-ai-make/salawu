@@ -77,6 +77,7 @@ function ConfirmModal({ request, processing, onConfirm, onClose, initialFocusRef
 
   return (
     <div
+      data-modale-voile
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       role="dialog"
       aria-modal="true"
@@ -85,7 +86,7 @@ function ConfirmModal({ request, processing, onConfirm, onClose, initialFocusRef
       onKeyDown={handleKeyDown}
       data-testid="confirm-modal-overlay"
     >
-      <div ref={containerRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div data-modale ref={containerRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
         <h2 id="confirm-modal-title" className="text-lg font-bold text-gray-800 mb-4">
           Confirmer la demande
         </h2>
@@ -209,6 +210,7 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
 
   return (
     <div
+      data-modale-voile
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       role="dialog"
       aria-modal="true"
@@ -217,7 +219,7 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
       onKeyDown={handleKeyDown}
       data-testid="reject-modal-overlay"
     >
-      <div ref={containerRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div data-modale ref={containerRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
         <h2 id="reject-modal-title" className="text-lg font-bold text-gray-800 mb-4">
           Rejeter la demande
         </h2>
@@ -459,6 +461,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
   const canDismissModal = !processingAction && !confirmModalOpen && !rejectModalOpen
   const wrap = (inner) => (asModal ? (
     <div
+      data-modale-voile
       className="fixed inset-0 z-[9990] flex items-start justify-center overflow-y-auto bg-black/50 p-4"
       role="dialog"
       aria-modal="true"

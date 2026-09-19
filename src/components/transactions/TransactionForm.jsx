@@ -600,12 +600,13 @@ function TransactionForm({ clients }) {
       </div>
 
       {pendingConfirmation && (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
+        <div data-modale-voile className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4">
           <div
             ref={confirmDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="tx-confirm-title"
+            data-modale
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
           >
             <h3 id="tx-confirm-title" className="text-xl font-bold text-gray-900">Confirmer la transaction</h3>

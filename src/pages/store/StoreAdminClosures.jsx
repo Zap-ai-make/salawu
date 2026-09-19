@@ -54,7 +54,7 @@ function RejectModal({ closureId, onSuccess, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div data-modale-voile className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       {/* role/aria-modal portés par le PANNEAU et non par le voile : c'est le
           panneau qui est le dialogue, et c'est lui que le piège de focus borne. */}
       <div
@@ -62,6 +62,7 @@ function RejectModal({ closureId, onSuccess, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="closure-reject-title"
+        data-modale
         className="w-full max-w-md rounded-2xl bg-white shadow-xl p-6 mx-4"
       >
         <h2 id="closure-reject-title" className="text-base font-semibold text-gray-900 mb-4">Rejeter la clôture</h2>

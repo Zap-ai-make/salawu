@@ -34,6 +34,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
 
       {open && (
         <div
+          data-modale-voile
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           role="dialog"
           aria-modal="true"
@@ -42,6 +43,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
         >
           <div
             ref={dialogRef}
+            data-modale
             className="w-full max-w-md rounded-xl bg-white shadow-xl"
             onClick={e => e.stopPropagation()}
           >

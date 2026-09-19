@@ -28,12 +28,13 @@ function RejectModal({ onSubmit, onClose }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div data-modale-voile className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="collab-reject-title"
+        data-modale
         className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
         onClick={e => e.stopPropagation()}
       >

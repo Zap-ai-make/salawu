@@ -18,8 +18,17 @@ function ReceiptModal({ transaction, onClose }) {
 
   if (!transaction) return null
 
+  // `data-modale-voile` et `data-portail` sont des FAITS inertes.
+  //
+  // ⚠ `data-portail` N'EST PAS DECORATIF : cette modale rend par `createPortal`
+  // dans `document.body`, donc HORS de `<main data-espace="boutique">`. La portee
+  // d'espace ne l'atteint pas, et sans ce second fait le lot L9.6 aurait habille
+  // onze modales sur douze en silence. Voir le bloc « LA MODALE » de
+  // src/index.css, qui porte les deux cas cote a cote.
   return createPortal(
     <div
+      data-modale-voile
+      data-portail
       className="fixed inset-0 z-[9990] flex items-start justify-center overflow-y-auto bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
