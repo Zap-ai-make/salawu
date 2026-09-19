@@ -431,7 +431,30 @@ intérieur qui porte le mot.
 réellement mesuré. Et une sonde réparée doit être prouvée capable de rougir à
 nouveau — ce qui a été fait en retirant le bloc CSS par `git stash`.
 
-### 10.4 Deux décisions de palette qui se défendent
+### 10.4 État des vérifications à la fin de la campagne
+
+```
+npx eslint src/ tests/ scripts/        exit 0
+npm run build                          ok
+npm run qa:jetons                      tous les contrastes annoncés confirmés
+npm run qa:taofic                      5 passed
+vitest tests/unit tests/components     128 passed (128) / 2502 passed (2502)
+npm run qa:full                        86 passed, 1 skipped, 0 failed
+```
+
+La progression du banc complet au fil de la campagne :
+
+```
+avant L9.3    81 passed,  5 failed, 1 skipped
+après L9.4    84 passed,  2 failed, 1 skipped
+après L9.5    86 passed,  0 failed, 1 skipped
+```
+
+**C'est la première fois que `qa:full` est entièrement vert**, et le chiffre de
+départ dit pourquoi : les cinq rouges n'ont pas été introduits par cette
+campagne — ils y ont seulement été VUS.
+
+### 10.5 Deux décisions de palette qui se défendent
 
 Elles sont argumentées dans `src/utils/statutDuMouvement.js` et reprises ici
 parce qu'elles engagent le système, pas un écran :
@@ -445,7 +468,7 @@ parce qu'elles engagent le système, pas un écran :
   TC-177 garde les quatre formes distinctes : s'il rougit, c'est la décision
   qu'il faut rouvrir, pas le test.
 
-### 10.5 Ce qui reste, après L9
+### 10.6 Ce qui reste, après L9
 
 | Sujet | État | Nature |
 |---|---|---|
