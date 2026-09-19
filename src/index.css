@@ -1239,6 +1239,127 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LA PASTILLE DE STATUT (lot L9.5)
+   ───────────────────────────────────────────────────────────────────────────
+   ELLE ÉTAIT VERTE QUEL QUE SOIT LE MOT QU'ELLE ENTOURAIT.
+
+   `HistoriqueTable.jsx` écrivait `bg-green-100 text-green-800` en dur, sans
+   jamais lire le statut. « Annulée », « Remboursée », « Non Terminées »
+   portaient toutes le vert de la réussite. La première exigence du chantier est
+   qu'aucune couleur ne porte seule une information ; ici la couleur faisait
+   pire — elle CONTREDISAIT le mot.
+
+   Le banc le dénonçait depuis qu'il a été écrit, et il était rouge :
+
+       « Annulée » est peint exactement comme « Validée »
+         (oklch(0.962 0.044 156.743) sur oklch(0.448 0.119 151.328))
+
+   ⚠ INVISIBLE JUSQU'À CE BANC, parce que le semis ne contenait que des
+   « Validée » — l'unique cas où ce code avait raison par accident. C'est
+   l'argument entier de l'état « erreur partielle » : un jeu de données qui ne
+   contient que le cas nominal ne prouve rien.
+
+   OÙ VIT LA DÉCISION
+
+   Pas ici. `src/utils/statutDuMouvement.js` dit quel palier prend quel statut,
+   et il le justifie sur la sémantique déjà écrite dans `chiffresDuJour.js` —
+   « Annulée » n'a jamais eu lieu, « Remboursée » a rendu ce qu'elle avait pris.
+   Ce fichier ne fait que peindre les quatre paliers. TC-177 tient la table.
+
+   DEUX POINTS QUI SE DÉFENDENT, ET QUI SONT ARGUMENTÉS DANS LE MODULE
+
+   · aucun statut d'opération ne prend `--echec` : le jeton est réservé à
+     l'échec, et annuler ou rembourser sont des gestes normaux du comptoir ;
+   · « Remboursée » et « Annulée » partagent la teinte neutre, et sont séparées
+     par le MOT et la FORME — le troisième canal de la maquette, « une couleur,
+     un mot, une forme ».
+
+   LES QUATRE TIENNENT AA SUR LEUR PROPRE FOND, et c'est mesuré :
+
+       valide    #0f6e3f sur #eef6f2   5,75:1
+       attente   #8a5a00 sur #fbf5e8   5,46:1
+       rejete    #a01b1b sur #fbeeee   6,96:1
+       neutre    #5b6470 sur --canvas  5,52:1
+
+   Les trois fonds pastels sont ceux de la maquette, repris tels quels ; ils ne
+   sont pas des jetons parce qu'ils ne servent qu'ici — en faire une famille de
+   @theme laisserait croire qu'on peut les poser ailleurs.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* La pastille elle-même : carrée, cerclée, jamais un aplat pastel. La bordure
+   n'est pas décorative — c'est elle qui donne une limite visible au contrôle
+   quand le fond est presque celui du papier (WCAG 1.4.11), et c'est pour cela
+   qu'elle prend `currentColor` plutôt qu'un gris. */
+.design-registre [data-espace='boutique'] [data-statut] {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  /* ⚠ Les deux lignes qui neutralisent le défaut. Sans elles, `bg-green-100`
+     et `text-green-800` (0,1,0) resteraient, et tout ce bloc ne serait qu'une
+     bordure posée autour d'un mensonge. Cette règle pèse (0,3,0). */
+  background-color: var(--color-papier);
+  color: var(--color-encre-doux);
+}
+
+.design-registre [data-espace='boutique'] [data-statut='valide'] {
+  color: var(--color-entree);
+  background-color: #eef6f2;
+}
+
+.design-registre [data-espace='boutique'] [data-statut='attente'] {
+  color: var(--color-alerte);
+  background-color: #fbf5e8;
+}
+
+/* Déclaré bien qu'aucun statut d'OPÉRATION ne le porte (cf. le module) : il
+   sert les écrans de décision, où un rejet est vraiment un rejet. Le déclarer
+   ici évite qu'on le réinvente ailleurs avec une autre teinte. */
+.design-registre [data-espace='boutique'] [data-statut='rejete'] {
+  color: var(--color-echec);
+  background-color: #fbeeee;
+}
+
+.design-registre [data-espace='boutique'] [data-statut='neutre'] {
+  color: var(--color-encre-doux);
+  background-color: var(--color-canvas);
+}
+
+/* La forme. Sept pixels, `currentColor` : elle prend la teinte de son palier
+   sans qu'on ait à la redéclarer quatre fois. `flex: 0 0 auto` pour qu'elle ne
+   se comprime pas quand le mot est long. Elle est `aria-hidden` dans le JSX —
+   elle ne dit rien que le mot ne dise, elle le REDIT sur un autre canal. */
+.design-registre [data-espace='boutique'] [data-forme] {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  background-color: currentColor;
+}
+
+.design-registre [data-espace='boutique'] [data-forme='rond'] {
+  border-radius: 50%;
+}
+
+.design-registre [data-espace='boutique'] [data-forme='carre'] {
+  border-radius: 0;
+}
+
+.design-registre [data-espace='boutique'] [data-forme='losange'] {
+  transform: rotate(45deg);
+}
+
+/* La barre dit « rien ne s'est passé » : elle est couchée, et plus fine. */
+.design-registre [data-espace='boutique'] [data-forme='barre'] {
+  width: 9px;
+  height: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LE VOILE DU BANDEAU (lot L9.4)
    ───────────────────────────────────────────────────────────────────────────
    LE WORDMARK TOMBAIT À 1,61:1, ET SEULEMENT À 1440 px.

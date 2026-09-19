@@ -212,7 +212,12 @@ test.describe('États limites', () => {
     // information. Ici le défaut est pire que « seule » — elle CONTREDIT le mot
     // qu'elle entoure.
     //
-    // `HistoriqueTable.jsx:76` peint la pastille de statut en
+    // ⟲ CORRIGÉ AU LOT L9.5. Ce qui suit décrit l'état d'AVANT, et reste écrit
+    // parce que c'est ce que ce contrôle empêche de revenir. Le défaut avait été
+    // attribué au lot L8.4, qui a corrigé autre chose : ce test est donc resté
+    // rouge d'un lot à l'autre, sans que personne le voie.
+    //
+    // `HistoriqueTable.jsx` peignait la pastille de statut en
     // `bg-green-100 text-green-800` SANS JAMAIS REGARDER LE STATUT. Une
     // opération « Annulée » s'affiche donc dans le vert de la réussite. Sur un
     // écran parcouru vite, la couleur se lit avant le mot.
@@ -223,12 +228,27 @@ test.describe('États limites', () => {
     await allerA(page, ECRANS_DE_DONNEES[2]) // historique
 
     const motsDeStatut = Object.values(STATUTS)
+    // ⚠ « L'ÉLÉMENT LE PLUS INTÉRIEUR QUI PORTE LE MOT », ET NON « UN SPAN SANS
+    // ENFANT ». La première version retenait les `span` FEUILLES, ce qui était
+    // vrai du produit au moment où elle a été écrite et a cessé de l'être dès que
+    // la pastille a reçu sa forme (un `<span>` vide, `aria-hidden`). La sonde
+    // n'a alors plus rien trouvé — « 0 trouvé(s) à l'écran » — et c'est son
+    // garde-fou, et non son assertion, qui l'a dit. Sans ce garde, elle serait
+    // passée au vert en n'ayant rien mesuré.
+    //
+    // La règle ci-dessous ne suppose plus rien de la structure : on garde
+    // l'élément dont le texte est le mot de statut et dont AUCUN descendant ne
+    // porte déjà ce même texte. C'est la pastille, quelle que soit la façon dont
+    // elle est composée — et le `<td>` qui l'enveloppe est écarté tout seul.
     const releve = await page.evaluate((mots) => {
       const trouves = []
-      for (const el of document.querySelectorAll('span')) {
-        if (el.querySelector('*')) continue // feuilles uniquement
+      for (const el of document.querySelectorAll('span, div, td, p')) {
         const mot = (el.textContent || '').trim()
         if (!mots.includes(mot)) continue
+        const plusInterieur = ![...el.querySelectorAll('*')].some(
+          (enfant) => (enfant.textContent || '').trim() === mot,
+        )
+        if (!plusInterieur) continue
         const cs = getComputedStyle(el)
         trouves.push({ mot, fond: cs.backgroundColor, encre: cs.color })
       }
@@ -252,9 +272,11 @@ test.describe('États limites', () => {
       expect(
         couleur,
         `« ${mot} » est peint exactement comme « ${STATUTS.VALIDEE} » (${couleur}). ` +
-          'La pastille de HistoriqueTable.jsx:76 est en dur, elle ne lit pas le statut : ' +
-          'une opération annulée porte le vert de la réussite. ' +
-          '⟲ CORRECTION PRÉVUE AU LOT L8.4 (écran Historique).',
+          'La pastille ne lit plus le statut : une opération annulée porte le vert ' +
+          'de la réussite. Vérifier que `data-statut` est bien posé dans ' +
+          'HistoriqueTable.jsx et que le bloc « LA PASTILLE DE STATUT » de ' +
+          'src/index.css (lot L9.5) est toujours là — la règle de la table vit ' +
+          'dans utils/statutDuMouvement.js (TC-177).',
       ).not.toBe(couleurDeLaReussite)
     }
   })

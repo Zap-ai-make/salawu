@@ -4,6 +4,7 @@ import { getClientName, formatTransactionDateTime } from '../../utils/helpers.js
 import { directionFromType, directionStyles } from '../../utils/transactionDirection.js'
 import DirectionBadge from '../ui/DirectionBadge.jsx'
 import { sensDuStock, montantSigne } from '../../utils/signeDuStock.js'
+import { cleDuStatut, formeDuStatut } from '../../utils/statutDuMouvement.js'
 import { IS_REGISTRE } from '../../constants/designSystem.js'
 import { useWindowedRows } from '../../hooks/useWindowedRows.js'
 import ReceiptModal from '../receipt/ReceiptModal.jsx'
@@ -42,6 +43,13 @@ function HistoriqueTable({ transactions = [] }) {
   const renderRow = (transaction, index, ref) => {
     const direction = directionFromType(transaction.type)
     const ds = directionStyles(direction)
+    // ⚠ LE MOT AFFICHÉ ET LA COULEUR SE CALCULENT SUR LA MÊME VALEUR.
+    // Une transaction sans statut s'affiche « Validée » depuis toujours ; colorer
+    // `transaction.statut` directement aurait rendu le mot « Validée » en gris
+    // neutre, c'est-à-dire le défaut que ce lot corrige, retourné. Le repli est
+    // conservé tel quel : le changer serait une décision métier, pas un lot de
+    // design.
+    const statutAffiche = transaction.statut || 'Validée'
     return (
       <tr
         ref={ref}
@@ -85,8 +93,30 @@ function HistoriqueTable({ transactions = [] }) {
                transaction.amount ? `${transaction.amount} FCFA` : '-')}
         </td>
         <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
-          <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
-            {transaction.statut || 'Validée'}
+          {/* ⚠ CETTE PASTILLE ÉTAIT VERTE QUEL QUE SOIT LE STATUT.
+              `bg-green-100 text-green-800` était écrit en dur : une opération
+              « Annulée » s'affichait dans le vert de la réussite, et sur un écran
+              parcouru vite, la couleur se lit avant le mot. Le banc le dénonçait
+              depuis qu'il a été écrit (etats-limites.spec.js).
+
+              `data-statut` et `data-forme` sont des FAITS, décidés par
+              `utils/statutDuMouvement.js` (TC-177) : la règle vit dans un module
+              pur, pas dans ce JSX. L'apparence vient de src/index.css sous la
+              portée. Les classes historiques restent — TAOFIC est en production,
+              et il ne porte ni la portée ni les attributs.
+
+              La FORME est le troisième canal exigé par la maquette : « une
+              couleur, un mot, une forme ». C'est elle qui sépare « Remboursée »
+              d'« Annulée », qui partagent délibérément la même teinte neutre.
+              `aria-hidden` : elle ne dit rien que le mot à côté ne dise déjà. */}
+          <span
+            data-statut={IS_REGISTRE ? cleDuStatut(statutAffiche) : undefined}
+            className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm"
+          >
+            {IS_REGISTRE && (
+              <span data-forme={formeDuStatut(statutAffiche)} aria-hidden="true" />
+            )}
+            {statutAffiche}
           </span>
         </td>
         <td className="border border-gray-200 px-4 py-3 text-base whitespace-nowrap">
