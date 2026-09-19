@@ -45,8 +45,20 @@ export async function seConnecter(page, compte) {
 
   // Repère de sortie valable aux DEUX largeurs : la barre de navigation existe
   // dans les deux formes, alors qu'un lien nommé n'existe qu'au-dessus de `md`.
-  await expect(page.locator('nav').first()).toBeVisible({ timeout: 60_000 })
-  await expect(page.locator('input[type="email"]')).toHaveCount(0, { timeout: 60_000 })
+  //
+  // ⚠ 120 s ET NON 60 s — RELEVÉ APRÈS UN ÉCHEC OBSERVÉ, pas par précaution.
+  // Le banc complet du lot L9.8 a rendu « element(s) not found » sur ce
+  // `locator('nav')`, au treizième test d'une série de trente minutes — alors
+  // que la CAPTURE D'ÉCHEC montre la navigation bien présente. La page avait
+  // rendu ; elle avait seulement mis plus de 60 s sous charge, chaque test de ce
+  // fichier payant une connexion complète.
+  //
+  // On relève le plafond, on n'ajoute PAS de `retries` : c'est la doctrine déjà
+  // écrite plus bas dans ce fichier. Une nouvelle tentative masquerait un vrai
+  // problème de synchronisation ; un plafond réaliste cesse seulement
+  // d'interrompre un travail correct mais lent.
+  await expect(page.locator('nav').first()).toBeVisible({ timeout: 120_000 })
+  await expect(page.locator('input[type="email"]')).toHaveCount(0, { timeout: 120_000 })
 }
 
 /**

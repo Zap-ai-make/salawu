@@ -458,6 +458,7 @@ test.describe('Écrans de travail', () => {
     const dispose = await grille.evaluate((el) => ({
       affichage: getComputedStyle(el).display,
       blocs: el.querySelectorAll('fieldset').length,
+      largeur: Math.round(el.getBoundingClientRect().width),
       // Combien de blocs partagent la meme ordonnee que le premier ?
       surLaPremiereRangee: (() => {
         const f = [...el.querySelectorAll('fieldset')]
@@ -469,10 +470,44 @@ test.describe('Écrans de travail', () => {
 
     expect(dispose.affichage, 'la serie de reseaux doit etre une grille').toBe('grid')
     expect(dispose.blocs, 'salawu declare six reseaux').toBe(6)
-    expect(
-      dispose.surLaPremiereRangee,
-      `blocs sur la premiere rangee : ${dispose.surLaPremiereRangee} — ils sont encore empiles`,
-    ).toBeGreaterThan(1)
+
+    /**
+     * ⚠ PREMIER JET ROUGE A 375 px, ET C'ETAIT MON CONTROLE, PAS LE PRODUIT.
+     *
+     * Il exigeait plusieurs colonnes A TOUTES LES LARGEURS. Or la regle est
+     * `repeat(auto-fill, minmax(232px, 1fr))` : sur un telephone, une seule
+     * colonne tient, et c'est EXACTEMENT ce qu'on veut — deux blocs de 232 px
+     * dans 343 px de contenu se chevaucheraient ou deborderaient.
+     *
+     * Un controle qui exige d'une grille responsive le meme rendu partout n'en
+     * verifie pas la regle : il verifie une largeur d'ecran. On calcule donc le
+     * nombre de colonnes que la largeur PERMET, et on n'exige la mise cote a
+     * cote que la ou elle a un sens.
+     *
+     * 232 px et 10 px de gouttiere sont les valeurs de src/index.css ; les
+     * ecrire ici serait les dupliquer, mais les LIRE demanderait de parser la
+     * feuille. Elles sont donc recopiees avec cette note, et le jour ou l'une
+     * change, ce chiffre est le seul endroit a corriger.
+     */
+    const MIN_COLONNE = 232
+    const GOUTTIERE = 10
+    const colonnesPossibles = Math.floor(
+      (dispose.largeur + GOUTTIERE) / (MIN_COLONNE + GOUTTIERE),
+    )
+
+    if (colonnesPossibles > 1) {
+      expect(
+        dispose.surLaPremiereRangee,
+        `${dispose.largeur}px permettent ${colonnesPossibles} colonnes, mais ` +
+          `${dispose.surLaPremiereRangee} bloc(s) tiennent la premiere rangee — ` +
+          'ils sont encore empiles',
+      ).toBeGreaterThan(1)
+    } else {
+      expect(
+        dispose.surLaPremiereRangee,
+        `${dispose.largeur}px ne permettent qu une colonne : un seul bloc par rangee`,
+      ).toBe(1)
+    }
   })
 
   test('un champ de montant porte la chasse de l argent, un numero d agent non', async ({ page }) => {
