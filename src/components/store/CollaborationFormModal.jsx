@@ -146,7 +146,7 @@ function CollaborationFormModal({ onClose, onCreated }) {
           {/* Montant */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
-            <input type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)}
+            <input data-champ-montant type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder="Ex. 20000" className="w-full rounded border border-gray-300 px-3 py-2 text-sm" aria-label="Montant" />
           </div>
 

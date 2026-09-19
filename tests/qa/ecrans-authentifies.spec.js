@@ -441,6 +441,86 @@ test.describe('Écrans de travail', () => {
       .not.toBe('none')
   })
 
+  test('les comptes agent par reseau tiennent en grille, pas en pile', async ({ page }) => {
+    // Le formulaire client demande deux valeurs par reseau. Chez salawu, qui en
+    // compte six, cela faisait six blocs empiles : un ecran entier de
+    // defilement pour douze champs.
+    //
+    // ⚠ ON MESURE LA MISE EN PAGE RENDUE, PAS LA REGLE ECRITE. Une grille
+    // `auto-fill` ne produit plusieurs colonnes que si la largeur disponible le
+    // permet : une regle presente peut ne rien changer. Comparer les
+    // ORDONNEES des blocs est la seule facon de savoir s'ils sont cote a cote.
+    await allerA(page, ECRANS[5]) // formulaire
+
+    const grille = page.locator('[data-reseaux-grille]')
+    await expect(grille).toBeVisible({ timeout: 30_000 })
+
+    const dispose = await grille.evaluate((el) => ({
+      affichage: getComputedStyle(el).display,
+      blocs: el.querySelectorAll('fieldset').length,
+      // Combien de blocs partagent la meme ordonnee que le premier ?
+      surLaPremiereRangee: (() => {
+        const f = [...el.querySelectorAll('fieldset')]
+        if (!f.length) return 0
+        const y = Math.round(f[0].getBoundingClientRect().top)
+        return f.filter((b) => Math.abs(Math.round(b.getBoundingClientRect().top) - y) < 4).length
+      })(),
+    }))
+
+    expect(dispose.affichage, 'la serie de reseaux doit etre une grille').toBe('grid')
+    expect(dispose.blocs, 'salawu declare six reseaux').toBe(6)
+    expect(
+      dispose.surLaPremiereRangee,
+      `blocs sur la premiere rangee : ${dispose.surLaPremiereRangee} — ils sont encore empiles`,
+    ).toBeGreaterThan(1)
+  })
+
+  test('un champ de montant porte la chasse de l argent, un numero d agent non', async ({ page }) => {
+    // ⚠ LES DEUX MOITIES DE CE CONTROLE COMPTENT AUTANT L'UNE QUE L'AUTRE.
+    //
+    // Il eut ete tentant de marquer les champs de montant par leur
+    // `inputMode="numeric"`, qui est deja pose et qui dit « des chiffres ». Le
+    // formulaire client l'emploie AUSSI pour les numeros d'agent, qui sont des
+    // identifiants et non des sommes : les mettre en chasse fixe calee a droite
+    // les ferait lire comme de l'argent.
+    //
+    // La seconde assertion garde donc ce qui NE DOIT PAS changer. Sans elle, un
+    // lot futur pourrait « simplifier » le marqueur en `inputMode` et ce
+    // controle resterait vert.
+    await allerA(page, ECRANS[5]) // formulaire
+
+    const numeroAgent = page
+      .locator('[data-reseaux-grille] input[inputmode="numeric"]')
+      .first()
+    await expect(numeroAgent).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await numeroAgent.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return { police: cs.fontFamily, alignement: cs.textAlign }
+    })
+    expect(rendu.police, 'un numero d agent n est pas une somme')
+      .not.toMatch(/Plex Mono/i)
+    expect(rendu.alignement, 'un numero d agent ne se cale pas a droite')
+      .not.toBe('right')
+
+    // Et le champ qui EST une somme : celui de la modale de transaction.
+    await allerA(page, ECRANS[1]) // transactions
+    const montant = page.locator('input[data-champ-montant]').first()
+    await expect(montant).toBeVisible({ timeout: 30_000 })
+
+    const argent = await montant.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return {
+        police: cs.fontFamily,
+        chiffres: cs.fontVariantNumeric,
+        alignement: cs.textAlign,
+      }
+    })
+    expect(argent.police, 'un montant se saisit en chasse fixe').toMatch(/Plex Mono/i)
+    expect(argent.chiffres, 'chiffres tabulaires').toContain('tabular-nums')
+    expect(argent.alignement, 'un montant se cale a droite').toBe('right')
+  })
+
   test('une legende de filtre n est pas un titre', async ({ page }) => {
     // ⚠ CE CONTROLE VISE LA PIRE DES TRENTE-NEUF, PAS UNE AU HASARD.
     //

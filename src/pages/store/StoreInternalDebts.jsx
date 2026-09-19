@@ -176,7 +176,7 @@ function DebtRow({ debt, credits, tbl }) {
                 Compenser {fmt(compensable)}
               </button>
             )}
-            <input type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)}
+            <input data-champ-montant type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)}
               placeholder="Montant" className="w-28 rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Montant règlement" />
             <select value={method} onChange={e => setMethod(e.target.value)} className="rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Méthode">
               {METHODS.map(m => {

@@ -371,6 +371,7 @@ function TransactionForm({ clients }) {
           </label>
           <input
             id={`${idChamps}-montant-fcfa`}
+            data-champ-montant
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}

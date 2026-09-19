@@ -1239,6 +1239,101 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LE FORMULAIRE : LA GRILLE DES RÉSEAUX ET LE CHAMP DE MONTANT (lot L9.8)
+   ───────────────────────────────────────────────────────────────────────────
+   SIX BLOCS EMPILÉS POUR DOUZE CHAMPS.
+
+   Le formulaire client demande deux valeurs par réseau — numéro d'agent et code
+   d'agent. Chez salawu, qui compte six réseaux, cela fait six blocs posés les
+   uns sous les autres : un écran entier de défilement pour douze champs, alors
+   que chacun tient dans un tiers de la largeur.
+
+   ⚠ LA STRUCTURE DE LA MAQUETTE ÉTAIT DÉJÀ LÀ. Le JSX écrit un `<fieldset>` par
+   réseau, une `<legend>` qui le nomme, et une grille de deux colonnes à
+   l'intérieur — c'est exactement `.reseau-bloc` et sa `.paire`. Il ne manquait
+   que la grille EXTÉRIEURE. Ce lot ne restructure donc rien : il ajoute un fait
+   (`data-reseaux-grille`) et trois règles.
+
+   `auto-fill` et non un nombre de colonnes fixe : le nombre de réseaux dépend du
+   PROFIL. TAOFIC en a un, salawu six, un client futur en aura trois. Une grille
+   à deux colonnes codée en dur laisserait un trou chez l'un et serrerait
+   l'autre. La largeur minimale de 232px vient de la maquette et correspond à
+   deux champs lisibles côte à côte.
+
+   ⚠ `space-y-3` RESTE SUR L'ÉLÉMENT, et ce n'est pas un oubli : TAOFIC est
+   mono-réseau. Un seul bloc dans une grille ou dans une pile, c'est le même
+   dessin — mais le jour où son profil gagne un réseau, il retrouve l'empilement
+   qu'il a aujourd'hui, et non une grille qu'il n'a pas demandée.
+
+   LE CHAMP DE MONTANT
+
+   `.saisie--montant` porte la signature du produit là où l'argent se SAISIT, et
+   plus seulement là où il s'affiche : chasse fixe, chiffres tabulaires, calé à
+   droite. Sur un champ où l'on tape « 1 250 000 », la chasse fixe est ce qui
+   permet de recompter les chiffres sans les relire un à un.
+
+   ⚠ POURQUOI UN MARQUEUR, ET NON `inputMode="numeric"`. C'eût été tentant — le
+   fait est déjà là, et il dit « des chiffres ». Il est FAUX pour cet usage : le
+   formulaire client l'emploie aussi pour les numéros d'agent, qui sont des
+   identifiants, pas des sommes. Les mettre en chasse fixe calée à droite les
+   ferait lire comme de l'argent. Un numéro n'est pas un montant.
+
+   ⚠ QUATRE CHAMPS MARQUÉS SUR CINQ. Celui du règlement d'une dette
+   (`TransactionTable`) est délibérément laissé : il vit CENTRÉ entre deux
+   boutons « − » et « + », et le caler à droite le décollerait du « + » qui
+   l'incrémente. La chasse fixe sans l'alignement aurait demandé une seconde
+   variante pour un seul champ. Il garde son dessin, et c'est écrit ici plutôt
+   que laissé à deviner.
+
+   Aucune taille n'est imposée : la maquette dit 19px, ce qui convient au champ
+   pleine largeur de la modale de transaction et déborderait du champ compact
+   des dettes internes (`w-28`). La CHASSE est la signature ; la taille est une
+   affaire de contexte.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-reseaux-grille] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 10px;
+}
+
+/* Le bloc d'un réseau. Un seul `<fieldset>` existe dans cet espace — celui-ci —
+   et les deux autres du dépôt vivent dans l'espace dealer, que la portée
+   n'atteint pas. Le sélecteur de balise est donc sûr, et il n'y a pas de
+   marqueur à tenir à jour. */
+.design-registre [data-espace='boutique'] fieldset {
+  border: 1px solid var(--color-trait-200);
+  border-radius: 2px;
+}
+
+.design-registre [data-espace='boutique'] fieldset legend {
+  font-size: 0.78125rem; /* 12,5px */
+  font-weight: 600;
+  color: var(--color-encre);
+}
+
+/* ⚠ CETTE RÈGLE DOIT BATTRE CELLE DES CHAMPS (lot L9.2), QUI EST PLUS BAS DANS
+   CE FICHIER. Cette dernière pose `font-family: inherit` sur tout `input` et
+   pèse (0,6,1) : une classe, un attribut d'espace, quatre `:not()` d'attribut,
+   une balise. À spécificité égale, c'est elle qui l'emporterait, puisqu'elle
+   vient après.
+
+   Le sélecteur ci-dessous reprend donc les quatre mêmes exclusions ET ajoute
+   `[data-champ-montant]`, ce qui le porte à (0,7,1). Il gagne par la
+   SPÉCIFICITÉ, et non par l'ordre — déplacer l'un des deux blocs ne changerait
+   rien. Les exclusions sont recopiées pour cette raison seule : sans elles, la
+   règle retomberait à (0,3,1) et la chasse fixe ne paraîtrait jamais. */
+.design-registre
+  [data-espace='boutique']
+  input[data-champ-montant]:not([type='checkbox']):not([type='radio']):not([type='file']):not([class*='border-red']) {
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LES LIBELLÉS (lot L9.7)
    ───────────────────────────────────────────────────────────────────────────
    « DU : » ÉTAIT ÉCRIT PLUS GROS QUE LA MOITIÉ DES TITRES DU PRODUIT.

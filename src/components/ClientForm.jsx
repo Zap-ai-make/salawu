@@ -252,7 +252,12 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client',
           <h3 className="text-sm font-semibold text-gray-800 mb-2">
             Comptes agent par réseau
           </h3>
-          <div className="space-y-3">
+          {/* `data-reseaux-grille` est un FAIT : ces blocs sont une SERIE de
+              comptes, un par reseau. Empiles, les six occupent un ecran entier
+              pour douze champs. La maquette les met en grille ; l'apparence
+              vient de src/index.css sous la portee. `space-y-3` reste, pour
+              TAOFIC qui est mono-reseau et n'a qu'un bloc a montrer. */}
+          <div data-reseaux-grille className="space-y-3">
             {NETWORK_OPTIONS.map((network) => {
               const key = network.toLowerCase()
               return (

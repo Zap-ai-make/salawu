@@ -156,6 +156,7 @@ function DealerTransferForm() {
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">Montant (FCFA)</label>
           <input
+            data-champ-montant
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
