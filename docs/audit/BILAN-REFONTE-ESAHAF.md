@@ -1,7 +1,11 @@
 # Bilan — refonte du design, espace boutique ESAHAF
 
-> Point 11 de `METHODE-REFONTE-DESIGN.md` §17.2. **Point d'arrêt dur** : rien n'est
-> entrepris au-delà sans nouvelle instruction.
+> Point 11 de `METHODE-REFONTE-DESIGN.md` §17.2.
+>
+> ⚠ **Le point d'arrêt a été levé le 2026-09-19**, avec une contrainte
+> ajoutée : « ne touche pas aux écrans dealer et gérant pour l'instant ». La
+> campagne L9 (§10) s'est déroulée sous cette instruction. Les §1 à §9 décrivent
+> l'état au point d'arrêt ; le §10 décrit ce qui a suivi.
 >
 > Branche : `refonte-design-esahaf` · Date : 2026-09-18
 > Périmètre : le `Layout` et les dix routes boutique de `src/App.jsx`.
@@ -16,13 +20,13 @@
 
 ```
 git log --oneline $(git merge-base main refonte-design-esahaf)..HEAD | wc -l
-  42 commits
+  54 commits          (42 au point d'arrêt, + 12 pendant la campagne L9)
 
 git diff --shortstat $(git merge-base main refonte-design-esahaf)..HEAD
-  206 files changed, 14100 insertions(+), 991 deletions(-)
+  238 files changed, 21091 insertions(+), 996 deletions(-)
 
 git diff --name-only --diff-filter=A <base>..HEAD | grep -c '^tests/'
-  31 fichiers de test ajoutés
+  36 fichiers de test ajoutés
 ```
 
 Les onze points de la méthode ont été parcourus : le filet (4), les jetons (5),
@@ -346,6 +350,109 @@ Les points 4 à 10 sont faits. Ce document est le point 11.
 été effectué, aucun identifiant de production n'a été employé, aucune écriture
 n'a touché Firestore production. Émulateurs uniquement.**
 
-Trois sujets attendent une décision avant tout travail supplémentaire : les
+Trois sujets attendaient une décision avant tout travail supplémentaire : les
 phrases de vide (§6), la convention de signe (§6), et la capture différentielle
 de TAOFIC (§4).
+
+> ⟲ **À JOUR AU 2026-09-19.** La convention de signe a été TRANCHÉE par le
+> client et implémentée (commit « la convention de signe — un depot sort du
+> stock, un retrait y rentre », TC-174). Le point d'arrêt a été levé, et la
+> campagne L9 a suivi : voir §10. **Les phrases de vide attendent toujours une
+> décision**, et la capture différentielle de TAOFIC n'a toujours pas été
+> faite — le mécanisme, lui, est gardé par `npm run qa:taofic`.
+
+---
+
+## 10. Campagne L9 — après la levée du point d'arrêt (2026-09-19)
+
+Cinq lots, sous la contrainte « ne touche pas aux écrans dealer et gérant ».
+Aucun fichier de `src/pages/dealer/` ni de `src/pages/admin/` n'a été modifié.
+
+| Lot | Ce qu'il corrige | Preuve |
+|---|---|---|
+| **L9.1** | Le soulignement vert survivait sous le titre du Formulaire — un `h2` sans marqueur, donc hors de portée CSS | TC-176 balaie les 135 fichiers du graphe boutique ; rouge vérifié avant correction |
+| **L9.2** | **Les champs de saisie n'avaient jamais été dessinés** — zéro règle dans `index.css` | banc rouge sans le bloc CSS, vert avec |
+| **L9.3** | La sonde de contraste du bandeau ne mesurait plus rien depuis L7.1 | 3 failed → 11 passed |
+| **L9.4** | Le wordmark tombait à 1,61:1 sur la photographie, à 1440 px | tolérance figée éteinte d'elle-même |
+| **L9.5** | Une opération « Annulée » portait le vert de la réussite | banc rouge sans le bloc CSS, vert avec ; TC-177 |
+
+### 10.1 Le relevé qui a motivé le lot des champs
+
+Sur les onze points d'entrée, imports suivis (135 fichiers, 43 champs) :
+
+```
+43   champs dans le périmètre
+26   avec une bordure sous 3:1        → WCAG 1.4.11 non tenu
+18   avec `focus:outline-none`        → WCAG 2.4.7 en jeu
+11   dont le focus n'était plus dit QUE par une bordure verte
+ 4   avec une bordure d'erreur à 1,90:1
+```
+
+L'erreur rouge a été **mise à niveau** (1,90:1 → 7,87:1), pas effacée : sans
+l'exclusion `:not([class*='border-red'])`, la règle neutre à (0,5,1) aurait
+écrasé le signal d'erreur de quatre champs. Repeindre une bordure ne vaut pas de
+faire disparaître un avertissement.
+
+### 10.2 ⚠ Ce que cette campagne a surtout révélé : le banc n'était plus rejoué
+
+`npm run qa:full` portait **cinq rouges** dont personne n'avait connaissance. Ils
+n'étaient ni nouveaux ni causés par un lot récent : ils dataient de L7.1 et de
+L8.4, et le banc complet n'avait pas tourné depuis.
+
+Les deux causes valent d'être retenues, parce qu'elles ne se ressemblent pas :
+
+1. **Un locator périmé par une correction antérieure.** Le lot L7.1 avait fait du
+   wordmark un `span` au lieu d'un `h1` — c'était son objet même. Le banc
+   cherchait toujours `header h1` et ne trouvait plus rien. Il ne mesurait donc
+   plus le contraste du bandeau, et n'a pas vu qu'il était tombé à 1,61:1.
+2. **Une correction attribuée au mauvais lot.** Le contrôle de la pastille de
+   statut nommait lui-même « CORRECTION PRÉVUE AU LOT L8.4 ». Le lot L8.4 a
+   corrigé autre chose. Le rouge est resté, et le commentaire a continué
+   d'affirmer qu'une correction était prévue.
+
+**Les leçons :** un test rouge qu'on n'exécute pas ne garde rien, et une promesse
+de correction écrite dans un test n'est pas une correction. Le banc complet doit
+tourner à chaque lot, pas à chaque campagne.
+
+### 10.3 ⚠ Une sonde cassée par la correction qu'elle vérifie
+
+En donnant sa **forme** à la pastille de statut — le troisième canal exigé par
+la maquette — le lot L9.5 a ajouté un `<span>` vide à l'intérieur d'elle. La
+sonde ne retenait que les `span` **sans enfant**, ce qui était vrai du produit
+quand elle a été écrite. Elle n'a plus rien trouvé.
+
+Ce qui l'a dit n'est pas son assertion mais son **garde-fou** : « le banc sème
+quatre statuts distincts ; 0 trouvé(s) à l'écran ». Sans lui, elle serait passée
+au vert en n'ayant rien mesuré — exactement le faux vert que ce chantier a appris
+à redouter. Sa règle ne suppose plus rien de la structure : l'élément le plus
+intérieur qui porte le mot.
+
+**La leçon :** toute sonde qui compte doit porter une assertion sur ce qu'elle a
+réellement mesuré. Et une sonde réparée doit être prouvée capable de rougir à
+nouveau — ce qui a été fait en retirant le bloc CSS par `git stash`.
+
+### 10.4 Deux décisions de palette qui se défendent
+
+Elles sont argumentées dans `src/utils/statutDuMouvement.js` et reprises ici
+parce qu'elles engagent le système, pas un écran :
+
+- **Aucun statut d'opération ne prend `--echec`.** Le jeton porte son contrat :
+  « RÉSERVÉ à l'échec : aucune opération normale ne le porte ». Annuler ou
+  rembourser sont des gestes normaux du comptoir ; les peindre en rouge
+  accuserait d'erreur un travail correct.
+- **« Remboursée » et « Annulée » partagent la teinte neutre.** Rien ne les sépare
+  sur l'axe réussite/échec. Ce qui les sépare est le MOT et la FORME. Un cas de
+  TC-177 garde les quatre formes distinctes : s'il rougit, c'est la décision
+  qu'il faut rouvrir, pas le test.
+
+### 10.5 Ce qui reste, après L9
+
+| Sujet | État | Nature |
+|---|---|---|
+| **28 phrases de vide** + `EmptyState` : 0/11 écrans boutique | inchangé — **attend une décision** | contenu |
+| Les autres pastilles (`StatusBadge`, `DealerRequestStatusBadge`) | **non restylées**, mais elles LISENT déjà leur statut — pas fausses, pas dessinées | apparence |
+| `.ecran__compte` — « 412 clients enregistrés · 25 affichés » | absent partout | contenu |
+| `.ecran__actions` — actions à droite du titre | le produit les empile dans leur propre rangée | structurel |
+| `.modal`, `.fiche-client`, `.recap`/`.verdict` | non restylés | apparence |
+| États d'erreur et d'erreur partielle (`.etat-bloc`) | inexistants | apparence |
+| « Top client du jour » → « Client le plus actif » | prescrit par la maquette, non fait | contenu |
