@@ -375,6 +375,9 @@ Aucun fichier de `src/pages/dealer/` ni de `src/pages/admin/` n'a été modifié
 | **L9.3** | La sonde de contraste du bandeau ne mesurait plus rien depuis L7.1 | 3 failed → 11 passed |
 | **L9.4** | Le wordmark tombait à 1,61:1 sur la photographie, à 1440 px | tolérance figée éteinte d'elle-même |
 | **L9.5** | Une opération « Annulée » portait le vert de la réussite | banc rouge sans le bloc CSS, vert avec ; TC-177 |
+| **L9.6** | Douze modales, douze dessins — deux voiles, trois arrondis, trois ombres | banc rouge sans le bloc ; TC-178 |
+| **L9.7** | « Du : » écrit à 18 px, plus lourd que les lignes qu'il filtre | banc rouge sans le bloc, et sans `:has()` |
+| **L9.8** | Six blocs empilés pour douze champs ; la chasse de l'argent à la saisie | banc rouge sans le bloc |
 
 ### 10.1 Le relevé qui a motivé le lot des champs
 
@@ -431,15 +434,15 @@ intérieur qui porte le mot.
 réellement mesuré. Et une sonde réparée doit être prouvée capable de rougir à
 nouveau — ce qui a été fait en retirant le bloc CSS par `git stash`.
 
-### 10.4 État des vérifications à la fin de la campagne
+### 10.4 État des vérifications, relevé après chaque lot
 
 ```
 npx eslint src/ tests/ scripts/        exit 0
 npm run build                          ok
 npm run qa:jetons                      tous les contrastes annoncés confirmés
 npm run qa:taofic                      5 passed
-vitest tests/unit tests/components     128 passed (128) / 2502 passed (2502)
-npm run qa:full                        86 passed, 1 skipped, 0 failed
+vitest tests/unit tests/components     129 passed (129) / 2505 passed (2505)
+npm run qa:full                        98 passed, 1 skipped, 0 failed
 ```
 
 La progression du banc complet au fil de la campagne :
@@ -448,13 +451,39 @@ La progression du banc complet au fil de la campagne :
 avant L9.3    81 passed,  5 failed, 1 skipped
 après L9.4    84 passed,  2 failed, 1 skipped
 après L9.5    86 passed,  0 failed, 1 skipped
+après L9.6    92 passed,  0 failed, 1 skipped
+après L9.7    98 passed,  0 failed, 1 skipped
 ```
 
 **C'est la première fois que `qa:full` est entièrement vert**, et le chiffre de
 départ dit pourquoi : les cinq rouges n'ont pas été introduits par cette
 campagne — ils y ont seulement été VUS.
 
-### 10.5 Deux décisions de palette qui se défendent
+### 10.5 ⚠ Deux erreurs de portée, symétriques, dans un seul lot
+
+Le lot L9.6 les a commises l'une après l'autre, et elles méritent d'être gardées
+parce qu'elles délimitent exactement où une portée CSS doit s'arrêter.
+
+**Elle n'atteignait pas.** `[data-espace='boutique'] [data-modale]` habillait
+onze modales sur douze. `ReceiptModal` rend par `createPortal` dans
+`document.body`, donc hors de `<main>`. Rien ne l'aurait dit : la modale serait
+simplement restée comme avant.
+
+**Elle débordait.** `.design-registre [data-modale]`, sans portée d'espace,
+règle le portail — et va restyler trois écrans dealer, parce que
+`.design-registre` est posée sur `<html>` et que `RejectionRemarkButton` est
+partagé. C'est-à-dire précisément les écrans que la consigne du client met hors
+chantier.
+
+La forme juste est la réunion des deux cas : **dans** l'espace, **ou bien** sorti
+par un portail depuis cet espace. TC-178 la tient, et exige que les deux
+branches existent — sans quoi supprimer l'une laisserait le filet vert.
+
+**La leçon :** une portée trop large et une portée trop étroite échouent toutes
+les deux en silence. Seule une assertion sur le rendu RÉEL, dans les deux cas,
+fait la différence.
+
+### 10.6 Deux décisions de palette qui se défendent
 
 Elles sont argumentées dans `src/utils/statutDuMouvement.js` et reprises ici
 parce qu'elles engagent le système, pas un écran :
@@ -468,14 +497,57 @@ parce qu'elles engagent le système, pas un écran :
   TC-177 garde les quatre formes distinctes : s'il rougit, c'est la décision
   qu'il faut rouvrir, pas le test.
 
-### 10.6 Ce qui reste, après L9
+### 10.7 Ce qui reste, mesuré contre la maquette
 
-| Sujet | État | Nature |
+Une sonde confronte le vocabulaire de la maquette aux règles réellement
+présentes dans `src/index.css` et aux faits posés dans `src/`, commentaires
+retirés. **24 concepts sur 45 sont rendus** au terme du lot L9.8.
+
+> ⚠ Ce chiffre compte des CONCEPTS, pas des écrans ni des pixels. « Fait » veut
+> dire qu'une règle existe sous la portée, pas que chaque écran l'emploie. Et il
+> lit la feuille, pas le rendu — c'est le banc qui mesure des pixels.
+>
+> Deux corrections ont été apportées au relevé lui-même, et elles disent quelque
+> chose sur la méthode. La pagination était comptée manquante : elle est faite,
+> mais posée en `[data-pagination]`, alors que la sonde cherchait le nom de la
+> maquette. `EmptyState` était compté fait : les occurrences trouvées étaient six
+> écrans admin et trois dealer, aucun écran boutique. **Une sonde qui cherche les
+> noms de la maquette dans un produit qui n'emploie pas ces noms se trompe dans
+> les deux sens.**
+
+| Famille | Ce qui manque | Nature |
 |---|---|---|
-| **28 phrases de vide** + `EmptyState` : 0/11 écrans boutique | inchangé — **attend une décision** | contenu |
-| Les autres pastilles (`StatusBadge`, `DealerRequestStatusBadge`) | **non restylées**, mais elles LISENT déjà leur statut — pas fausses, pas dessinées | apparence |
-| `.ecran__compte` — « 412 clients enregistrés · 25 affichés » | absent partout | contenu |
-| `.ecran__actions` — actions à droite du titre | le produit les empile dans leur propre rangée | structurel |
-| `.modal`, `.fiche-client`, `.recap`/`.verdict` | non restylés | apparence |
-| États d'erreur et d'erreur partielle (`.etat-bloc`) | inexistants | apparence |
-| « Top client du jour » → « Client le plus actif » | prescrit par la maquette, non fait | contenu |
+| **Champs** | `.champ__regle` · `.champ-icone` · `.choix` · `.requis` | apparence |
+| **États** | `.etat-bloc`, `--erreur`, et `EmptyState` sur **0 écran boutique sur 11** | **contenu — décision** |
+| **Fiche** | `.fiche-client` · `.tels` · `.recap` · `.verdict` | apparence + contenu |
+| **Modale** | `__tete` / `__corps` / `__pied` · `__fermer` | apparence |
+| **Châssis** | `.ecran__compte` · `.ecran__actions` | **contenu + structure** |
+| **Filtres** | `.filtres` / `.filtre__bloc` | apparence |
+| **Divers** | `.tableau--compact` · `.actions-ligne` | apparence |
+| **Vocabulaire** | « Top client du jour » → « Client le plus actif » | **contenu** |
+
+La moitié structurante est posée. Ce qui reste se concentre sur les
+**formulaires** et sur les **états vides et d'erreur**. Les trois quarts sont de
+l'apparence pure et peuvent être livrés sans arbitrage ; le reste demande une
+décision de produit.
+
+### 10.8 Défauts signalés et NON corrigés
+
+Ils sont réels, mesurés, et hors du mandat d'un lot de design — ils demandent un
+changement fonctionnel, qui ne se fait pas dans le même lot qu'un restyle.
+
+**Douze champs partagent deux identifiants** sur l'écran Formulaire
+(`ClientForm.jsx`, lignes 265 à 283). Les `id` sont construits sans la clé du
+réseau, à l'intérieur d'un `.map()` sur les six réseaux. Un `htmlFor` pointe vers
+le PREMIER élément portant cet identifiant : le caissier qui touche le libellé
+« Numéro agent » sous *Wave* voit le curseur se poser dans le champ d'*Orange*.
+Six libellés sur six activent la même case.
+
+⚠ **Le banc est vert dessus, aux trois largeurs.** Il scanne `wcag2a` à
+`wcag22aa` sans règle désactivée, mais axe-core a retiré ses règles
+`duplicate-id`, et `label` ne vérifie que l'EXISTENCE d'une association, pas son
+unicité.
+
+**Le radio en `sr-only` de `DealerTransferForm`** : l'option retenue n'est dite
+que par la couleur de son contour. Rendre le contrôle visible changerait la
+structure d'un formulaire, pas son apparence.
