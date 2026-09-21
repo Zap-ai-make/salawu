@@ -38,9 +38,9 @@ function DateFilter({ onDateChange, onResetToToday }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div data-filtres className="space-y-4">
       {/* Date Du */}
-      <div>
+      <div data-filtre-bloc>
         <label htmlFor={`${idBase}-du`} className="block text-lg font-semibold text-gray-700 mb-1">
           Du :
         </label>
@@ -54,7 +54,7 @@ function DateFilter({ onDateChange, onResetToToday }) {
       </div>
 
       {/* Date Au */}
-      <div>
+      <div data-filtre-bloc>
         <label htmlFor={`${idBase}-au`} className="block text-lg font-semibold text-gray-700 mb-1">
           Au :
         </label>

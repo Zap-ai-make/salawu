@@ -1239,6 +1239,103 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LES FILTRES ET LA NOTE DE CHAMP (lot L9.11)
+   ───────────────────────────────────────────────────────────────────────────
+   CE LOT EST PETIT PARCE QUE LE RELEVE L'A REDUIT, PAS PARCE QU'IL BACLE.
+
+   Le BILAN annoncait sept familles restantes en « apparence pure ». Le releve
+   fait AVANT d'ecrire en a retire quatre, chacune pour une raison verifiable :
+
+     `.tel` `.tels` `.tel-liste`   NE SONT PAS DES CONCEPTS PRODUIT. C'est le
+                                   cadre de telephone qui illustre la maquette :
+                                   `border: 10px solid var(--encre)`,
+                                   `border-radius: 26px`. Les compter comme un
+                                   manque du logiciel etait une erreur de lecture.
+
+     `.fiche-client`               AUCUNE CONTREPARTIE dans le produit. C'est un
+                                   ecran que la maquette imagine, pas un ecran a
+                                   rhabiller. Le livrer demanderait de creer un
+                                   composant — une decision de produit, pas un
+                                   lot de design.
+
+     `.tableau--compact`           LES TABLEAUX SONT DEJA HABILLES (plus haut
+                                   dans ce fichier : th 10/13px, td 9/13px). Le
+                                   « compact » de la maquette est une VARIANTE de
+                                   densite, pas un manque.
+
+     `.champ-icone`                AUCUNE CIBLE. Le seul champ a icone du produit
+                                   est sur l'ecran de connexion, hors espace
+                                   boutique.
+
+   Restent deux concepts, et les voici.
+
+   LA BARRE DE FILTRES
+
+   Deux barres existent : « Filtrer l'historique » (quatre blocs en grille) et le
+   filtre de dates des Transactions (deux blocs empiles). Elles ne partagent
+   aujourd'hui ni gouttiere, ni alignement, ni taille de libelle.
+
+   ⚠ ON NE TOUCHE PAS A LEUR `display`. La premiere est une grille a quatre
+   colonnes qui se replie a 375px, la seconde une pile. Imposer le `flex` de la
+   maquette casserait le repli de l'une pour aligner l'autre — la meme faute que
+   le `display: flex` retire de `[data-choix] label` au lot L9.9. Ce qu'on unifie,
+   c'est la GOUTTIERE, l'ALIGNEMENT EN PIED de chaque bloc, et le LIBELLE.
+
+   LA NOTE DE CHAMP
+
+   Sur les onze `text-xs text-gray-500` du graphe boutique, DEUX seulement sont
+   une note posee sous un champ ; les neuf autres sont des sous-titres de carte,
+   de modale, ou des libelles de tableau. Marquer les onze aurait donne un lot
+   plus gros et un produit moins juste.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-filtres] {
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.design-registre [data-espace='boutique'] [data-filtre-bloc] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* ⚠ CE QUE CETTE REGLE NE FAIT PAS, ET POURQUOI LE BANC A DU ME LE DIRE.
+   ───────────────────────────────────────────────────────────────────────────
+   Le premier jet posait ici 12px / 600 / --encre-doux, en suivant
+   `.filtre__bloc > label` de la maquette. Le banc a rougi AUX TROIS LARGEURS sur
+   un controle du lot L9.7 : « une legende de filtre n'est pas un titre »
+   (13px attendu, 12px recu).
+
+   Le controle avait raison, et pas seulement sur la valeur. Le lot L9.7 avait
+   RELEVE les trente-neuf <label> des onze points d'entree — quatre tailles, trois
+   graisses — et TRANCHE pour une seule : 13px / 600. Cette uniformite est une
+   decision de la campagne, ecrite et gardee par un test.
+
+   Rouvrir un second format pour gagner un pixel de fidelite a la maquette,
+   c'est defaire une decision deja prise et deja tenue. La maquette guide le
+   dessin ; elle ne prime pas sur un arbitrage rendu et verifie.
+
+   Il ne reste donc ici que ce que le lot L9.11 apporte VRAIMENT : la marge basse
+   du libelle, devenue inutile puisque le `gap` du bloc l'a remplacee. Sans cette
+   remise a zero, la marge Tailwind (`mb-1`, `mb-2`) S'AJOUTERAIT au `gap`, et
+   les deux barres de filtres se retrouveraient a nouveau espacees differemment
+   — exactement le defaut que ce lot corrige. */
+.design-registre [data-espace='boutique'] [data-filtre-bloc] > label {
+  margin-bottom: 0;
+}
+
+/* La note sous un champ. Elle appartient au champ : elle reste alignee a gauche,
+   sous lui, et ne prend jamais la graisse d'une legende. */
+.design-registre [data-espace='boutique'] [data-champ-regle] {
+  margin: 4px 0 0;
+  font-size: 0.75rem; /* 12px */
+  font-weight: 400;
+  color: var(--color-encre-doux);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LES PARTIES DE LA MODALE : LA TETE, LE PIED, LA FERMETURE (lot L9.10)
    ───────────────────────────────────────────────────────────────────────────
    ⚠ CE QUE CE LOT N'APPORTE PAS, ET QUE J'AI FAILLI LUI ATTRIBUER.

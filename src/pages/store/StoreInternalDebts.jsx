@@ -191,7 +191,7 @@ function DebtRow({ debt, credits, tbl }) {
             <button type="button" disabled={busy || available <= 0} onClick={rembourser}
               data-rang="accent"
               className="rounded-lg bg-green-700 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">Rembourser</button>
-            {pending > 0 && <p className="w-full text-xs text-gray-500">Déjà en attente : {fmt(pending)}</p>}
+            {pending > 0 && <p data-champ-regle className="w-full text-xs text-gray-500">Déjà en attente : {fmt(pending)}</p>}
             {msg && <p className="w-full text-xs text-green-700">{msg}</p>}
             {err && <p className="w-full text-xs text-red-600">{err}</p>}
           </div>

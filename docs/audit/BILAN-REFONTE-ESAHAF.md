@@ -380,6 +380,7 @@ Aucun fichier de `src/pages/dealer/` ni de `src/pages/admin/` n'a été modifié
 | **L9.8** | Six blocs empilés pour douze champs ; la chasse de l'argent à la saisie | banc rouge sans le bloc |
 | **L9.9** | Le cadre de « Nature » disait le type par sa seule couleur — et peignait un **crédit en rouge** | banc rouge sans le bloc ; et une sonde de L9.7 rendue aveugle, puis rendue à elle-même |
 | **L9.10** | Huit modales sur neuf n'avaient **aucun filet** entre titre, corps et actions ; pieds en `gap-2` et `gap-3` | banc rouge sans le bloc (filet `0`, gouttière `8`) ; TC-178 étendu à 5 cas |
+| **L9.11** | Les deux barres de filtres ne partageaient ni gouttière, ni alignement, ni taille de libellé | banc rouge sans le bloc (`flex` attendu, `block` reçu) |
 
 ### 10.1 Le relevé qui a motivé le lot des champs
 
@@ -443,8 +444,8 @@ npx eslint src/ tests/ scripts/        exit 0
 npm run build                          ok
 npm run qa:jetons                      tous les contrastes annoncés confirmés
 npm run qa:taofic                      5 passed
-vitest tests/unit tests/components     129 passed (129) / 2505 passed (2505)
-npm run qa:full                        110 passed, 1 skipped, 0 failed
+vitest tests/unit tests/components     129 passed (129) / 2507 passed (2507)
+npm run qa:full                        119 passed, 1 skipped, 0 failed
 ```
 
 La progression du banc complet au fil de la campagne :
@@ -458,6 +459,9 @@ après L9.7    98 passed,  0 failed, 1 skipped
 après L9.8   102 passed,  2 failed, 1 skipped   ← mes deux contrôles, pas le produit
 après L9.9   107 passed,  3 failed, 1 skipped   ← ma règle avait aveuglé une sonde de L9.7
 correction   110 passed,  0 failed, 1 skipped
+après L9.10  115 passed,  1 failed, 1 skipped   ← la machine (491 Mo libres)
+après L9.11  114 passed,  5 failed, 1 skipped   ← 3 de moi, 2 de la machine (328 Mo)
+correction   119 passed,  0 failed, 1 skipped
 ```
 
 Les deux rouges de L9.8 et les trois de L9.9 sont de natures opposées, et c'est
@@ -598,6 +602,37 @@ Le marqueur `data-modale-titre` et sa règle ont été retirés des neuf fichier
 avant livraison. Ce que L9.10 apporte réellement est plus étroit, et vrai : les
 filets, la gouttière unique du pied, et le bouton de fermeture.
 
+#### ⚠ La maquette ne prime pas sur une décision déjà prise et vérifiée
+
+Le lot L9.11 a posé 12 px / `--encre-doux` sur le libellé d'un bloc de filtre, en
+suivant fidèlement `.filtre__bloc > label` de la maquette. Le banc a rougi **aux
+trois largeurs** sur un contrôle du lot L9.7 :
+
+```
+Error: une legende de filtre doit faire 13 px
+  Expected: "13px"
+  Received: "12px"
+```
+
+Le contrôle avait raison, et pas seulement sur la valeur. Le lot L9.7 avait
+**relevé les trente-neuf `<label>`** des onze points d'entrée — quatre tailles,
+trois graisses — et **tranché pour une seule** : 13 px / 600. Cette uniformité
+n'est pas un détail d'implémentation : c'est un arbitrage de la campagne, écrit,
+et gardé par un test.
+
+> **La leçon.** Une maquette est une référence, pas une autorité. Quand elle
+> contredit un arbitrage déjà rendu *et déjà tenu par un test*, c'est l'arbitrage
+> qui gagne — sauf à rouvrir la décision explicitement. Ici, l'écart valait **un
+> pixel** ; le coût aurait été de réintroduire un second format de libellé dans
+> un produit qui venait d'en sortir.
+
+La règle ne garde donc que ce que le lot apporte vraiment : `margin-bottom: 0`,
+sans quoi la marge Tailwind s'ajouterait au `gap` du bloc — et les deux barres de
+filtres retrouveraient l'écartement différent que ce lot corrige. Et le contrôle
+de banc du lot assertit désormais **l'inverse de ce qu'il visait** : il garde
+l'uniformité des trente-neuf, et rougira si quelqu'un réinvente une taille propre
+aux filtres.
+
 ### 10.5 ⚠ Deux erreurs de portée, symétriques, dans un seul lot
 
 Le lot L9.6 les a commises l'une après l'autre, et elles méritent d'être gardées
@@ -636,46 +671,46 @@ parce qu'elles engagent le système, pas un écran :
   TC-177 garde les quatre formes distinctes : s'il rougit, c'est la décision
   qu'il faut rouvrir, pas le test.
 
-### 10.7 Ce qui reste, mesuré contre la maquette
+### 10.7 Ce qui reste — et ce qui n'a jamais été un manque
 
-Une sonde confronte le vocabulaire de la maquette aux règles réellement
-présentes dans `src/index.css` et aux faits posés dans `src/`, commentaires
-retirés. **24 concepts sur 45 étaient rendus** au terme du lot L9.8 — c'est le
-dernier chiffre que la sonde a réellement produit, et il n'a pas été rejoué
-depuis.
+> ⚠ **Cette section a été refaite au lot L9.11, et sa version précédente
+> surestimait le travail restant.** Elle annonçait sept familles en « apparence
+> pure ». Un relevé fait contre le produit, avant d'écrire la moindre règle, en a
+> retiré quatre. Le détail importe, parce qu'il dit comment une liste de tâches
+> se met à mentir.
 
-Les lots L9.9 et L9.10 en ont livré quatre de plus (`.choix`, `.modal__tete`,
-`.modal__pied`, `.modal__fermer`), ce qui porterait le compte à 28 sur 45. **Ce
-28 est une addition, pas une mesure** : il est écrit ici comme tel, et sera
-remplacé par un relevé de la sonde.
+**Quatre « manques » qui n'en étaient pas :**
 
-> ⚠ Ce chiffre compte des CONCEPTS, pas des écrans ni des pixels. « Fait » veut
-> dire qu'une règle existe sous la portée, pas que chaque écran l'emploie. Et il
-> lit la feuille, pas le rendu — c'est le banc qui mesure des pixels.
->
-> Deux corrections ont été apportées au relevé lui-même, et elles disent quelque
-> chose sur la méthode. La pagination était comptée manquante : elle est faite,
-> mais posée en `[data-pagination]`, alors que la sonde cherchait le nom de la
-> maquette. `EmptyState` était compté fait : les occurrences trouvées étaient six
-> écrans admin et trois dealer, aucun écran boutique. **Une sonde qui cherche les
-> noms de la maquette dans un produit qui n'emploie pas ces noms se trompe dans
-> les deux sens.**
+| concept | ce qu'il est réellement |
+|---|---|
+| `.tel` · `.tels` · `.tel-liste` | Le **cadre de téléphone qui illustre la maquette** — `border: 10px solid var(--encre)`, `border-radius: 26px`. Du chrome de documentation, jamais un objet du logiciel. |
+| `.fiche-client` | **Aucune contrepartie dans le produit.** Un écran que la maquette imagine ; le livrer demanderait de créer un composant, donc une décision de produit. |
+| `.tableau--compact` | **Les tableaux sont déjà habillés** (`src/index.css:508-559` — th 10/13 px, td 9/13 px). Le « compact » est une *variante* de densité. |
+| `.champ-icone` | **Aucune cible** : le seul champ à icône est sur l'écran de connexion, hors espace boutique. |
 
-| Famille | Ce qui manque | Nature |
+**La leçon.** Une liste de restes construite depuis le VOCABULAIRE de la maquette
+compte des mots, pas des écrans. Elle gonfle de deux façons : en comptant le
+chrome de la maquette comme du produit, et en comptant comme « à faire » ce qui
+est déjà fait sous un autre nom. C'est la même erreur, dans les deux sens, que
+celle déjà relevée sur la pagination et sur `EmptyState`.
+
+**Ce qui reste réellement**, après L9.11 — et il n'y a plus d'apparence pure
+dedans :
+
+| Famille | Ce qui manque | Pourquoi ce n'est pas un lot de design |
 |---|---|---|
-| **Champs** | `.champ__regle` · `.champ-icone` · `.requis` — ~~`.choix`~~ fait au L9.9 | apparence |
-| **États** | `.etat-bloc`, `--erreur`, et `EmptyState` sur **0 écran boutique sur 11** | **contenu — décision** |
-| **Fiche** | `.fiche-client` · `.tels` · `.recap` · `.verdict` | apparence + contenu |
-| **Modale** | `__corps` seul — ~~`__tete`~~ ~~`__pied`~~ ~~`__fermer`~~ faits au L9.10 | **structure** |
-| **Châssis** | `.ecran__compte` · `.ecran__actions` | **contenu + structure** |
-| **Filtres** | `.filtres` / `.filtre__bloc` | apparence |
-| **Divers** | `.tableau--compact` · `.actions-ligne` | apparence |
-| **Vocabulaire** | « Top client du jour » → « Client le plus actif » | **contenu** |
+| **États vides** | `EmptyState` sur **0 écran boutique sur 11** · `.etat-bloc--erreur` | **28 phrases à écrire.** Du contenu : ce que l'écran DIT quand il n'a rien à montrer. |
+| **Châssis** | `.ecran__compte` · `.ecran__actions` | **Décision** : ce que la ligne de compte doit compter. |
+| **Fiche** | `.recap` · `.verdict` · `.fiche-client` | **Contenu + composant à créer.** |
+| **Champs** | `.requis` | Marquer un champ obligatoire, c'est **ajouter du contenu** (`*`), pas repeindre. |
+| **Vocabulaire** | « Top client du jour » → « Client le plus actif » | **Contenu.** |
+| **Modale** | `.modal__corps` et les bandes pleine largeur | **Réécriture de structure** dans huit fichiers. |
 
-La moitié structurante est posée. Ce qui reste se concentre sur les
-**formulaires** et sur les **états vides et d'erreur**. Les trois quarts sont de
-l'apparence pure et peuvent être livrés sans arbitrage ; le reste demande une
-décision de produit.
+Autrement dit : **la part « design » du chantier boutique est terminée.** Ce qui
+subsiste demande soit une décision du client, soit un changement de structure ou
+de contenu — c'est-à-dire précisément ce que la consigne d'ouverture interdisait
+de faire dans un lot de design : « si une correction de design semble exiger un
+changement fonctionnel : tu t'arrêtes et tu le signales ».
 
 ### 10.8 Défauts signalés et NON corrigés
 

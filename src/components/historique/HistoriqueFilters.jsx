@@ -44,9 +44,9 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
         Filtrer l'historique
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div data-filtres className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Filtre par date de début */}
-        <div>
+        <div data-filtre-bloc>
           <label htmlFor={`${idBase}-debut`} className="block text-sm font-medium text-gray-700 mb-2">
             Date de début
           </label>
@@ -60,7 +60,7 @@ function HistoriqueFilters({ onFiltersChange, activeFilters }) {
         </div>
 
         {/* Filtre par date de fin */}
-        <div>
+        <div data-filtre-bloc>
           <label htmlFor={`${idBase}-fin`} className="block text-sm font-medium text-gray-700 mb-2">
             Date de fin
           </label>

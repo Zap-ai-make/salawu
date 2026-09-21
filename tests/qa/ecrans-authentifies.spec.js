@@ -885,6 +885,62 @@ test.describe('Écrans de travail', () => {
       .toBe('rgb(229, 234, 240)')
   })
 
+  test('un bloc de filtre range son libelle au-dessus de son champ', async ({ page }) => {
+    // ⚠ CE CONTROLE NE MESURE PAS LE `display` DU CONTENEUR, ET C'EST VOULU.
+    //
+    // Les deux barres de filtres du produit n'ont pas la meme mise en page :
+    // « Filtrer l'historique » est une grille a quatre colonnes qui se replie a
+    // 375px, le filtre de dates des Transactions est une pile. Imposer le `flex`
+    // de la maquette casserait le repli de la premiere pour aligner la seconde —
+    // la meme faute que le `display: flex` retire de `[data-choix] label` au lot
+    // L9.9.
+    //
+    // Ce que le lot unifie, et donc ce qu'on mesure : la GOUTTIERE interne du
+    // bloc, son EMPILEMENT libelle-au-dessus-du-champ, et la taille du libelle.
+    await allerA(page, ECRANS[2]) // historique
+
+    const bloc = page.locator('[data-filtre-bloc]').first()
+    await expect(bloc).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await bloc.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      const lab = el.querySelector(':scope > label')
+      const cl = lab ? getComputedStyle(lab) : null
+      return {
+        affichage: cs.display,
+        sens: cs.flexDirection,
+        gouttiere: parseFloat(cs.rowGap),
+        libelleTaille: cl ? parseFloat(cl.fontSize) : null,
+        libelleGraisse: cl ? parseInt(cl.fontWeight, 10) : null,
+        libelleMarge: cl ? parseFloat(cl.marginBottom) : null,
+      }
+    })
+
+    expect(rendu.affichage, 'un bloc de filtre empile ses deux elements').toBe('flex')
+    expect(rendu.sens, 'le libelle au-dessus du champ').toBe('column')
+    expect(rendu.gouttiere, 'la maquette pose 4px entre libelle et champ')
+      .toBeCloseTo(4, 1)
+
+    // ⚠ CES DEUX-LA GARDENT UNE DECISION, PAS UNE VALEUR DE MAQUETTE.
+    //
+    // Le premier jet du lot L9.11 posait 12px / --encre-doux sur ce libelle, en
+    // suivant `.filtre__bloc > label` de la maquette. Le banc a rougi aux trois
+    // largeurs sur le controle « une legende de filtre n'est pas un titre » :
+    // le lot L9.7 avait releve les trente-neuf <label> du produit — quatre
+    // tailles, trois graisses — et tranche pour UNE SEULE, 13px / 600.
+    //
+    // On assertit donc l'inverse de ce que le premier jet voulait : un bloc de
+    // filtre range son libelle, mais ne lui invente pas un second format. Si
+    // quelqu'un rouvre une taille propre aux filtres, ce controle le dira.
+    expect(rendu.libelleTaille, 'le libelle garde la taille unique des 39 labels')
+      .toBeCloseTo(13, 1)
+    expect(rendu.libelleGraisse, 'et sa graisse').toBe(600)
+    // Une marge basse en plus du `gap` doublerait l'espace, et redonnerait aux
+    // deux barres de filtres l'ecartement different que ce lot corrige.
+    expect(rendu.libelleMarge, 'le gap du bloc remplace la marge du libelle')
+      .toBe(0)
+  })
+
   test('la bande des reserves ne s en va jamais, meme au defilement', async ({ page }) => {
     // ⟲ RETOURNE AU LOT L7.4b. Ce controle exigeait l'inverse : un rail qui
     // apparaissait au defilement pour COMPENSER la disparition du rideau. La

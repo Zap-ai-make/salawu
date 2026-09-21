@@ -247,7 +247,7 @@ function DealerTransferForm() {
               <p><span className="font-semibold">Opération :</span> {STORE_TRANSFER_TYPE_LABELS[pending.transferType]}</p>
               {IS_DEALER_MULTI_NETWORK && <p><span className="font-semibold">Réseau :</span> {pending.network}</p>}
               <p><span className="font-semibold">Montant :</span> {formatCurrency(pending.amount)}</p>
-              <p className="text-xs text-gray-500">Le solde de la boutique sera débité immédiatement.</p>
+              <p data-champ-regle className="text-xs text-gray-500">Le solde de la boutique sera débité immédiatement.</p>
             </div>
             <div data-modale-pied className="mt-6 flex flex-wrap justify-end gap-3">
               <button
