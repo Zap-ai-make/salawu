@@ -87,7 +87,7 @@ function ConfirmModal({ request, processing, onConfirm, onClose, initialFocusRef
       data-testid="confirm-modal-overlay"
     >
       <div data-modale ref={containerRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <h2 id="confirm-modal-title" className="text-lg font-bold text-gray-800 mb-4">
+        <h2 data-modale-tete id="confirm-modal-title" className="text-lg font-bold text-gray-800 mb-4">
           Confirmer la demande
         </h2>
         <p id="confirm-modal-desc" className="sr-only">
@@ -138,7 +138,7 @@ function ConfirmModal({ request, processing, onConfirm, onClose, initialFocusRef
         </label>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
+        <div data-modale-pied className="flex justify-end gap-3">
           <button
             data-rang="second"
             type="button"
@@ -220,7 +220,7 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
       data-testid="reject-modal-overlay"
     >
       <div data-modale ref={containerRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <h2 id="reject-modal-title" className="text-lg font-bold text-gray-800 mb-4">
+        <h2 data-modale-tete id="reject-modal-title" className="text-lg font-bold text-gray-800 mb-4">
           Rejeter la demande
         </h2>
         <p id="reject-modal-desc" className="sr-only">
@@ -267,7 +267,7 @@ function RejectModal({ processing, onReject, onClose, initialFocusRef }) {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
+        <div data-modale-pied className="flex justify-end gap-3">
           <button
             data-rang="second"
             type="button"

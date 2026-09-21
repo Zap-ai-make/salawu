@@ -379,6 +379,7 @@ Aucun fichier de `src/pages/dealer/` ni de `src/pages/admin/` n'a été modifié
 | **L9.7** | « Du : » écrit à 18 px, plus lourd que les lignes qu'il filtre | banc rouge sans le bloc, et sans `:has()` |
 | **L9.8** | Six blocs empilés pour douze champs ; la chasse de l'argent à la saisie | banc rouge sans le bloc |
 | **L9.9** | Le cadre de « Nature » disait le type par sa seule couleur — et peignait un **crédit en rouge** | banc rouge sans le bloc ; et une sonde de L9.7 rendue aveugle, puis rendue à elle-même |
+| **L9.10** | Huit modales sur neuf n'avaient **aucun filet** entre titre, corps et actions ; pieds en `gap-2` et `gap-3` | banc rouge sans le bloc (filet `0`, gouttière `8`) ; TC-178 étendu à 5 cas |
 
 ### 10.1 Le relevé qui a motivé le lot des champs
 
@@ -565,6 +566,38 @@ sauvegarde.
 > distinguer — et si la réponse est « rien », ce n'est pas le test qu'il faut
 > ajuster.
 
+#### ⚠ Un relevé qui décrit les classes, et non le rendu
+
+Le lot L9.10 s'est ouvert sur ce constat, tiré du JSX des neuf modales :
+
+```
+text-base font-semibold   16px/600   cinq modales
+text-lg   font-bold       18px/700   deux modales
+text-xl   font-bold       20px/700   deux modales
+```
+
+« Trois tailles pour le même objet. » C'est exact — **des classes écrites**. Ce
+n'était plus vrai **du rendu** : le lot L9.6 avait déjà unifié ces titres à
+17 px/600 (`src/index.css:1621`), justement parce que le produit en écrivait
+quatre. La règle de typographie que L9.10 s'apprêtait à ajouter était une redite,
+et le commentaire qui l'annonçait, une fausse nouvelle.
+
+**Ce qui l'a révélé n'est pas une relecture, c'est la preuve de rouge.** Jouée
+sans le bloc CSS du lot, la sonde du titre a échoué sur le **filet**
+(`>= 1` attendu, `0` reçu) et **pas** sur la taille — qui rendait donc déjà
+17 px. Une assertion qui reste verte quand elle devrait tomber en dit autant
+qu'une qui tombe.
+
+> **La leçon.** Un relevé pris dans le code source décrit une intention
+> d'auteur ; seul un relevé pris dans le navigateur décrit ce que quelqu'un voit.
+> Sur un produit dont l'apparence est déportée dans une feuille scopée, les deux
+> divergent par construction — c'est même le but de l'architecture. Un lot qui
+> annonce ce qu'il corrige doit citer le **rendu**, pas la classe.
+
+Le marqueur `data-modale-titre` et sa règle ont été retirés des neuf fichiers
+avant livraison. Ce que L9.10 apporte réellement est plus étroit, et vrai : les
+filets, la gouttière unique du pied, et le bouton de fermeture.
+
 ### 10.5 ⚠ Deux erreurs de portée, symétriques, dans un seul lot
 
 Le lot L9.6 les a commises l'une après l'autre, et elles méritent d'être gardées
@@ -607,7 +640,14 @@ parce qu'elles engagent le système, pas un écran :
 
 Une sonde confronte le vocabulaire de la maquette aux règles réellement
 présentes dans `src/index.css` et aux faits posés dans `src/`, commentaires
-retirés. **24 concepts sur 45 sont rendus** au terme du lot L9.8.
+retirés. **24 concepts sur 45 étaient rendus** au terme du lot L9.8 — c'est le
+dernier chiffre que la sonde a réellement produit, et il n'a pas été rejoué
+depuis.
+
+Les lots L9.9 et L9.10 en ont livré quatre de plus (`.choix`, `.modal__tete`,
+`.modal__pied`, `.modal__fermer`), ce qui porterait le compte à 28 sur 45. **Ce
+28 est une addition, pas une mesure** : il est écrit ici comme tel, et sera
+remplacé par un relevé de la sonde.
 
 > ⚠ Ce chiffre compte des CONCEPTS, pas des écrans ni des pixels. « Fait » veut
 > dire qu'une règle existe sous la portée, pas que chaque écran l'emploie. Et il
@@ -623,10 +663,10 @@ retirés. **24 concepts sur 45 sont rendus** au terme du lot L9.8.
 
 | Famille | Ce qui manque | Nature |
 |---|---|---|
-| **Champs** | `.champ__regle` · `.champ-icone` · `.choix` · `.requis` | apparence |
+| **Champs** | `.champ__regle` · `.champ-icone` · `.requis` — ~~`.choix`~~ fait au L9.9 | apparence |
 | **États** | `.etat-bloc`, `--erreur`, et `EmptyState` sur **0 écran boutique sur 11** | **contenu — décision** |
 | **Fiche** | `.fiche-client` · `.tels` · `.recap` · `.verdict` | apparence + contenu |
-| **Modale** | `__tete` / `__corps` / `__pied` · `__fermer` | apparence |
+| **Modale** | `__corps` seul — ~~`__tete`~~ ~~`__pied`~~ ~~`__fermer`~~ faits au L9.10 | **structure** |
 | **Châssis** | `.ecran__compte` · `.ecran__actions` | **contenu + structure** |
 | **Filtres** | `.filtres` / `.filtre__bloc` | apparence |
 | **Divers** | `.tableau--compact` · `.actions-ligne` | apparence |

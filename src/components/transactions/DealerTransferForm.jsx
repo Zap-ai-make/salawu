@@ -242,14 +242,14 @@ function DealerTransferForm() {
             data-modale
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
           >
-            <h3 id="dealer-transfer-confirm-title" className="text-xl font-bold text-gray-900">Confirmer l'envoi au dealer</h3>
+            <h3 data-modale-tete id="dealer-transfer-confirm-title" className="text-xl font-bold text-gray-900">Confirmer l'envoi au dealer</h3>
             <div className="mt-4 space-y-2 text-sm text-gray-700">
               <p><span className="font-semibold">Opération :</span> {STORE_TRANSFER_TYPE_LABELS[pending.transferType]}</p>
               {IS_DEALER_MULTI_NETWORK && <p><span className="font-semibold">Réseau :</span> {pending.network}</p>}
               <p><span className="font-semibold">Montant :</span> {formatCurrency(pending.amount)}</p>
               <p className="text-xs text-gray-500">Le solde de la boutique sera débité immédiatement.</p>
             </div>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
+            <div data-modale-pied className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setPending(null)}

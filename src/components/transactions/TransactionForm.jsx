@@ -619,7 +619,7 @@ function TransactionForm({ clients }) {
             data-modale
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
           >
-            <h3 id="tx-confirm-title" className="text-xl font-bold text-gray-900">Confirmer la transaction</h3>
+            <h3 data-modale-tete id="tx-confirm-title" className="text-xl font-bold text-gray-900">Confirmer la transaction</h3>
             <div className="mt-4 space-y-2 text-sm text-gray-700">
               <p><span className="font-semibold">Client:</span> {pendingConfirmation.details.clientName}</p>
               <p><span className="font-semibold">Nature:</span> {pendingConfirmation.details.type}</p>
@@ -627,7 +627,7 @@ function TransactionForm({ clients }) {
               <p><span className="font-semibold">Réseau:</span> {pendingConfirmation.details.network}</p>
               <p><span className="font-semibold">Statut:</span> {pendingConfirmation.details.statut}</p>
             </div>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
+            <div data-modale-pied className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 onClick={cancelPendingSubmit}

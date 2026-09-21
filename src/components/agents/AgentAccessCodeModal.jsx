@@ -52,7 +52,7 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
         onClick={e => e.stopPropagation()}
         data-testid="agent-access-modal"
       >
-        <h3 id="agent-access-title" className="mb-1 text-base font-semibold text-gray-800">Code d'accès mobile</h3>
+        <h3 data-modale-tete id="agent-access-title" className="mb-1 text-base font-semibold text-gray-800">Code d'accès mobile</h3>
         <p className="mb-4 text-sm text-gray-500">
           {clientName ? `Agent : ${clientName}` : 'Générer le code d\'accès de cet agent.'}
         </p>
@@ -65,7 +65,7 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
               L'agent se connectera à l'application mobile avec son <strong>numéro ou code agent</strong> et
               ce code d'accès. Générer un nouveau code invalide l'ancien.
             </p>
-            <div className="flex justify-end gap-2">
+            <div data-modale-pied className="flex justify-end gap-2">
               <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm">Annuler</button>
               <button type="button" disabled={busy} onClick={generate} data-testid="btn-generate-access-code"
                 className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
@@ -83,7 +83,7 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>Notez-le maintenant : il ne sera plus réaffiché. En cas de perte, régénérez un nouveau code.</span>
             </p>
-            <div className="flex justify-end gap-2">
+            <div data-modale-pied className="flex justify-end gap-2">
               <button type="button" onClick={copy} data-testid="btn-copy-access-code"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50">
                 {copied && <Check className="h-4 w-4" aria-hidden="true" />}

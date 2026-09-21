@@ -1239,6 +1239,116 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LES PARTIES DE LA MODALE : LA TETE, LE PIED, LA FERMETURE (lot L9.10)
+   ───────────────────────────────────────────────────────────────────────────
+   ⚠ CE QUE CE LOT N'APPORTE PAS, ET QUE J'AI FAILLI LUI ATTRIBUER.
+
+   Le releve de depart disait : « neuf modales, trois tailles de titre » —
+   `text-base` (16px/600) pour cinq, `text-lg` (18px/700) pour deux, `text-xl`
+   (20px/700) pour deux. C'est exact des CLASSES ECRITES DANS LE JSX. Ce n'est
+   plus vrai du RENDU : le lot L9.6 a deja unifie ces titres a 17px/600, quelques
+   centaines de lignes plus bas, et pour la meme raison de maquette.
+
+   Une regle de typographie ajoutee ici aurait donc ete une redite, et le
+   commentaire qui l'annoncait, une fausse nouvelle. Le marqueur
+   `data-modale-titre` du premier jet a ete retire des neuf fichiers.
+
+   ⚠ C'EST LE BANC QUI L'A DIT, ET PAR UN DETAIL. La sonde du titre, jouee sans
+   ce bloc CSS, a rougi sur le FILET (`>= 1` attendu, `0` recu) et NON sur la
+   taille — donc 17px et 600 etaient deja rendus. Une assertion qui passe quand
+   elle devrait echouer en dit autant qu'une qui echoue.
+
+   CE QUE CE LOT APPORTE REELLEMENT
+
+   · UN FILET sous la tete, un autre au-dessus du pied. Une modale sur neuf en
+     avait (`RejectionRemarkButton`) ; les huit autres n'avaient rien pour
+     separer le titre du corps, ni le corps des actions.
+   · UNE GOUTTIERE UNIQUE entre les actions. Les pieds melangeaient `gap-2`
+     (8px) et `gap-3` (12px) ; la maquette pose 9px.
+   · LE BOUTON DE FERMETURE : un contour, jamais un aplat.
+
+   Reference : docs/audit/maquette-espace-boutique.html, lignes 282-287.
+
+   ⚠ CE QUE CE LOT NE FAIT PAS, ET POURQUOI
+
+   La maquette decoupe la modale en trois bandes PLEINE LARGEUR : `.modal__tete`,
+   `.modal__corps`, `.modal__pied`, chacune avec sa propre marge de 18px. Huit
+   modales sur neuf n'ont pas cette structure : titre, contenu et boutons sont
+   des enfants DIRECTS d'une boite a `p-5`/`p-6`.
+
+   Leur donner des bandes exigerait d'inserer des conteneurs et de deplacer la
+   marge de la boite vers les parties, dans huit fichiers — dont certains portent
+   un `stopPropagation` et un conteneur de defilement `max-h-[90vh]
+   overflow-y-auto`. C'est une REECRITURE DE STRUCTURE, pas un lot de design.
+
+   Consequence assumee et visible : dans ces huit modales, les filets s'arretent
+   au bord du CONTENU au lieu de traverser la boite. Le role fonctionnel du filet
+   — separer le titre du corps, et le corps des actions — est rendu ; son trace
+   pleine largeur attend une reprise de structure.
+
+   POURQUOI UN SECOND MARQUEUR SUR LA TETE
+
+   `data-modale-tete`   l'element qui forme la bande de titre. Dans huit modales
+                        c'est le TITRE lui-meme, faute de conteneur ; dans
+                        `RejectionRemarkButton` c'est le conteneur qui porte le
+                        titre ET le bouton de fermeture.
+   `data-modale-bande`  ⚠ un FAIT, pas un style : « cette partie est deja une
+                        bande pleine largeur avec sa propre marge ». Seule
+                        `RejectionRemarkButton` le porte. Sans lui, sa tete se
+                        serait retrouvee avec 16px de marge en haut et 10px en
+                        bas — la marge du lot posee par-dessus celle qui existe.
+
+   PORTEE
+
+   Toutes ces regles sont bornees par `[data-espace='boutique']` et AUCUNE n'a de
+   branche `[data-portail]` — contrairement a `[data-modale]` du lot L9.6. Ce
+   n'est pas un oubli : `ReceiptModal`, la seule modale portalisee, ne porte ni
+   tete ni pied (c'est un recu). Une branche `[data-portail]` serait une regle
+   sans cible, c'est-a-dire du code mort protege par un test. TC-178 verifie les
+   deux exigences separement, et dit pourquoi.
+
+   ⚠ `RejectionRemarkButton` est PARTAGE avec trois ecrans dealer. La portee
+   `[data-espace='boutique']` les exclut — c'est exactement la lecon du lot L9.6.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Les filets. Ils sont le seul geste que les neuf modales recoivent en commun. */
+.design-registre [data-espace='boutique'] [data-modale-tete] {
+  border-bottom: 1px solid var(--color-reglure);
+}
+
+.design-registre [data-espace='boutique'] [data-modale-pied] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-reglure);
+}
+
+/* Huit modales sur neuf n'ont pas de bande : la partie doit creer elle-meme
+   l'espace autour de son filet. La neuvieme la porte deja dans ses marges. */
+.design-registre [data-espace='boutique'] [data-modale-tete]:not([data-modale-bande]) {
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+.design-registre [data-espace='boutique'] [data-modale-pied]:not([data-modale-bande]) {
+  padding-top: 12px;
+  margin-top: 16px;
+}
+
+/* Le bouton de fermeture : un contour, jamais un aplat. `background-image: none`
+   en plus de `background-color` — Tailwind v4 pose les deux. */
+.design-registre [data-espace='boutique'] [data-modale-fermer] {
+  border: 1px solid var(--color-trait-200);
+  border-radius: 2px;
+  padding: 5px;
+  background-color: transparent;
+  background-image: none;
+  color: var(--color-encre-doux);
+  line-height: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LE CHOIX ENTRE OPTIONS EXCLUSIVES (lot L9.9)
    ───────────────────────────────────────────────────────────────────────────
    ⚠ LE CADRE DE « NATURE » DISAIT LE TYPE PAR SA SEULE COULEUR — ET IL PEIGNAIT

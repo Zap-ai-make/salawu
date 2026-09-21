@@ -38,11 +38,11 @@ function RejectModal({ onSubmit, onClose }) {
         className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
-        <h3 id="collab-reject-title" className="mb-3 text-base font-semibold text-gray-800">Rejeter la collaboration</h3>
+        <h3 data-modale-tete id="collab-reject-title" className="mb-3 text-base font-semibold text-gray-800">Rejeter la collaboration</h3>
         <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3}
           placeholder="Motif (min. 3 caractères)…" className="w-full rounded border border-gray-300 p-2 text-sm" aria-label="Motif de rejet" />
         {err && <p className="mt-2 text-xs text-red-600">{err}</p>}
-        <div className="mt-4 flex justify-end gap-2">
+        <div data-modale-pied className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm">Annuler</button>
             data-rang="second"
           <button type="button" disabled={busy}

@@ -94,7 +94,7 @@ function CollaborationFormModal({ onClose, onCreated }) {
         data-modale
         className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-xl"
       >
-        <h3 id="collab-form-title" className="text-base font-semibold text-gray-800">Nouvelle collaboration</h3>
+        <h3 data-modale-tete id="collab-form-title" className="text-base font-semibold text-gray-800">Nouvelle collaboration</h3>
         <p className="mb-4 text-xs text-gray-500">Faire servir un client par une boutique fournisseuse</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -164,7 +164,7 @@ function CollaborationFormModal({ onClose, onCreated }) {
           {error && <p className="rounded-lg bg-red-50 border border-red-200 p-2 text-xs text-red-700">{error}</p>}
           {success && <p className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700">Collaboration créée.</p>}
 
-          <div className="flex justify-end gap-2">
+          <div data-modale-pied className="flex justify-end gap-2">
             <button type="button" onClick={() => onClose?.()}
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Annuler</button>
             <button type="submit" disabled={submitting}

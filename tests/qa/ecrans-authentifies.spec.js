@@ -804,6 +804,87 @@ test.describe('Écrans de travail', () => {
     expect(rendu.fond, 'le panneau est pose sur le papier').toBe('rgb(255, 255, 255)')
   })
 
+  test('la tete d une modale est separee du corps par un filet', async ({ page }) => {
+    // ⚠ CE CONTROLE GARDE DEUX REGLES DE DEUX LOTS DIFFERENTS, ET C'EST VOULU.
+    //
+    // La TAILLE (17px/600) vient du lot L9.6. Le FILET vient du lot L9.10.
+    //
+    // La distinction n'est pas academique : au premier essai, ce controle joue
+    // sans le bloc L9.10 a rougi sur le filet (`>= 1` attendu, `0` recu) et PAS
+    // sur la taille. C'est ainsi qu'on a decouvert que le releve de depart du
+    // lot L9.10 — « trois tailles de titre » — decrivait les CLASSES JSX et non
+    // le RENDU, deja unifie trois lots plus tot. La regle de typographie
+    // prevue etait une redite ; elle n'a pas ete ecrite.
+    //
+    // Les deux assertions restent ensemble parce qu'elles decrivent un seul
+    // objet visible : la bande de titre d'une modale.
+    //
+    // Celle du code d'acces est la seule qu'on ouvre d'un seul clic, sans
+    // remplir de formulaire ni rien semer de particulier.
+    await allerA(page, ECRANS[3]) // clients
+
+    await page.locator('[data-testid="btn-access-code"]').first().click()
+
+    // Dans cette modale la tete EST le titre : il n'y a pas de conteneur.
+    const titre = page.locator('[data-modale-tete]').first()
+    await expect(titre).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await titre.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return {
+        taille: parseFloat(cs.fontSize),
+        graisse: parseInt(cs.fontWeight, 10),
+        filet: parseFloat(cs.borderBottomWidth),
+        couleurFilet: cs.borderBottomColor,
+      }
+    })
+
+    // ⚠ Ces deux-la gardent le lot L9.6, pas le L9.10.
+    expect(rendu.taille, 'la maquette dit 17px').toBeCloseTo(17, 1)
+    expect(rendu.graisse, 'et 600, pas le 700 des deux modales de confirmation')
+      .toBe(600)
+    expect(rendu.filet, 'un filet separe le titre du corps')
+      .toBeGreaterThanOrEqual(1)
+    // #e5eaf0 — le jeton --reglure, celui des filets horizontaux.
+    expect(rendu.couleurFilet, 'le filet prend la reglure du registre')
+      .toBe('rgb(229, 234, 240)')
+  })
+
+  test('le pied d une modale separe ses actions du corps', async ({ page }) => {
+    // Les pieds melangeaient `gap-2` (8px) et `gap-3` (12px), et aucun des huit
+    // pieds inclus dans une boite padded ne portait de filet. La maquette pose
+    // 9px et un filet au-dessus.
+    //
+    // ⚠ CE CONTROLE MESURE LE RENDU, PAS LA CLASSE. `gap-2` peut disparaitre du
+    // JSX sans que la regle change, et inversement.
+    await allerA(page, ECRANS[3]) // clients
+
+    await page.locator('[data-testid="btn-access-code"]').first().click()
+
+    const pied = page.locator('[data-modale-pied]').first()
+    await expect(pied).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await pied.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return {
+        affichage: cs.display,
+        gouttiere: parseFloat(cs.columnGap),
+        alignement: cs.justifyContent,
+        filet: parseFloat(cs.borderTopWidth),
+        couleurFilet: cs.borderTopColor,
+      }
+    })
+
+    expect(rendu.affichage, 'le pied range ses boutons en ligne').toBe('flex')
+    expect(rendu.gouttiere, 'la maquette pose 9px entre deux actions')
+      .toBeCloseTo(9, 1)
+    expect(rendu.alignement, 'les actions se rangent a droite').toBe('flex-end')
+    expect(rendu.filet, 'un filet separe les actions du corps')
+      .toBeGreaterThanOrEqual(1)
+    expect(rendu.couleurFilet, 'le filet prend la reglure du registre')
+      .toBe('rgb(229, 234, 240)')
+  })
+
   test('la bande des reserves ne s en va jamais, meme au defilement', async ({ page }) => {
     // ⟲ RETOURNE AU LOT L7.4b. Ce controle exigeait l'inverse : un rail qui
     // apparaissait au defilement pour COMPENSER la disparition du rideau. La

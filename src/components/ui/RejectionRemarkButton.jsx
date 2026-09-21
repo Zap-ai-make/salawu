@@ -47,7 +47,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
             className="w-full max-w-md rounded-xl bg-white shadow-xl"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4">
+            <div data-modale-tete data-modale-bande className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4">
               <div>
                 <h2 id="remark-modal-title" className="text-base font-semibold text-gray-900">
                   Remarque de rejet
@@ -59,6 +59,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
                 onClick={() => setOpen(false)}
                 className="rounded-md p-1 text-encre-doux hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                 aria-label="Fermer"
+                data-modale-fermer
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -70,7 +71,7 @@ function RejectionRemarkButton({ storeName, reason, testId }) {
                 {reason}
               </p>
             </div>
-            <div className="flex justify-end border-t border-gray-100 px-5 py-3">
+            <div data-modale-pied data-modale-bande className="flex justify-end border-t border-gray-100 px-5 py-3">
               <button
                 type="button"
                 onClick={() => setOpen(false)}

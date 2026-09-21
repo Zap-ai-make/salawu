@@ -43,8 +43,23 @@ import { join } from 'node:path'
 
 const FEUILLE = join(process.cwd(), 'src', 'index.css')
 
-/** Les marqueurs posés par le lot L9.6. */
+/** Les marqueurs posés par le lot L9.6 — la boîte et son voile. */
 const MARQUEURS = /\[data-modale(-voile)?\]/
+
+/**
+ * Les marqueurs des PARTIES, posés par le lot L9.10.
+ *
+ * ⚠ Ils sont tenus séparément, et ce n'est pas de la décoration. La règle
+ * « les DEUX branches existent » ne vaut QUE pour la boîte : `ReceiptModal`,
+ * seule modale portalisée, ne porte ni titre ni pied — c'est un reçu. Exiger
+ * une branche `[data-portail]` sur les parties reviendrait à réclamer une règle
+ * sans cible, c'est-à-dire du code mort protégé par un test.
+ *
+ * En revanche l'obligation de BORNE vaut pour elles aussi, et pour la même
+ * raison qu'au lot L9.6 : `RejectionRemarkButton` est partagé avec trois écrans
+ * dealer, que la consigne du client met hors chantier.
+ */
+const PARTIES = /\[data-modale-(tete|pied|fermer|bande)\]/
 
 /** Les deux seules bornes admises. */
 const BORNES = [/\[data-espace='boutique'\]/, /\[data-portail\]/]
@@ -95,6 +110,29 @@ describe('TC-178 — la portée des règles de modale', () => {
         'modale sort du DOM par `createPortal` :\n' +
         horsPortee.join('\n'),
     ).toEqual([])
+  })
+
+  it('chaque règle de PARTIE de modale est bornée elle aussi', () => {
+    const horsPortee = tous
+      .filter((s) => PARTIES.test(s))
+      .filter((s) => !BORNES.some((b) => b.test(s)))
+
+    expect(
+      horsPortee,
+      'une règle de partie de modale sans borne. `RejectionRemarkButton` est\n' +
+        'partagé avec trois écrans dealer : sans borne, leur en-tête et leur\n' +
+        'pied redessinés alors qu ils sont hors chantier :\n' +
+        horsPortee.join('\n'),
+    ).toEqual([])
+  })
+
+  it('les parties sont réellement posées (garde-fou du filet)', () => {
+    // Sans ce cas, supprimer tout le bloc L9.10 laisserait le précédent vert :
+    // une liste vide n a aucune règle hors portée.
+    expect(
+      tous.filter((s) => PARTIES.test(s)).length,
+      'aucune règle de partie de modale dans la feuille',
+    ).toBeGreaterThan(3)
   })
 
   it('⚠ les DEUX cas sont couverts, et pas seulement le plus simple', () => {

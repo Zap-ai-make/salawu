@@ -65,7 +65,7 @@ function RejectModal({ closureId, onSuccess, onClose }) {
         data-modale
         className="w-full max-w-md rounded-2xl bg-white shadow-xl p-6 mx-4"
       >
-        <h2 id="closure-reject-title" className="text-base font-semibold text-gray-900 mb-4">Rejeter la clôture</h2>
+        <h2 data-modale-tete id="closure-reject-title" className="text-base font-semibold text-gray-900 mb-4">Rejeter la clôture</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Motif de rejet</label>
@@ -82,7 +82,7 @@ function RejectModal({ closureId, onSuccess, onClose }) {
             <p className="text-xs text-encre-doux mt-0.5">{reason.length}/500</p>
           </div>
           {err && <p className="text-sm text-red-600">{err}</p>}
-          <div className="flex justify-end gap-3">
+          <div data-modale-pied className="flex justify-end gap-3">
             <button
               data-rang="second"
               type="button"
