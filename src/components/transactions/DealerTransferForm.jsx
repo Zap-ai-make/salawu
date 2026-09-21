@@ -127,7 +127,10 @@ function DealerTransferForm() {
         {/* Ressource */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Ressource à renvoyer</label>
-          <div className="flex flex-wrap gap-3">
+          {/* Meme concept que la nature d'une transaction : un choix entre
+              options exclusives. La forme de carte est deja celle de la
+              maquette ; il lui manquait l'angle droit et la teinte de marque. */}
+          <div data-choix className="flex flex-wrap gap-3">
             {Object.values(STORE_TRANSFER_TYPES).map(t => (
               <label
                 key={t}

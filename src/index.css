@@ -1239,6 +1239,117 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LE CHOIX ENTRE OPTIONS EXCLUSIVES (lot L9.9)
+   ───────────────────────────────────────────────────────────────────────────
+   ⚠ LE CADRE DE « NATURE » DISAIT LE TYPE PAR SA SEULE COULEUR — ET IL PEIGNAIT
+   UN CRÉDIT EN ROUGE.
+
+   `TransactionForm` entoure ses trois boutons radio d'un cadre dont le fond
+   change avec le type retenu :
+
+       dépôt    → bg-green-50
+       retrait  → bg-blue-50
+       crédit   → bg-red-50
+
+   Deux défauts en un seul geste. D'abord une information portée par la COULEUR
+   SEULE : le fond est le seul élément qui change de teinte, et qui ne distingue
+   pas le vert du rouge ne lit rien de plus que le radio déjà coché.
+
+   Ensuite, et c'est le plus grave, le ROUGE DE L'ÉCHEC posé sur une opération
+   normale. C'est la faute que ce fichier nomme déjà, à propos du jeton
+   `--sortie` : « le produit rendait "Crédit" en rouge, ce qui accusait d'erreur
+   une opération parfaitement normale ». Elle avait été corrigée dans
+   l'historique. Elle avait survécu dans l'écran où l'on SAISIT.
+
+   Le cadre disparaît donc — fond, bordure de 4 px et marge intérieure. Ce qu'il
+   voulait dire, l'option retenue le dit mieux.
+
+   CE QUE DEVIENT UNE OPTION
+
+   Une carte, comme dans la maquette : un contour de 1 px, un angle droit, une
+   surface de papier. L'option RETENUE prend la marque et un contour de 2 px.
+   `:has(input:checked)` lit l'état réel du contrôle — aucune classe
+   conditionnelle à maintenir dans le JSX, et l'état ne peut pas diverger de ce
+   que le navigateur coche.
+
+   ⚠ LA BORDURE ÉPAISSIT SANS QUE RIEN NE BOUGE. Passer de 1 à 2 px déplacerait
+   chaque carte d'un pixel au moment du clic, et la rangée entière avec elle. La
+   marge intérieure est donc réduite d'autant — 11/13 devient 10/12. C'est la
+   même arithmétique que la maquette, et elle est là pour cette raison.
+
+   ⚠ LE CONTOUR NE SUFFIT PAS À DIRE « RETENU », et ce n'est pas un oubli : le
+   bouton radio reste visible à l'intérieur de la carte de `TransactionForm`.
+   C'est LUI qui porte l'état pour qui ne distingue pas les teintes, et c'est
+   pour cela qu'on ne le masque pas. Dans `DealerTransferForm`, le radio est en
+   `sr-only` et le contour est seul — un défaut antérieur à ce lot, qu'il
+   n'aggrave pas et ne corrige pas : le rendre visible changerait la structure
+   d'un formulaire, pas son apparence.
+
+   LE SÉPARATEUR VERTICAL S'EN VA
+
+   Un trait de 32 px entre deux options avait un sens quand elles étaient de
+   simples radios alignés. Entre deux cartes contournées, il ajoute un troisième
+   trait entre deux traits.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Le cadre teinté cesse d'être un cadre. `background-image: none` en plus de
+   `background-color` : les classes `bg-*-50` de Tailwind v4 posent l'une et
+   l'autre, et n'en neutraliser qu'une laisse un aplat. */
+.design-registre [data-espace='boutique'] [data-choix-cadre] {
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  background-image: none;
+}
+
+.design-registre [data-espace='boutique'] [data-choix] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.design-registre [data-espace='boutique'] [data-choix] label {
+  flex: 1 1 140px;
+  /* ⚠ AUCUN `display` ICI, ET C'EST DELIBERE. Les deux choix du produit
+     n'ont pas la meme mise en page interne : « Nature » aligne un radio et un
+     mot cote a cote, le renvoi au dealer empile un titre et sa legende. Imposer
+     `display: flex` conviendrait au premier et ecraserait le second. La carte
+     donne le CONTOUR ; chaque choix garde son flux. */
+  border: 1px solid var(--color-filet);
+  border-radius: 2px;
+  padding: 11px 13px;
+  background-color: var(--color-papier);
+  background-image: none;
+  font-size: 0.84375rem; /* 13,5px */
+  font-weight: 600;
+  color: var(--color-encre);
+  cursor: pointer;
+}
+
+/* L'option retenue. La bordure passe à 2 px et la marge intérieure perd un
+   pixel sur chaque côté : la carte garde exactement la même taille, et rien ne
+   saute au clic. */
+.design-registre [data-espace='boutique'] [data-choix] label:has(input:checked) {
+  border-color: var(--color-brand-500);
+  border-width: 2px;
+  padding: 10px 12px;
+  background-color: var(--color-canvas);
+}
+
+/* La légende sous le libellé d'une option — « Disponible : 1 250 000 FCFA » sur
+   le renvoi au dealer. Elle est secondaire : elle ne prend ni la graisse ni
+   l'encre du libellé qu'elle accompagne. */
+.design-registre [data-espace='boutique'] [data-choix] label span + span {
+  font-weight: 400;
+  font-size: 0.75rem; /* 12px */
+  color: var(--color-encre-doux);
+}
+
+.design-registre [data-espace='boutique'] [data-choix-separateur] {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LE FORMULAIRE : LA GRILLE DES RÉSEAUX ET LE CHAMP DE MONTANT (lot L9.8)
    ───────────────────────────────────────────────────────────────────────────
    SIX BLOCS EMPILÉS POUR DOUZE CHAMPS.

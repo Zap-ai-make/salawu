@@ -441,6 +441,106 @@ test.describe('Écrans de travail', () => {
       .not.toBe('none')
   })
 
+  test('aucun cadre ne dit le type d une operation par sa seule couleur', async ({ page }) => {
+    // ⚠ LE DEFAUT QUE CE CONTROLE GARDE EST DOUBLE, ET LE SECOND EST LE PIRE.
+    //
+    // `TransactionForm` entourait ses trois radios d'un cadre dont le FOND
+    // changeait avec le type retenu : vert pour un depot, bleu pour un retrait,
+    // ROUGE pour un credit.
+    //
+    //   1. Une information portee par la COULEUR SEULE. Le fond est le seul
+    //      element qui change ; qui ne distingue pas le vert du rouge ne lit
+    //      rien de plus que le radio deja coche.
+    //   2. Le ROUGE DE L'ECHEC sur une operation normale. C'est la faute que
+    //      src/index.css nomme deja a propos du jeton --sortie — corrigee dans
+    //      l'historique au lot L8.4, et restee dans l'ecran ou l'on SAISIT.
+    //
+    // On mesure le fond RENDU, pas la classe : `bg-red-50` peut disparaitre du
+    // JSX sans que la regle change, et inversement.
+    //
+    // ⚠ ET ON MESURE APRES AVOIR COCHE. Au chargement, `transactionType` vaut
+    // '' : aucune option n'est retenue, donc AUCUNE teinte n'est posee, et le
+    // controle serait vert sur un ecran ou le defaut ne peut pas se produire.
+    await allerA(page, ECRANS[1]) // transactions
+
+    const cadre = page.locator('[data-choix-cadre]')
+    await expect(cadre).toBeVisible({ timeout: 30_000 })
+
+    await page.locator('[data-choix] label').first().click()
+
+    const rendu = await cadre.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return {
+        fond: cs.backgroundColor,
+        image: cs.backgroundImage,
+        bordure: cs.borderTopWidth,
+      }
+    })
+
+    // `rgba(0, 0, 0, 0)` est la facon dont un navigateur ecrit « transparent ».
+    expect(rendu.fond, 'le cadre ne doit porter aucun aplat de couleur')
+      .toBe('rgba(0, 0, 0, 0)')
+    expect(rendu.image, 'ni degrade — Tailwind v4 pose les deux')
+      .toBe('none')
+    expect(parseFloat(rendu.bordure), 'ni bordure de 4 px').toBe(0)
+  })
+
+  test('l option retenue porte la marque, et la carte ne bouge pas d un pixel', async ({ page }) => {
+    // La carte retenue passe d'une bordure de 1 px a 2 px. Sans compensation,
+    // elle se decalerait d'un pixel de chaque cote au clic — et la rangee
+    // entiere avec elle. La marge interieure perd exactement ce que la bordure
+    // gagne.
+    //
+    // ⚠ CE CONTROLE MESURE AVANT ET APRES LE CLIC. C'est la seule facon de
+    // prouver la compensation : lire le CSS montrerait deux valeurs, pas leur
+    // somme. Et au chargement aucune option n'est cochee, ce qui donne
+    // justement l'etat « avant ».
+    await allerA(page, ECRANS[1]) // transactions
+
+    const options = page.locator('[data-choix] label')
+    await expect(options.first()).toBeVisible({ timeout: 30_000 })
+    expect(await options.count(), 'le choix doit presenter plusieurs options')
+      .toBeGreaterThan(1)
+
+    const mesurer = () =>
+      options.evaluateAll((els) =>
+        els.map((el) => {
+          const cs = getComputedStyle(el)
+          return {
+            retenu: !!el.querySelector('input:checked'),
+            bordure: parseFloat(cs.borderTopWidth),
+            couleur: cs.borderTopColor,
+            largeur: Math.round(el.getBoundingClientRect().width),
+            rayon: cs.borderTopLeftRadius,
+          }
+        }),
+      )
+
+    const avant = await mesurer()
+    expect(avant.some((m) => m.retenu), 'aucune option n est cochee au chargement')
+      .toBe(false)
+    expect(avant[0].bordure, 'une option au repos porte 1 px').toBe(1)
+    expect(avant[0].rayon, 'le registre est carre').toBe('2px')
+
+    await options.first().click()
+
+    const apres = await mesurer()
+    const retenue = apres[0]
+    expect(retenue.retenu, 'le clic doit cocher l option').toBe(true)
+    // #1b62b0 — le jeton --brand-500.
+    expect(retenue.couleur, 'l option retenue prend la marque').toBe('rgb(27, 98, 176)')
+    expect(retenue.bordure, 'et une bordure de 2 px').toBe(2)
+    expect(apres[1].bordure, 'les autres gardent 1 px').toBe(1)
+
+    // ⚠ L'ASSERTION QUI COMPTE.
+    const ecart = Math.abs(retenue.largeur - avant[0].largeur)
+    expect(
+      ecart,
+      `la carte mesurait ${avant[0].largeur}px et mesure ${retenue.largeur}px apres le ` +
+        'clic : la bordure epaissit sans que la marge interieure compense',
+    ).toBeLessThanOrEqual(1)
+  })
+
   test('les comptes agent par reseau tiennent en grille, pas en pile', async ({ page }) => {
     // Le formulaire client demande deux valeurs par reseau. Chez salawu, qui en
     // compte six, cela faisait six blocs empiles : un ecran entier de

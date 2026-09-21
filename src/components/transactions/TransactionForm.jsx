@@ -492,13 +492,22 @@ function TransactionForm({ clients }) {
           <label className="block text-lg font-semibold text-gray-700 mb-1">
             Nature :
           </label>
-          <div className={`border-4 border-gray-300 rounded p-4 transition-colors ${
+          {/* ⚠ `data-choix-cadre` DESIGNE UN CADRE QUI DIT LE TYPE PAR SA SEULE
+              COULEUR — vert pour un depot, bleu pour un retrait, ROUGE pour un
+              credit. Deux defauts en un : une information portee par la couleur
+              seule, et le rouge de l'echec pose sur une operation parfaitement
+              normale. C'est la faute que src/index.css nomme deja a propos du
+              jeton --sortie, corrigee dans l'historique et restee ici.
+              Les classes restent pour TAOFIC ; la portee les neutralise. */}
+          <div
+            data-choix-cadre
+            className={`border-4 border-gray-300 rounded p-4 transition-colors ${
             normalizeLabel(transactionType) === 'depot' ? 'bg-green-50' :
             normalizeLabel(transactionType) === 'retrait' ? 'bg-blue-50' :
             normalizeLabel(transactionType) === 'credit' ? 'bg-red-50' :
             'bg-white'
           }`}>
-          <div className="flex flex-wrap gap-8 md:flex-row flex-col">
+          <div data-choix className="flex flex-wrap gap-8 md:flex-row flex-col">
             {TRANSACTION_TYPES.map((type, index) => (
               <div key={type.value} className="flex items-center">
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -513,7 +522,7 @@ function TransactionForm({ clients }) {
                   <span className="text-gray-700">{type.label}</span>
                 </label>
                 {index < TRANSACTION_TYPES.length - 1 && (
-                  <div className="ml-8 h-8 border-l border-gray-300"></div>
+                  <div data-choix-separateur className="ml-8 h-8 border-l border-gray-300"></div>
                 )}
               </div>
             ))}
