@@ -1321,9 +1321,43 @@ body {
   background-color: var(--color-papier);
   background-image: none;
   font-size: 0.84375rem; /* 13,5px */
-  font-weight: 600;
+  /* ⚠ AUCUN `font-weight` ICI NON PLUS, et cette fois c'est un controle qui me
+     l'a appris. Le premier jet posait `font-weight: 600` sur le LABEL. Le banc
+     complet a rougi aux trois largeurs, sur un controle du lot L9.7 :
+     « un label qui ENVELOPPE son controle n est pas mis en gras ».
+
+     Ce controle garde l'exclusion `:not(:has(input, select, textarea))` de la
+     regle des legendes, quelques centaines de lignes plus bas. Il mesure la
+     graisse d'un label-enveloppe et exige moins de 600, en se disant que si
+     l'exclusion sautait, la regle des legendes poserait 600 et il rougirait.
+
+     En posant 600 ici, je lui retirais son pouvoir : il ne distinguait plus
+     « l'exclusion a casse » de « la carte a fait son travail ». Et
+     l'arithmetique le rendait DEFINITIVEMENT aveugle, pas seulement bruyant —
+
+         legendes    .design-registre [data-espace='boutique']
+                     label:not(:has(input, select, textarea))     (0,2,2)
+         la carte    .design-registre [data-espace='boutique']
+                     [data-choix] label                           (0,3,1)
+
+     (0,3,1) l'emporte. Meme l'exclusion supprimee, ces labels auraient garde le
+     rendu de la carte : AUCUNE sonde posee sur eux n'aurait pu voir la
+     regression.
+
+     La correction n'est pas un amenagement pour faire taire le test, c'est le
+     dessin juste : la graisse appartient au TITRE de la carte, pas a l'enveloppe
+     qui contient le titre ET sa legende. L'enveloppe ne pose plus rien, donc si
+     l'exclusion sautait, la regle des legendes s'appliquerait sans concurrence
+     et le controle rougirait — ce qui est exactement son role. */
   color: var(--color-encre);
   cursor: pointer;
+}
+
+/* Le titre de la carte — « Depot », « Renvoyer du stock ». C'est LUI qui porte
+   la graisse. Les deux formulaires le rendent dans un <span> ; dans le renvoi au
+   dealer il est suivi d'un second <span> de legende, d'ou `:first-of-type`. */
+.design-registre [data-espace='boutique'] [data-choix] label > span:first-of-type {
+  font-weight: 600;
 }
 
 /* L'option retenue. La bordure passe à 2 px et la marge intérieure perd un

@@ -712,6 +712,26 @@ test.describe('Écrans de travail', () => {
 
     // La regle des legendes pose 600. Si l'exclusion `:has()` disparaissait, ce
     // label la recevrait et ce controle rougirait — c'est exactement son role.
+    //
+    // ⚠ CE CONTROLE A DEJA ATTRAPE UNE VRAIE FAUTE, ET C'ETAIT LA MIENNE.
+    //
+    // Le lot L9.9 a d'abord pose `font-weight: 600` sur `[data-choix] label` —
+    // c'est-a-dire sur CE label. Le banc complet a rougi aux trois largeurs.
+    //
+    // La faute n'etait pas le rouge, elle etait ce que le rouge revelait : la
+    // graisse avait ete posee sur l'ENVELOPPE au lieu du TITRE qu'elle contient.
+    // Et l'arithmetique de specificite rendait le controle definitivement
+    // aveugle — `[data-choix] label` pese (0,3,1) contre (0,2,2) pour la regle
+    // des legendes : meme l'exclusion supprimee, ces labels auraient garde le
+    // rendu de la carte, et aucune sonde posee sur eux n'aurait vu la
+    // regression.
+    //
+    // La graisse vit desormais sur `label > span:first-of-type`. L'enveloppe ne
+    // pose plus rien, et ce controle retrouve tout son pouvoir : il a ete
+    // reverifie en retirant l'exclusion `:has()` de src/index.css, et il rougit.
+    //
+    // ⚠ NE PAS REPOSER DE `font-weight` SUR `[data-choix] label`. Le test
+    // redeviendrait vert et cesserait de garder quoi que ce soit.
     expect(graisse, 'une enveloppe de controle ne doit pas heriter du gras des legendes')
       .toBeLessThan(600)
   })

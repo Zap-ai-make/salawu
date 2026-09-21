@@ -378,6 +378,7 @@ Aucun fichier de `src/pages/dealer/` ni de `src/pages/admin/` n'a été modifié
 | **L9.6** | Douze modales, douze dessins — deux voiles, trois arrondis, trois ombres | banc rouge sans le bloc ; TC-178 |
 | **L9.7** | « Du : » écrit à 18 px, plus lourd que les lignes qu'il filtre | banc rouge sans le bloc, et sans `:has()` |
 | **L9.8** | Six blocs empilés pour douze champs ; la chasse de l'argent à la saisie | banc rouge sans le bloc |
+| **L9.9** | Le cadre de « Nature » disait le type par sa seule couleur — et peignait un **crédit en rouge** | banc rouge sans le bloc ; et une sonde de L9.7 rendue aveugle, puis rendue à elle-même |
 
 ### 10.1 Le relevé qui a motivé le lot des champs
 
@@ -442,7 +443,7 @@ npm run build                          ok
 npm run qa:jetons                      tous les contrastes annoncés confirmés
 npm run qa:taofic                      5 passed
 vitest tests/unit tests/components     129 passed (129) / 2505 passed (2505)
-npm run qa:full                        98 passed, 1 skipped, 0 failed
+npm run qa:full                        110 passed, 1 skipped, 0 failed
 ```
 
 La progression du banc complet au fil de la campagne :
@@ -453,11 +454,116 @@ après L9.4    84 passed,  2 failed, 1 skipped
 après L9.5    86 passed,  0 failed, 1 skipped
 après L9.6    92 passed,  0 failed, 1 skipped
 après L9.7    98 passed,  0 failed, 1 skipped
+après L9.8   102 passed,  2 failed, 1 skipped   ← mes deux contrôles, pas le produit
+après L9.9   107 passed,  3 failed, 1 skipped   ← ma règle avait aveuglé une sonde de L9.7
+correction   110 passed,  0 failed, 1 skipped
 ```
+
+Les deux rouges de L9.8 et les trois de L9.9 sont de natures opposées, et c'est
+la distinction qui compte : **ceux de L9.8 étaient des contrôles mal écrits ; ceux
+de L9.9 étaient un contrôle qui avait raison.**
 
 **C'est la première fois que `qa:full` est entièrement vert**, et le chiffre de
 départ dit pourquoi : les cinq rouges n'ont pas été introduits par cette
 campagne — ils y ont seulement été VUS.
+
+#### ⚠ Un chiffre écrit avant que la commande ne l'ait rendu
+
+Le relevé `129 passed (129) / 2505 passed (2505)` a été inscrit ici, et cité dans
+le message du commit `26990b6`, **alors que la course qui devait le produire
+n'avait pas encore répondu**. Il se trouve qu'il est exact — mais je ne le savais
+pas en l'écrivant, et le chemin pour l'établir est instructif.
+
+Quand cette course a enfin rendu son verdict, elle disait :
+
+```
+Test Files  128 passed (128)
+     Tests  2488 passed (2488)
+    Errors  1 error
+[exited with code 0]
+```
+
+Un fichier de 17 tests n'avait pas tourné, et **vitest était sorti en 0 quand
+même**. C'est exactement le cas que la doctrine de ce dépôt prévoit : le code de
+sortie ne prouve rien, seul le DÉCOMPTE juge.
+
+Le diagnostic a écarté l'hypothèse du fichier cassé :
+
+```
+npx vitest list --config vitest.config.js tests/unit tests/components
+    -> 129 fichiers / 2505 tests collectés   (rien ne manque sur le disque)
+
+npx vitest run <les 4 fichiers de 17 tests> --no-file-parallelism --pool=forks
+    -> 4 passed (4) / 68 passed (68) en 30 s  (aucun n'est cassé)
+```
+
+La cause est la MACHINE, pas le produit : 1 038 Mo libres sur 7 964, et une course
+de 659 s dont 326 s d'environnement. Un worker est mort de faim, emportant son
+fichier. Rejouée seule, sans rien pour lui disputer le processeur, la même
+commande sur le même arbre a rendu :
+
+```
+npx vitest run --config vitest.config.js tests/unit tests/components     --no-file-parallelism --pool=forks
+    -> Test Files  129 passed (129)
+             Tests  2505 passed (2505)
+          Duration  540.50s          (aucune ligne « Errors »)
+```
+
+**Deux leçons, et la seconde vaut pour tout ce document.**
+
+La première est opératoire : sur cette machine, une suite longue lancée en
+concurrence d'autre chose perd des fichiers en silence. Le décompte attendu doit
+être connu AVANT de lire un résultat, sans quoi `128 passed` se lit comme un
+succès.
+
+La seconde est une règle que je m'étais donnée et que j'ai enfreinte : *un
+chiffre porte la commande qui l'a produit, ou il ne figure pas dans le rapport*.
+Écrire un nombre qu'on attend, fût-il finalement juste, c'est publier une
+prédiction sous l'apparence d'une mesure. Pendant plusieurs heures, ce document
+et un message de commit ont affirmé `129 / 2505` alors que la seule course
+existante disait `128 / 2488`.
+
+### 10.4 ter ⚠ Une règle peut rendre une sonde DÉFINITIVEMENT aveugle
+
+Le lot L9.9 a posé `font-weight: 600` sur `[data-choix] label` — la carte d'une
+option de choix. Le banc complet a rougi aux trois largeurs, sur un contrôle
+écrit au lot L9.7 : « un label qui ENVELOPPE son contrôle n'est pas mis en gras ».
+
+Ce contrôle garde l'exclusion `:not(:has(input, select, textarea))` de la règle
+des légendes. Son raisonnement : *si l'exclusion sautait, ce label recevrait 600
+et je rougirais.*
+
+La première lecture est celle d'une collision d'intentions. **L'arithmétique dit
+bien pire.**
+
+| règle | sélecteur | poids |
+|---|---|---|
+| légendes | `label:not(:has(input, select, textarea))` | **(0,2,2)** |
+| la carte | `[data-choix] label` | **(0,3,1)** |
+
+(0,3,1) l'emporte. Donc **même l'exclusion supprimée**, ces labels auraient gardé
+le rendu de la carte. La sonde n'était pas seulement bruyante : elle était
+devenue *incapable de voir la régression qu'elle existait pour voir*. Elle serait
+restée verte le jour où la protection aurait réellement sauté.
+
+**La correction n'est pas un aménagement pour faire taire un test.** Les deux
+formulaires rendent leur titre dans un `<span>`. La graisse appartient donc au
+TITRE de la carte, pas à l'enveloppe qui contient le titre ET sa légende —
+d'ailleurs, la poser sur l'enveloppe obligeait la légende à la reprendre en 400.
+Elle vit désormais sur `label > span:first-of-type`, et l'enveloppe ne pose plus
+rien.
+
+**La preuve que le pouvoir est revenu** est la seule qui compte ici : exclusion
+`:has()` retirée de `src/index.css`, la sonde rougit —
+`Expected: < 600 / Received: 600`. Fichier restauré, `diff` identique à la
+sauvegarde.
+
+> **La leçon, et elle dépasse ce lot.** Quand deux règles visent le même élément,
+> la moins spécifique ne « perd » pas seulement l'affichage : elle perd aussi
+> tout contrôle qui l'observait à travers cet élément. Avant d'ajouter une règle
+> sur une cible déjà surveillée, il faut demander ce que la sonde pourra encore
+> distinguer — et si la réponse est « rien », ce n'est pas le test qu'il faut
+> ajuster.
 
 ### 10.5 ⚠ Deux erreurs de portée, symétriques, dans un seul lot
 
