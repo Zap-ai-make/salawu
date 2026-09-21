@@ -441,6 +441,26 @@ test.describe('Écrans de travail', () => {
       .not.toBe('none')
   })
 
+  /**
+   * ⚠ LE FORMULAIRE DE TRANSACTION EST DESORMAIS EN MODALE — lot L9.15.
+   *
+   * Sur decision du client, maquette a l'appui, l'ecran Transactions montre la
+   * liste et ouvre la saisie par « Enregistrer une transaction ». Les quatre
+   * controles qui inspectent ce formulaire doivent donc l'ouvrir d'abord.
+   *
+   * Le banc complet l'a dit sans ambiguite : DOUZE rouges, soit quatre tests aux
+   * trois largeurs, tous sur des selecteurs internes au formulaire. Un echec
+   * franc et uniforme comme celui-la designe un changement de structure, pas une
+   * regression de style — et c'est exactement ce qu'on avait change.
+   */
+  async function ouvrirLaSaisie(page) {
+    const bouton = page.getByRole('button', { name: /Enregistrer une transaction/ })
+    await expect(bouton).toBeVisible({ timeout: 30_000 })
+    await bouton.click()
+    // On attend le panneau, pas un delai : la modale monte son formulaire.
+    await expect(page.locator('[data-modale]').first()).toBeVisible({ timeout: 30_000 })
+  }
+
   test('aucun cadre ne dit le type d une operation par sa seule couleur', async ({ page }) => {
     // ⚠ LE DEFAUT QUE CE CONTROLE GARDE EST DOUBLE, ET LE SECOND EST LE PIRE.
     //
@@ -462,6 +482,7 @@ test.describe('Écrans de travail', () => {
     // '' : aucune option n'est retenue, donc AUCUNE teinte n'est posee, et le
     // controle serait vert sur un ecran ou le defaut ne peut pas se produire.
     await allerA(page, ECRANS[1]) // transactions
+    await ouvrirLaSaisie(page)
 
     const cadre = page.locator('[data-choix-cadre]')
     await expect(cadre).toBeVisible({ timeout: 30_000 })
@@ -496,6 +517,7 @@ test.describe('Écrans de travail', () => {
     // somme. Et au chargement aucune option n'est cochee, ce qui donne
     // justement l'etat « avant ».
     await allerA(page, ECRANS[1]) // transactions
+    await ouvrirLaSaisie(page)
 
     const options = page.locator('[data-choix] label')
     await expect(options.first()).toBeVisible({ timeout: 30_000 })
@@ -640,6 +662,7 @@ test.describe('Écrans de travail', () => {
 
     // Et le champ qui EST une somme : celui de la modale de transaction.
     await allerA(page, ECRANS[1]) // transactions
+    await ouvrirLaSaisie(page)
     const montant = page.locator('input[data-champ-montant]').first()
     await expect(montant).toBeVisible({ timeout: 30_000 })
 
@@ -699,6 +722,7 @@ test.describe('Écrans de travail', () => {
     // (TransactionForm.jsx) enveloppent leur <input type="radio">. Ils sont
     // affiches au repos, sans rien a semer.
     await allerA(page, ECRANS[1]) // transactions
+    await ouvrirLaSaisie(page)
 
     const enveloppe = page
       .locator('main[data-espace="boutique"] label')
