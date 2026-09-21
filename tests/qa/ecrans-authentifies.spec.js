@@ -987,6 +987,49 @@ test.describe('Écrans de travail', () => {
       .toBe('rgb(27, 98, 176)')
   })
 
+  test('l espace de travail ne perd pas plus de 10 px de chaque cote', async ({ page }) => {
+    // ⚠ CHIFFRE DONNE PAR LE CLIENT : « les marges left et right sont trop, ca
+    // doit pas etre max 10px ».
+    //
+    // Le compte y etait : `px-4` sur <main> (16 px) plus `p-6` sur la carte
+    // (24 px) faisaient QUARANTE pixels de chaque cote. Sur un telephone de
+    // 375 px, 80 px partaient en blanc — plus d'un cinquieme de la largeur, sur
+    // un ecran dont le travail est de montrer un tableau de huit colonnes.
+    //
+    // ⚠ ON MESURE LE CUMUL, PAS UNE REGLE. Deux elements imbriques portent
+    // chacun une marge interieure ; verifier l'une des deux laisserait l'autre
+    // grossir en silence. On compare donc le bord GAUCHE RENDU du contenu au
+    // bord gauche de la fenetre, ce qui est exactement ce que le client voit.
+    await allerA(page, ECRANS[3]) // clients
+
+    const carte = page.locator('main[data-espace="boutique"] [data-surface]').first()
+    await expect(carte).toBeVisible({ timeout: 30_000 })
+
+    const mesure = await carte.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      const boite = el.getBoundingClientRect()
+      return {
+        gauche: Math.round(boite.left + parseFloat(cs.paddingLeft)),
+        droite: Math.round(
+          window.innerWidth - (boite.right - parseFloat(cs.paddingRight)),
+        ),
+      }
+    })
+
+    // ⚠ UN ENCADREMENT, ET NON UN PLAFOND — les deux bornes ont ete demandees.
+    //
+    // Le client a d'abord dit « max 10px », en visant les 154 px que le plafond
+    // de largeur laissait a 1440 px. Au rendu, il a repondu « ajoute quelques
+    // px, c'est colle ». Un controle qui n'aurait garde que le maximum aurait
+    // laisse quelqu'un revenir a zero sans rien dire.
+    for (const [cote, valeur] of [['gauche', mesure.gauche], ['droit', mesure.droite]]) {
+      expect(valeur, `le contenu est a ${valeur}px du bord ${cote} — trop loin`)
+        .toBeLessThanOrEqual(20)
+      expect(valeur, `le contenu est a ${valeur}px du bord ${cote} — colle`)
+        .toBeGreaterThanOrEqual(12)
+    }
+  })
+
   test('la bande des reserves ne s en va jamais, meme au defilement', async ({ page }) => {
     // ⟲ RETOURNE AU LOT L7.4b. Ce controle exigeait l'inverse : un rail qui
     // apparaissait au defilement pour COMPENSER la disparition du rideau. La

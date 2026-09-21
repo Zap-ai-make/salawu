@@ -374,6 +374,74 @@ export const exportClientsToXLSM = async (clients, filename = `clients_${CLIENT_
 }
 
 // Fonction pour importer des clients depuis un fichier XLSM/XLSX
+/**
+ * Export des transactions NON TERMINEES vers XLSM.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠ AJOUTE SUR DEMANDE DU CLIENT (2026-09-21). La maquette pose un bouton
+ * « Exporter » sur l'ecran Transactions ; le produit n'en avait aucun. Ce n'est
+ * donc pas un bouton mal dessine qu'on redessine : c'est une fonction absente
+ * qu'on ecrit. Elle a ete signalee comme telle avant d'etre faite, et demandee.
+ *
+ * Il exporte ce que l'ecran MONTRE — les transactions en attente — et non
+ * l'historique complet. Un bouton pose au-dessus d'une liste exporte cette
+ * liste ; exporter autre chose serait un piege.
+ *
+ * Les colonnes reprennent celles du tableau, dans le meme ordre, pour qu'on
+ * puisse relire le fichier en regardant l'ecran.
+ */
+export const exportTransactionsToXLSM = async (
+  transactions,
+  filename = `transactions_${CLIENT_ID}`,
+) => {
+  try {
+    const XLSX = await import('xlsx')
+
+    // Meme precaution que pour les clients : un numero de telephone ou un code
+    // agent qui commence par 0 le perdrait si Excel le lisait comme un nombre.
+    const forceText = (value) => ({
+      t: 's',
+      v: value !== null && value !== undefined ? String(value) : '',
+    })
+
+    const entetes = [
+      'Date & heure',
+      'Client',
+      'Nature',
+      'Reseau',
+      'Code / numero',
+      'Montant (FCFA)',
+      'Statut',
+    ]
+
+    const data = (transactions || []).map((t) => [
+      forceText(t.date ?? t.createdAt ?? ''),
+      forceText(t.client),
+      forceText(t.type),
+      forceText(t.reseau),
+      forceText(t.code),
+      Number(t.montant) || 0,
+      forceText(t.statut ?? 'Non Terminees'),
+    ])
+
+    const worksheet = XLSX.utils.aoa_to_sheet([entetes, ...data])
+    worksheet['!cols'] = [
+      { width: 20 }, { width: 28 }, { width: 12 },
+      { width: 14 }, { width: 18 }, { width: 16 }, { width: 16 },
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions')
+
+    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    XLSX.writeFile(workbook, `${filename}_${timestamp}.xlsm`)
+
+    return { success: true, count: (transactions || []).length }
+  } catch (error) {
+    console.error("Erreur lors de l'export des transactions:", error)
+    return { success: false, error: error.message }
+  }
+}
+
 export const importClientsFromXLSM = (file) => {
   return new Promise((resolve, reject) => {
     try {

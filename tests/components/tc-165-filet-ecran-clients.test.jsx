@@ -25,6 +25,14 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, within, cleanup, fireEvent } from '@testing-library/react'
+// ⚠ AJOUTE LE 2026-09-21, ET CE N'EST PAS UN AMENAGEMENT DE CONFORT.
+//
+// L'ecran Clients porte desormais « Ajouter un client », qui mene au Formulaire.
+// C'est un <Link> et non un <button> : une navigation doit survivre au
+// Ctrl+clic, au clic-milieu et au menu contextuel. Un <Link> exige un contexte
+// de routeur — le composant depend donc reellement du routage, et c'est au
+// harnais de le fournir, pas au composant de s'en passer.
+import { MemoryRouter } from 'react-router-dom'
 import { pilotProfile } from '../../config/clients/_pilot.js'
 
 vi.setConfig({ testTimeout: 30_000 })
@@ -128,11 +136,13 @@ async function monterLesClients(proprietes = {}) {
   const { default: ClientsTable } = await import('../../src/components/ClientsTable.jsx')
 
   render(
-    <AuthContext.Provider
-      value={{ activeStore: { id: 'b1', name: 'ESAHAF Ouagadougou — Zone du Bois' } }}
-    >
-      <ClientsTable clients={CLIENTS} {...proprietes} />
-    </AuthContext.Provider>,
+    <MemoryRouter>
+      <AuthContext.Provider
+        value={{ activeStore: { id: 'b1', name: 'ESAHAF Ouagadougou — Zone du Bois' } }}
+      >
+        <ClientsTable clients={CLIENTS} {...proprietes} />
+      </AuthContext.Provider>
+    </MemoryRouter>,
   )
   return React
 }
@@ -263,7 +273,7 @@ describe('TC-165 — les trois actions de ligne', () => {
 describe('TC-165 — la recherche et le filtre par mois', () => {
   it('cherche dans le nom, le prénom et le numéro personnel', async () => {
     await monterLesClients()
-    const champ = screen.getByPlaceholderText(/rechercher nom, prénom/i)
+    const champ = screen.getByPlaceholderText(/nom, prénom, code ou numéro agent/i)
 
     fireEvent.change(champ, { target: { value: 'Boukare' } })
     expect(nomsAffiches()).toEqual(['ZONGO'])
@@ -276,7 +286,7 @@ describe('TC-165 — la recherche et le filtre par mois', () => {
     // C'est la raison d'être de la colonne par réseau : un caissier a sous les
     // yeux le code d'un réseau quelconque, pas forcément Orange.
     await monterLesClients()
-    const champ = screen.getByPlaceholderText(/rechercher nom, prénom/i)
+    const champ = screen.getByPlaceholderText(/nom, prénom, code ou numéro agent/i)
 
     fireEvent.change(champ, { target: { value: '1 006 210' } })
     expect(nomsAffiches()).toEqual(['TRAORE'])
@@ -284,7 +294,7 @@ describe('TC-165 — la recherche et le filtre par mois', () => {
 
   it('cherche aussi dans le numéro d\'agent, qui n\'est pourtant pas affiché', async () => {
     await monterLesClients()
-    const champ = screen.getByPlaceholderText(/rechercher nom, prénom/i)
+    const champ = screen.getByPlaceholderText(/nom, prénom, code ou numéro agent/i)
 
     fireEvent.change(champ, { target: { value: '70113344' } })
     expect(nomsAffiches()).toEqual(['OUEDRAOGO/KABORE'])
@@ -293,7 +303,15 @@ describe('TC-165 — la recherche et le filtre par mois', () => {
   it('filtre par mois d\'ajout, sur un champ nommé', async () => {
     await monterLesClients()
 
-    const mois = screen.getByLabelText(/filtrer par mois/i)
+    // ⚠ LE NOM DU CHAMP A CHANGE, ET DANS LE BON SENS.
+    //
+    // Il etait porte par `aria-label="Filtrer par mois"` — un nom CACHE, pose
+    // faute de mieux (constat Q4 de la boucle QA : le champ n'avait aucun nom).
+    // La maquette donne au bloc de filtre un <label> VISIBLE, « Mois ». Un nom
+    // visible vaut toujours mieux qu'un nom cache : il sert aussi ceux qui
+    // voient. L'intention du test — « sur un champ nomme » — est donc mieux
+    // servie qu'avant, pas relachee.
+    const mois = screen.getByLabelText(/^mois$/i)
     fireEvent.change(mois, { target: { value: 'Avril' } })
 
     expect(nomsAffiches()).toEqual(['ZONGO'])
@@ -302,18 +320,21 @@ describe('TC-165 — la recherche et le filtre par mois', () => {
   it('porte le nombre de clients filtrés sur le bouton d\'export', async () => {
     await monterLesClients()
 
-    expect(screen.getByRole('button', { name: /Exporter \(XLSM\) \(3\)/ })).toBeInTheDocument()
+    // Le separateur du compte suit la maquette : « Exporter (XLSM) · 3 », et
+    // non « (3) ». Le nombre, lui, reste celui des clients FILTRES — c'est ce
+    // que ce test garde, et cela n'a pas bouge.
+    expect(screen.getByRole('button', { name: /Exporter \(XLSM\) · 3/ })).toBeInTheDocument()
 
-    fireEvent.change(screen.getByPlaceholderText(/rechercher nom, prénom/i), {
+    fireEvent.change(screen.getByPlaceholderText(/nom, prénom, code ou numéro agent/i), {
       target: { value: 'ZONGO' },
     })
-    expect(screen.getByRole('button', { name: /Exporter \(XLSM\) \(1\)/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Exporter \(XLSM\) · 1/ })).toBeInTheDocument()
   })
 
   it('exporte la sélection affichée, jamais la base entière', async () => {
     await monterLesClients()
 
-    fireEvent.change(screen.getByPlaceholderText(/rechercher nom, prénom/i), {
+    fireEvent.change(screen.getByPlaceholderText(/nom, prénom, code ou numéro agent/i), {
       target: { value: 'ZONGO' },
     })
     fireEvent.click(screen.getByRole('button', { name: /Exporter \(XLSM\)/ }))
@@ -342,16 +363,18 @@ describe('TC-165 — ce que l\'écran dit quand il n\'a rien à montrer', () => 
     const { AuthContext } = await import('../../src/context/AuthContext')
     const { default: ClientsTable } = await import('../../src/components/ClientsTable.jsx')
     render(
-      <AuthContext.Provider value={{ activeStore: { id: 'b1' } }}>
-        <ClientsTable clients={[]} />
-      </AuthContext.Provider>,
+      <MemoryRouter>
+        <AuthContext.Provider value={{ activeStore: { id: 'b1' } }}>
+          <ClientsTable clients={[]} />
+        </AuthContext.Provider>
+      </MemoryRouter>,
     )
     const videSansDonnee = screen.getByText('Aucun client trouvé.').textContent
 
     // Cas 2 — des clients existent, mais la recherche ne rend rien.
     cleanup()
     await monterLesClients()
-    fireEvent.change(screen.getByPlaceholderText(/rechercher nom, prénom/i), {
+    fireEvent.change(screen.getByPlaceholderText(/nom, prénom, code ou numéro agent/i), {
       target: { value: 'NOM QUI N EXISTE PAS' },
     })
     const videApresRecherche = screen.getByText('Aucun client trouvé.').textContent

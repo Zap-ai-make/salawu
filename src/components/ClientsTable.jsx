@@ -1,4 +1,5 @@
 import { useContext, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useClientsFilter } from '../hooks/useClientsFilter'
 import { useExcelOperations } from '../hooks/useExcelOperations'
 import { usePagination } from '../hooks/usePagination'
@@ -38,15 +39,69 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode
   // pas un restylage ; l'aplatir est la mesure juste.
   return (
     <div data-surface className="bg-white rounded-lg shadow-md p-6">
-      {/* `data-tete-ecran` : sur cet ecran, ce h2 EST la tete de page — il n'y a
-          pas d'autre titre. Le marqueur ne touche pas au niveau du titre, qui
-          reste un h2 : la maquette le dit elle-meme (« un h2, jamais un second
-          h1 »), et changer le niveau modifierait l'arbre d'accessibilite, ce
-          qui n'est pas un restylage. Il ne retire que le trait noir de 2 px,
-          comme sur les neuf autres ecrans. */}
-      <h2 data-tete-ecran className={`text-2xl font-bold ${themeClasses.text} mb-6 border-b-2 border-current pb-2`}>
-        Liste des clients
-      </h2>
+      {/* LA TETE D'ECRAN — titre et compte a gauche, actions a droite.
+          Le titre reste un <h2> : la maquette le dit elle-meme (« un h2, jamais
+          un second h1 »), et changer le niveau modifierait l'arbre
+          d'accessibilite, ce qui n'est pas un restylage. */}
+      <div data-ecran-tete className="flex flex-wrap items-end gap-3 mb-4">
+        <div>
+          <h2 data-tete-ecran className={`text-2xl font-bold ${themeClasses.text}`}>
+            Clients
+          </h2>
+          {/* Le compte. DEUX nombres et non un : le total ENREGISTRE ne bouge
+              pas avec les filtres, le nombre AFFICHE est celui de la page en
+              cours. Les confondre ferait croire a une perte de donnees des
+              qu'on filtre. */}
+          <p data-ecran-compte>
+            {clients.length} client{clients.length > 1 ? 's' : ''} enregistré{clients.length > 1 ? 's' : ''}
+            {' · '}
+            {paginatedData.length} affiché{paginatedData.length > 1 ? 's' : ''}
+          </p>
+        </div>
+
+        <div data-ecran-actions className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleImportClick}
+            disabled={isImporting}
+            data-rang="second"
+            className="inline-flex items-center gap-2"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 15V3" /><path d="m7 8 5-5 5 5" /><path d="M4 19h16" />
+            </svg>
+            {isImporting ? 'Import en cours...' : 'Importer (XLSM)'}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleExport(filteredClients)}
+            data-rang="second"
+            className="inline-flex items-center gap-2"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M4 19h16" />
+            </svg>
+            Exporter (XLSM){filteredClients.length > 0 && ` · ${filteredClients.length}`}
+          </button>
+          {/* ⚠ UN LIEN, PAS UN BOUTON. « Ajouter un client » mene a l'ecran
+              Formulaire, deja present dans la navigation : c'est une NAVIGATION,
+              et un <button> la volerait au clic-milieu, au Ctrl+clic et au menu
+              contextuel. Le rang lui donne l'apparence d'un bouton primaire. */}
+          <Link
+            to="/formulaire"
+            data-rang="primaire"
+            className="inline-flex items-center gap-2"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 5v14" /><path d="M5 12h14" />
+            </svg>
+            Ajouter un client
+          </Link>
+        </div>
+      </div>
 
       {/* Input caché pour l'import */}
       <input
@@ -57,48 +112,55 @@ function ClientsTable({ clients, onDelete, onEdit, onImportClients, onAccessCode
         style={{ display: 'none' }}
       />
 
-      {/* Boutons d'action en haut */}
-      <div className="flex flex-wrap justify-between gap-3 mb-6">
-        <button 
-          onClick={handleImportClick}
-          disabled={isImporting}
-          data-rang="second"
-          className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white px-6 py-2 rounded transition-colors"
-        >
-          {isImporting ? 'Import en cours...' : 'Importer (XLSM)'}
-        </button>
-        <button 
-          onClick={() => handleExport(filteredClients)}
-          data-rang="second"
-          className="bg-blue-700 hover:bg-blue-700 text-white px-6 py-2 rounded transition-colors"
-        >
-          Exporter (XLSM) {filteredClients.length > 0 && `(${filteredClients.length})`}
-        </button>
-      </div>
+      {/* LA BARRE DE FILTRES.
+          ⚠ UN <form> ET UN BOUTON « Rechercher », alors que le filtrage est
+          DEJA immediat a la frappe. Ce n'est pas un bouton decoratif : sans lui,
+          la touche Entree dans un champ de recherche isole recharge la page sur
+          certains navigateurs. Le `preventDefault` la neutralise, et le bouton
+          donne une action explicite a qui en attend une. Le filtrage reste
+          instantane — le bouton ne declenche rien de plus.
 
-      {/* Filtres */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Rechercher nom, prénom, code/numéro agent (tous réseaux), numéro personnel..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 min-w-64 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
-        />
-        <select
-          // Sans nom accessible, un lecteur d'ecran annonce « liste deroulante »
-          // sans dire de quoi. Il n'y a pas de <label> visible ici : le nom passe
-          // donc par aria-label (constat Q4 de la boucle QA navigateur).
-          aria-label="Filtrer par mois"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
-        >
-          {MONTH_OPTIONS.map(month => (
-            <option key={month} value={month}>{month}</option>
-          ))}
-        </select>
-      </div>
+          ⚠ LES DEUX <label> SONT VISIBLES, donc l'`aria-label` du mois
+          disparait : il etait la faute de mieux (constat Q4 de la boucle QA).
+          Un nom accessible visible vaut toujours mieux qu'un nom cache. */}
+      <form
+        data-filtres
+        data-cadre
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-wrap mb-6"
+      >
+        <div data-filtre-bloc>
+          <label htmlFor="clients-filtre-mois">Mois</label>
+          <select
+            id="clients-filtre-mois"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          >
+            {MONTH_OPTIONS.map(month => (
+              <option key={month} value={month}>{month}</option>
+            ))}
+          </select>
+        </div>
+
+        <div data-filtre-bloc data-filtre-bloc-large>
+          <label htmlFor="clients-filtre-recherche">Rechercher</label>
+          <span data-champ-icone>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" /><path d="M16.5 16.5 21 21" />
+            </svg>
+            <input
+              id="clients-filtre-recherche"
+              type="search"
+              placeholder="Nom, prénom, code ou numéro agent (tous réseaux), numéro personnel…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </span>
+        </div>
+
+        <button type="submit" data-rang="primaire">Rechercher</button>
+      </form>
 
       {/* Tableau */}
       {/* `tabIndex={0}` : une zone qui defile horizontalement DOIT etre focalisable,

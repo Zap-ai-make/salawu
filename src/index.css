@@ -407,19 +407,46 @@ body {
    ici. C'est la règle déjà appliquée au filet des montants.
 
    CE QUE MESURE LA MAQUETTE (docs/audit/maquette-espace-boutique.html)
-     .doc       max-width 1180px, padding latéral 24px → contenu ≈ 1132px
      .ecran h1  23px / 600 / letter-spacing -.015em / line-height 1.2
      .marque__nom  34px / 600 / letter-spacing .12em
+
+   ⚠ `.doc` NE FIGURE PLUS DANS CE RELEVÉ, et c'est une correction. Ses
+   1180 px sont la largeur du DOCUMENT DE SPÉCIFICATION, pas celle de
+   l'application — laquelle est montrée dans des boîtes `.appli` sans largeur
+   maximale. Voir la note du bloc `main[data-espace='boutique']` ci-dessous.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* UNE SEULE LARGEUR, et elle est portée par le Layout.
    Le dépôt en déclarait QUATRE (2xl, 4xl, 6xl, 7xl), chacune décidée dans son
    coin : d'un écran à l'autre, le contenu ne commençait pas au même endroit et
-   l'œil devait se recaler à chaque navigation.
-   72rem = 1152px, le pas Tailwind le plus proche des 1132px de la maquette. */
+   l'œil devait se recaler à chaque navigation. Cette unification-là reste, et
+   c'est elle qui comptait.
+
+   ⟲ LE PLAFOND DE 72rem EST RETIRÉ (2026-09-21), ET LA RAISON EST UNE ERREUR
+   DE LECTURE DE MA PART — la deuxième du même genre.
+   ───────────────────────────────────────────────────────────────────────────
+   Il était justifié ainsi : « 72rem = 1152px, le pas Tailwind le plus proche des
+   1132px de la maquette », en s'appuyant sur `.doc { max-width: 1180px }`.
+
+   Mais `.doc` N'EST PAS L'APPLICATION. C'est le document de spécification
+   lui-même : il porte `.doc-entete h1`, `.doc > h2 { margin: 64px 0 }`,
+   `.doc > p { max-width: 70ch }`. Les écrans du logiciel y sont montrés dans des
+   boîtes `.appli`, QUI N'ONT AUCUNE LARGEUR MAXIMALE.
+
+   J'avais donc pris la largeur de la page de documentation pour celle du
+   produit. C'est exactement la faute déjà relevée au lot L9.11 sur `.tel` — le
+   cadre de téléphone qui illustre la maquette, compté comme un concept du
+   logiciel. Deux fois le même piège : **le chrome d'un document de conception
+   ressemble à du produit, et n'en est pas.**
+
+   Conséquence mesurée : à 1440 px, le contenu commençait à 154 px du bord. Le
+   client l'a vu avant moi.
+
+   L'unification survit au retrait : les dix écrans partagent toujours UNE seule
+   largeur — celle de la fenêtre. */
 .design-registre main[data-espace='boutique'] {
-  max-width: 72rem;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
 }
 
 /* Les cadres de page se taisent : la largeur, le centrage et le fond sont
@@ -1236,6 +1263,146 @@ body {
    d'un carré de 32 px au bout de chaque titre. */
 .design-registre [data-espace='boutique'] [data-vignette] {
   display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES MARGES LATERALES DE L'ESPACE DE TRAVAIL (lot L9.14)
+   ───────────────────────────────────────────────────────────────────────────
+   DEMANDE DU CLIENT : « les marges left et right sont trop, ca doit pas etre
+   max 10px ».
+
+   Le compte y etait, et il etait lourd — QUARANTE PIXELS de chaque cote :
+
+       <main>          px-4   16 px
+       [data-surface]  p-6    24 px
+       ------------------------------
+       total                  40 px
+
+   Sur un telephone de 375 px, 80 px partaient donc en blanc, soit plus d'un
+   cinquieme de la largeur — sur un ecran dont le travail est de montrer un
+   tableau de huit colonnes. C'est la largeur utile qui payait.
+
+   On ramene le total a SEIZE pixels, repartis ainsi : ZERO sur <main>, SEIZE sur
+   la carte. La carte garde donc son filet au bord de la fenetre, et le contenu
+   respire a l'interieur. L'inverse — la marge sur <main>, rien sur la carte —
+   collerait le texte contre le filet.
+
+   ⟲ PREMIER JET A 10 px, CORRIGE LE MEME JOUR. Le client avait donne « max
+   10px » ; au rendu il a repondu « ajoute quelques px, c'est colle ». Les deux
+   remarques ne se contredisent pas : la premiere visait les 154 px que le
+   plafond de largeur laissait a 1440 px, la seconde le confort de lecture une
+   fois ce plafond retire. 16 px repond aux deux.
+
+   ⚠ ON NE TOUCHE QUE L'HORIZONTAL. Le `padding-top` de <main> est calcule en
+   JavaScript (il compense la navigation quand elle passe en `fixed`) et le
+   `padding-bottom` aere la fin de page. Les ecrire ici les casserait, ou pire :
+   `padding` en raccourci les remettrait a zero sans que rien ne le dise.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.design-registre [data-espace='boutique'] [data-surface] {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA TETE D'ECRAN ET LA BARRE DE FILTRES EN CADRE (lot L9.13)
+   ───────────────────────────────────────────────────────────────────────────
+   DEMANDE DU CLIENT, CAPTURES A L'APPUI : l'ecran Clients doit rendre ce que la
+   maquette montre. Les ecarts releves etaient tous de STRUCTURE, pas de teinte :
+
+     · le titre disait « Liste des clients » et non « Clients » ;
+     · aucune ligne de compte sous le titre ;
+     · Importer et Exporter sur une rangee A PART, etires aux deux bords par un
+       `justify-between` ;
+     · aucun bouton « Ajouter un client » ;
+     · des filtres sans libelle visible, sans icone et sans cadre.
+
+   C'est pourquoi ce lot touche du JSX, et pas seulement la feuille : on ne
+   repositionne pas trois boutons par une regle CSS quand ils ne sont pas dans le
+   meme conteneur que le titre.
+
+   ⚠ CE QUE LA LIGNE DE COMPTE COMPTE, ET POURQUOI DEUX NOMBRES
+
+   « 412 clients enregistres · 25 affiches ». Le premier ne bouge pas avec les
+   filtres, le second est celui de la page en cours. N'en montrer qu'un ferait
+   croire a une perte de donnees des qu'on filtre — c'est la question que la
+   section « ce qui reste » du BILAN laissait ouverte, et que ces captures
+   tranchent.
+
+   ⚠ LE CADRE DES FILTRES EST OPTIONNEL, ET C'EST DELIBERE
+
+   `[data-filtres]` existe depuis le lot L9.11 et sert DEUX barres qui n'ont pas
+   la meme mise en page — une grille a quatre colonnes, une pile. Le lot L9.11
+   avait donc decide de ne poser NI `display` NI fond dessus. Ce lot ne revient
+   pas sur cette decision : le cadre vient d'un second marqueur, `data-cadre`, et
+   ne s'applique qu'a la barre qui le porte. La barre de l'historique, deja posee
+   dans une carte `data-surface`, ne se retrouve pas avec deux cadres imbriques.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* La tete d'ecran : le titre et son compte d'un cote, les actions de l'autre.
+   `margin-left: auto` sur les actions — elles se collent a droite tant qu'il y a
+   de la place, et passent a la ligne sans se disloquer quand il n'y en a plus. */
+.design-registre [data-espace='boutique'] [data-ecran-actions] {
+  margin-left: auto;
+  gap: 9px;
+}
+
+.design-registre [data-espace='boutique'] [data-ecran-compte] {
+  margin: 3px 0 0;
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 400;
+  color: var(--color-encre-doux);
+}
+
+/* Le cadre de la barre de filtres — seulement quand elle le demande. */
+.design-registre [data-espace='boutique'] [data-filtres][data-cadre] {
+  border: 1px solid var(--color-trait-200);
+  border-radius: 2px;
+  background-color: var(--color-papier);
+  background-image: none;
+  padding: 12px 14px;
+}
+
+/* Le bloc large : celui de la recherche prend la place qui reste. */
+.design-registre [data-espace='boutique'] [data-filtre-bloc-large] {
+  flex: 1 1 320px;
+}
+
+/* Un champ a icone. L'icone est DECORATIVE (`aria-hidden` dans le JSX) : elle
+   redit ce que le libelle dit deja, elle ne le remplace pas. */
+.design-registre [data-espace='boutique'] [data-champ-icone] {
+  position: relative;
+  display: block;
+}
+
+.design-registre [data-espace='boutique'] [data-champ-icone] svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-encre-doux);
+  pointer-events: none;
+}
+
+/* La marge gauche laisse la place a l'icone. Elle reprend les quatre exclusions
+   de la regle des champs du lot L9.2 pour peser plus lourd qu'elle. */
+.design-registre [data-espace='boutique'] [data-champ-icone]
+  input:not([type='checkbox']):not([type='radio']):not([type='file']) {
+  width: 100%;
+  padding-left: 34px;
+}
+
+/* Un lien qui porte un rang est un BOUTON A L'OEIL et un lien au clavier. La
+   regle des rangs vise `[data-rang]` sans nommer de balise, donc elle l'habille
+   deja ; il ne manque que le centrage vertical, qu'un <a> n'a pas par defaut. */
+.design-registre [data-espace='boutique'] a[data-rang] {
+  text-decoration: none;
+  line-height: 1;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
