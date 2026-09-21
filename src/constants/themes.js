@@ -52,9 +52,23 @@ export const THEMES = {
       background: 'bg-papier',
       text: 'text-encre',
       accent: 'bg-encre',
-      // Barre de navigation à l'encre : calme, et surtout elle laisse les six
-      // couleurs opérateur être les seules taches de couleur de l'écran.
-      navbar: 'bg-encre text-white',
+      // ⟲ RETOURNÉ LE 2026-09-21, SUR DÉCISION DU CLIENT.
+      //
+      // Cette ligne portait `bg-encre`, avec pour raison écrite : « calme, et
+      // surtout elle laisse les six couleurs opérateur être les seules taches de
+      // couleur de l'écran ». L'argument reste vrai — une navigation bleue ajoute
+      // une septième surface colorée — mais la maquette tranche l'inverse, et
+      // l'explicite au §PALETTE : « Le bleu profond #1B62B0, relevé au pixel sur
+      // le logo, devient le chrome : navigation, bouton primaire, lien, focus. »
+      //
+      // Le client a comparé les deux rendus et retenu la maquette. On consigne
+      // l'arbitrage plutôt que de l'effacer : le prochain qui lira ce fichier
+      // saura que le calme a été pesé, pas oublié.
+      //
+      // `bg-brand-500` et non `bg-blue-600` : TC-157 exige qu'aucune couleur
+      // Tailwind par défaut n'entre ici — tout vient des jetons `@theme static`.
+      // #1b62b0 rend 6,14:1 sous du blanc, vérifié par `npm run qa:jetons`.
+      navbar: 'bg-brand-500 text-white',
       // `border-filet` (3,81:1) et NON `border-reglure` (1,21:1) : une réglure
       // de tableau structure la lecture d'une colonne de montants — en plein
       // soleil, un trait à 1,21:1 est invisible et la colonne se disloque.

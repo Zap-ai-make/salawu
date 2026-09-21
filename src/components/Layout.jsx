@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext'
 import NavBar from './NavBar'
 import NetworkCardsDrawer from './network/NetworkCardsDrawer'
 import { IS_REGISTRE } from '../constants/designSystem.js'
-import { APP_NAME } from '../constants/branding'
+import { APP_NAME, APP_TAGLINE } from '../constants/branding'
 
 /**
  * ⚠ `StickyBalanceRail` n'est plus monté ici — et son fichier est CONSERVÉ.
@@ -100,6 +100,7 @@ function Layout({ children }) {
           le travail réel. Les thèmes historiques gardent leur bandeau photo. */}
       {backgroundImage ? (
         <header
+          data-marque-bandeau
           className="relative text-white w-full overflow-hidden"
           style={{
             backgroundImage: `url(${backgroundImage})`,
@@ -117,8 +118,21 @@ function Layout({ children }) {
               src/index.css la renforce (cf. le bloc du lot L9.4). */}
           <div data-voile className="absolute inset-0 bg-black/20"></div>
 
-          {/* Contenu du header */}
-          <div className="relative z-10 w-full px-4 py-12 flex items-center justify-center">
+          {/* Contenu du header.
+              ⚠ LE LOGO ET LE SOUS-TITRE NE SONT RENDUS QUE SOUS `IS_REGISTRE`.
+              Ce bandeau sert aussi TAOFIC, qui est en production : y ajouter deux
+              éléments sans garde changerait son écran d'accueil. Le sous-titre a
+              en plus sa propre garde — `APP_TAGLINE` est vide pour tout profil
+              qui n'en déclare pas. */}
+          <div className="relative z-10 w-full px-4 py-12 flex flex-col items-center justify-center">
+            {IS_REGISTRE && (
+              <img
+                data-marque-logo
+                src="/brand-mark.svg"
+                alt=""
+                aria-hidden="true"
+              />
+            )}
             <Marque
               data-marque
               className="text-4xl font-bold text-center text-white"
@@ -128,6 +142,9 @@ function Layout({ children }) {
             >
               {APP_NAME}
             </Marque>
+            {IS_REGISTRE && APP_TAGLINE && (
+              <span data-marque-boutique>{APP_TAGLINE}</span>
+            )}
           </div>
         </header>
       ) : (

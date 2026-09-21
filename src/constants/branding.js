@@ -21,6 +21,11 @@ export const APP_NAME = branding.appName ?? 'AKAYIS'
 // Nom complet (titre de l'onglet navigateur, nom PWA installée).
 export const APP_FULL_NAME = branding.pwaName ?? 'AKAYIS CRM'
 
+// Sous-titre du bandeau de marque. Chaîne VIDE par défaut, et non une valeur de
+// repli : un profil qui n'en déclare pas ne doit rien afficher du tout. C'est ce
+// qui garantit que TAOFIC garde son bandeau au caractère près.
+export const APP_TAGLINE = branding.tagline ?? ''
+
 // Thème de marque déclaré par le profil (réservé — le rendu couleur reste piloté
 // par le système de thème existant). Exposé pour un usage futur cohérent.
 export const BRAND_THEME = branding.theme ?? 'green'

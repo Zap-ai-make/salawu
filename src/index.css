@@ -1239,6 +1239,94 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LE BANDEAU DE MARQUE : FILET ORANGE, LOGO, SOUS-TITRE (lot L9.12)
+   ───────────────────────────────────────────────────────────────────────────
+   DEMANDE DU CLIENT, CAPTURES A L'APPUI, LE 2026-09-21. Il a compare le rendu
+   du produit a la maquette et releve quatre ecarts :
+
+     · pas de LOGO au-dessus du wordmark ;
+     · pas de SOUS-TITRE sous le wordmark ;
+     · pas de FILET ORANGE entre le bandeau et la navigation ;
+     · une navigation a l'ENCRE la ou la maquette la veut BLEUE.
+
+   Les trois premiers etaient des manques. Le quatrieme est un ARBITRAGE, et il
+   est consigne dans src/constants/themes.js plutot qu'efface : la navigation a
+   l'encre avait une raison ecrite — laisser les six couleurs d'operateur etre
+   les seules taches de couleur. Le client a pese les deux rendus et retenu la
+   maquette, qui l'explicite a son §PALETTE : « Le bleu profond #1B62B0, releve
+   au pixel sur le logo, devient le chrome : navigation, bouton primaire, lien,
+   focus. L'orange #EA6A21 ne devient PAS un jeton : il reste dans la marque, en
+   filet sous le bandeau. »
+
+   ⚠ POURQUOI #EA6A21 EST ECRIT EN DUR ICI, ET NE DEVIENT PAS UN JETON
+
+   C'est la consigne de la maquette, et elle se defend : un jeton est fait pour
+   etre reutilise. Cet orange ne doit PARAITRE QU'UNE FOIS dans tout le logiciel
+   — ce filet. En faire `--color-orange-500` inviterait le prochain lot a s'en
+   servir pour un bouton ou un statut, et la marque cesserait d'etre une marque.
+   Une valeur litterale, a un seul endroit, dit exactement cela.
+
+   ⚠ TAOFIC NE BOUGE PAS, ET DEUX GARDES S'EN CHARGENT
+
+   Le bandeau est PARTAGE. Le logo et le sous-titre sont donc rendus sous
+   `IS_REGISTRE` dans le Layout, et le sous-titre a en plus sa propre garde :
+   `APP_TAGLINE` vaut la chaine VIDE pour tout profil qui ne declare pas
+   `branding.tagline`. Le texte lui-meme vit dans config/clients/salawu.js — un
+   libelle propre a une boutique n'a rien a faire dans un composant partage.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Le filet orange. La maquette le pose sur `.marque` : il separe la
+   photographie de la navigation, et c'est le seul endroit du logiciel ou cette
+   teinte paraisse. */
+.design-registre [data-marque-bandeau] {
+  border-bottom: 3px solid #ea6a21;
+}
+
+/* Le logo, au-dessus du wordmark. Une hauteur en `rem` et non en pixels : il
+   suit la taille de texte du poste si elle est augmentee, comme le reste. */
+.design-registre [data-marque-logo] {
+  display: block;
+  height: 3.25rem; /* 52px */
+  width: auto;
+  margin-bottom: 0.5rem;
+}
+
+/* Le wordmark. 34px et un interlettrage large, comme `.marque__nom`. */
+.design-registre [data-marque] {
+  display: block;
+  font-size: 2.125rem; /* 34px */
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+}
+
+/* Le sous-titre. #e6edf6 sur le voile du bandeau — un blanc casse, pour qu'il
+   accompagne le wordmark au lieu de rivaliser avec lui. */
+.design-registre [data-marque-boutique] {
+  margin-top: 0.4375rem; /* 7px, la gouttiere de `.marque__contenu` */
+  font-size: 0.84375rem; /* 13,5px */
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #e6edf6;
+}
+
+/* L'onglet courant de la navigation. `aria-current` est pose par `NavLink` : on
+   lit l'etat REEL du routeur, sans classe conditionnelle a maintenir. La
+   maquette pose `--brand-600` et un trait blanc sous l'onglet actif — sur un
+   fond bleu, le `bg-black/30` du produit rendait une tache terne.
+
+   ⚠ BORNE PAR `[data-nav]` ET NON PAR `nav`. `.design-registre` est posee sur
+   <html> : elle couvre TOUT ESAHAF, dealer et gerant compris. Un selecteur
+   `.design-registre nav a[...]` aurait redessine leurs barres, que la consigne
+   du client met hors chantier. `[data-nav]` n'existe que dans NavBar.jsx, monte
+   par le seul Layout boutique. C'est la lecon du lot L9.6, appliquee d'avance
+   cette fois. */
+.design-registre [data-nav] a[aria-current='page'] {
+  background-color: var(--color-brand-600);
+  border-bottom-color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LES FILTRES ET LA NOTE DE CHAMP (lot L9.11)
    ───────────────────────────────────────────────────────────────────────────
    CE LOT EST PETIT PARCE QUE LE RELEVE L'A REDUIT, PAS PARCE QU'IL BACLE.

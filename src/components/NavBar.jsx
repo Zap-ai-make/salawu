@@ -150,9 +150,15 @@ function NavBar() {
 
   const counts = { pendingCount, incomingCollabCount, settlementsToConfirmCount }
 
+  // `data-nav` est un FAIT : « ceci est la navigation de la boutique ». Il
+  // n'existe que dans ce composant, qui n'est monté que par le Layout boutique —
+  // les espaces dealer et gérant ont leurs propres barres et ne lisent même pas
+  // `themeClasses.navbar`. C'est ce qui permet à src/index.css de dessiner
+  // l'onglet courant sans déborder sur un espace hors chantier.
   return (
     <nav
       ref={navRef}
+      data-nav
       className={`${themeClasses.navbar} shadow-md w-full transition-all duration-300 z-50 ${
         isSticky
           ? 'fixed top-0 left-0 right-0 shadow-lg'

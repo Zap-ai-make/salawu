@@ -34,6 +34,11 @@ export const salawuProfile = Object.freeze({
     appName: 'ESAHAF',
     pwaName: 'ESAHAF',
     theme: 'orange',
+    // Sous-titre du bandeau de marque, demande par le client le 2026-09-21.
+    // Il vit ICI et non dans le Layout : un texte propre a une boutique n'a rien
+    // a faire dans un composant partage avec TAOFIC, qui est en production. Un
+    // profil sans `tagline` ne rend rien du tout — c'est la garantie mecanique.
+    tagline: 'Service Mobile Money',
   }),
 
   // ── Système de design : l'identité « registre », propre à ESAHAF ────────────

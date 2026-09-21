@@ -941,6 +941,52 @@ test.describe('Écrans de travail', () => {
       .toBe(0)
   })
 
+  test('le bandeau de marque porte son logo, son sous-titre et son filet orange', async ({ page }) => {
+    // ⚠ DEMANDE DU CLIENT, CAPTURES A L'APPUI, LE 2026-09-21.
+    //
+    // Il a compare le produit a la maquette et releve quatre ecarts : pas de
+    // logo, pas de sous-titre, pas de filet orange, et une navigation a l'encre
+    // la ou la maquette la veut bleue.
+    //
+    // Ce controle les tient tous les quatre ENSEMBLE, parce qu'ils forment un
+    // seul objet visible : l'en-tete de l'application. Les separer donnerait
+    // quatre tests qui passent chacun sur un fragment d'un bandeau faux.
+    await allerA(page, ECRANS[0]) // tableau de bord
+
+    const bandeau = page.locator('[data-marque-bandeau]')
+    await expect(bandeau).toBeVisible({ timeout: 30_000 })
+
+    const rendu = await bandeau.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      const logo = el.querySelector('[data-marque-logo]')
+      const sous = el.querySelector('[data-marque-boutique]')
+      const nav = document.querySelector('[data-nav]')
+      return {
+        filet: parseFloat(cs.borderBottomWidth),
+        filetCouleur: cs.borderBottomColor,
+        logoPresent: !!logo,
+        logoHauteur: logo ? Math.round(logo.getBoundingClientRect().height) : 0,
+        sousTitre: sous ? sous.textContent.trim() : null,
+        navFond: nav ? getComputedStyle(nav).backgroundColor : null,
+      }
+    })
+
+    // #ea6a21 — la couleur la plus abondante du logo. La maquette la garde DANS
+    // la marque et refuse d'en faire un jeton : elle ne doit paraitre qu'ici.
+    expect(rendu.filet, 'la maquette pose un filet de 3 px').toBeCloseTo(3, 1)
+    expect(rendu.filetCouleur, 'et il est orange').toBe('rgb(234, 106, 33)')
+
+    expect(rendu.logoPresent, 'le logo manque au-dessus du wordmark').toBe(true)
+    expect(rendu.logoHauteur, 'et il doit etre visible').toBeGreaterThan(20)
+
+    expect(rendu.sousTitre, 'le sous-titre vient du profil, pas du Layout')
+      .toBe('Service Mobile Money')
+
+    // #1b62b0 — le jeton --brand-500, releve au pixel sur le logo.
+    expect(rendu.navFond, 'la navigation prend le bleu de la marque')
+      .toBe('rgb(27, 98, 176)')
+  })
+
   test('la bande des reserves ne s en va jamais, meme au defilement', async ({ page }) => {
     // ⟲ RETOURNE AU LOT L7.4b. Ce controle exigeait l'inverse : un rail qui
     // apparaissait au defilement pour COMPENSER la disparition du rideau. La
