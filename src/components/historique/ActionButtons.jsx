@@ -1,22 +1,24 @@
 import { useRef, useState } from 'react'
 import { useTransactions } from '../../context/transactions.jsx'
 import { EXPORT_CONFIG, MESSAGES } from '../../utils/constants.js'
-import { exporterHistoriqueXLSX } from '../../utils/exportHistorique.js'
 
-function ActionButtons({ filteredTransactions = [], resetFilters }) {
+// ⚠  a disparu de la signature avec l'export : ce
+// composant ne fait plus qu'IMPORTER, et un import ne regarde pas ce qui est
+// filtre a l'ecran. Garder le parametre "au cas ou" aurait laisse croire qu'il
+// sert.
+function ActionButtons({ resetFilters }) {
   const { addTransaction } = useTransactions()
   const fileInputRef = useRef(null)
   const [message, setMessage] = useState(null)
 
 
-  // La logique vit dans `exporterHistoriqueXLSX` : la tete d'ecran porte le meme
-  // bouton, et deux copies auraient diverge le jour ou les colonnes changent.
-  const handleExport = async () => {
-    const r = await exporterHistoriqueXLSX(filteredTransactions)
-    if (r.vide) {
-      setMessage({ type: 'error', text: MESSAGES.ERRORS.NO_EXPORT_DATA })
-    }
-  }
+  // ⚠ L'EXPORT N'EST PLUS ICI. Le lot L9.16 l'a remonte dans la tete d'ecran, ou
+  // la maquette le place. Le garder en bas EN PLUS aurait donne DEUX boutons
+  // « Exporter » sur le meme ecran, a deux endroits, avec le meme effet — de
+  // quoi faire douter qu'ils fassent la meme chose.
+  //
+  // L'import reste : il n'a pas d'equivalent en haut, et c'est une action rare
+  // qui n'a rien a faire dans la tete a cote de ce qu'on fait tous les jours.
 
   const handleImport = () => {
     fileInputRef.current?.click()
@@ -101,13 +103,6 @@ function ActionButtons({ filteredTransactions = [], resetFilters }) {
       )}
 
       <div className="flex flex-wrap gap-4">
-        <button data-rang="second"
-          onClick={handleExport}
-          className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded font-medium transition-colors"
-        >
-          Exporter XLSM
-        </button>
-
         <button data-rang="second"
           onClick={handleImport}
           className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded font-medium transition-colors"

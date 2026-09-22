@@ -221,15 +221,25 @@ function Historique() {
           </div>
 
           {/* Filtres — partagés par les trois onglets */}
-          <div data-surface data-filtres data-cadre className="bg-white rounded-lg shadow-md p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
-              <div className="lg:col-span-1">
-                <DateFilter onDateChange={applyDateFilter} onResetToToday={resetToToday} />
-              </div>
-              <div className="lg:col-span-2">
-                <ClientSearch onSearch={applySearchFilter} onSearchChange={handleSearchChange} />
-              </div>
-            </div>
+          {/* ⚠ UNE SEULE RANGEE, ET LA GRILLE QUI L'EMPECHAIT EST PARTIE.
+              Les dates et la recherche vivaient dans deux colonnes d'une grille
+              `lg:grid-cols-3` : elles ne pouvaient PAS se retrouver sur la meme
+              ligne, quoi qu'on fasse a l'interieur de chacune. Le libelle
+              « Rechercher » se retrouvait seul sur sa ligne, et son champ
+              dessous.
+
+              Les deux composants gardent leur existence et leur logique ; leur
+              conteneur passe en `display: contents` (voir src/index.css), ce qui
+              fait de LEURS enfants des elements directs de cette rangee. Aucun
+              des deux n'a eu besoin d'etre demonte. */}
+          <div
+            data-surface
+            data-filtres
+            data-cadre
+            className="bg-white rounded-lg shadow-md p-6 flex flex-wrap items-end gap-3"
+          >
+            <DateFilter onDateChange={applyDateFilter} onResetToToday={resetToToday} />
+            <ClientSearch onSearch={applySearchFilter} onSearchChange={handleSearchChange} />
           </div>
 
           {/* La convention de signe vient APRES les filtres : elle explique le
@@ -255,7 +265,7 @@ function Historique() {
                     </button>
                   </div>
                 )}
-                <ActionButtons filteredTransactions={filteredTransactions} resetFilters={resetFilters} />
+                <ActionButtons resetFilters={resetFilters} />
               </div>
             </>
           )}

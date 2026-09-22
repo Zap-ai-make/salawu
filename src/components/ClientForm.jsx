@@ -176,8 +176,18 @@ function ClientForm({ onSubmit, initialData = null, title = 'Ajouter un client',
 
   const inputClasses = "w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
 
+  // ⚠ `data-colonne-lecture` : cet ecran N'EST QU'UN FORMULAIRE, une pile de
+  // champs sur une seule colonne. Depuis que le plafond de largeur global est
+  // tombe (lot L9.14), ses champs s'etiraient sur toute la fenetre — 1 390 px
+  // pour saisir un prenom. L'oeil perd la ligne entre l'etiquette a gauche et
+  // le curseur a droite, et le champ ment sur ce qu'on attend : un nom n'a
+  // pas besoin de 1 390 px.
+  //
+  // Le plafond ne revient PAS globalement : les tableaux, eux, ont gagne a
+  // s'etendre, et c'est ce que le client avait demande. Il revient sur ce qui
+  // se lit en colonne.
   return (
-    <div data-surface className="bg-white rounded-lg shadow-md p-6 w-full">
+    <div data-surface data-colonne-lecture className="bg-white rounded-lg shadow-md p-6 w-full">
       {/* `data-titre-ecran` est un FAIT : sur /formulaire, ce `h2` EST le titre de
           l'écran — la page ne rend que ce composant. Sans ce marqueur, la portée
           `.design-registre [data-espace="boutique"]` ne pouvait pas l'atteindre,

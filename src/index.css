@@ -1266,6 +1266,81 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   UNE COLONNE DE LECTURE POUR CE QUI SE LIT EN COLONNE (lot L9.19)
+   ───────────────────────────────────────────────────────────────────────────
+   ⚠ EFFET DE BORD DU LOT L9.14, SIGNALE PAR LE CLIENT SUR L'ECRAN FORMULAIRE.
+
+   Retirer le plafond `max-width: 72rem` a bien fait ce qu'on lui demandait : les
+   TABLEAUX se deploient, et les huit colonnes de l'historique tiennent enfin.
+   Mais l'ecran Formulaire n'est pas un tableau. C'est une pile de champs sur une
+   seule colonne, et ses champs s'etiraient sur 1 390 px a 1440.
+
+   Un champ de 1 390 px ment sur ce qu'on attend de lui — un prenom n'a pas
+   besoin de cette place — et il eloigne l'etiquette, posee a gauche, du curseur
+   qui part a droite. C'est la raison pour laquelle un texte courant se compose
+   sur une mesure, pas sur la largeur du papier.
+
+   ⚠ LA CORRECTION N'EST PAS D'ANNULER L9.14. Ce serait rendre aux tableaux le
+   defaut qu'on venait d'en retirer. Le plafond revient sur CE QUI SE LIT EN
+   COLONNE, et nulle part ailleurs — d'ou un marqueur pose sur le formulaire, et
+   non une regle sur `main`.
+
+   46rem = 736px : trois blocs reseau de 232px y tiennent encore cote a cote, ce
+   qui garde la grille du lot L9.8 utile.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-colonne-lecture] {
+  max-width: 46rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA BARRE DE FILTRES TIENT SUR UNE SEULE RANGEE (lot L9.18)
+   ───────────────────────────────────────────────────────────────────────────
+   ⚠ CE QUI L'EN EMPECHAIT N'ETAIT PAS UN `display`, C'ETAIT UNE GRILLE.
+
+   Les dates et la recherche sont deux composants — `DateFilter` et
+   `ClientSearch` — que l'ecran posait dans deux colonnes d'une grille
+   `lg:grid-cols-3`. Aucun reglage INTERIEUR a l'un des deux ne pouvait les
+   mettre sur la meme ligne : une colonne de grille est une boite, et ce qu'elle
+   contient ne sort pas.
+
+   Resultat visible : « Du » et « Au » d'un cote, et le libelle « Rechercher »
+   seul sur sa ligne avec son champ dessous.
+
+   `display: contents` EFFACE LA BOITE SANS EFFACER LE COMPOSANT. Les enfants de
+   `DateFilter` et de `ClientSearch` deviennent des elements directs de la
+   rangee, et se rangent avec « Filtrer », « Aujourd'hui » et le bouton de
+   recherche. Aucun des deux composants n'a eu besoin d'etre demonte, et leur
+   logique — validation de l'intervalle, touche Entree, remise a aujourd'hui —
+   n'a pas ete touchee.
+
+   ⚠ POURQUOI UN MARQUEUR ET NON `[data-filtres] > div`. La rangee contient
+   aussi des blocs qui doivent GARDER leur boite (`[data-filtre-bloc]`). Un
+   selecteur d'enfant les aurait effaces aussi, et le libelle se serait decolle
+   de son champ. Le marqueur dit une chose precise : « ce conteneur n'est qu'un
+   emballage de composant, traversez-le ».
+
+   ⚠ ET LES CHAMPS DE DATE PERDENT LEUR `w-full`. Dans une colonne de grille il
+   avait un sens ; dans une rangee, il les fait pousser tout le reste dehors. Une
+   date a une longueur connue : on la lui donne.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-filtres] [data-filtres-groupe] {
+  display: contents;
+}
+
+/* Quand la rangee retombe a la ligne — sur un telephone — les deux lignes se
+   toucheraient : `gap` en Tailwind ne pose que l'ecart HORIZONTAL ici. */
+.design-registre [data-espace='boutique'] [data-filtres][data-cadre] {
+  row-gap: 12px;
+}
+
+.design-registre [data-espace='boutique'] [data-filtre-bloc] input[type='date'] {
+  width: auto;
+  min-width: 10.5rem; /* la place de jj/mm/aaaa et de l'icone du calendrier */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LE RECAPITULATIF D'UNE MODALE DE CONFIRMATION (lot L9.16)
    ───────────────────────────────────────────────────────────────────────────
    La modale qui demande « Confirmer la transaction » recapitule cinq faits :

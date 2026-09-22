@@ -43,7 +43,7 @@ function DateFilter({ onDateChange, onResetToToday }) {
   // l'ecran. `flex-wrap` les laisse retomber en pile sur un telephone, ou c'est
   // la bonne forme.
   return (
-    <div data-filtres className="flex flex-wrap items-end gap-3">
+    <div data-filtres-groupe className="flex flex-wrap items-end gap-3">
       {/* Date Du */}
       <div data-filtre-bloc>
         {/* Le deux-points s'en va : c'est la position sous le libelle qui dit

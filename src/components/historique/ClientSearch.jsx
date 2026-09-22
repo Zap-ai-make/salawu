@@ -28,7 +28,7 @@ function ClientSearch({ onSearch, onSearchChange }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-3 items-end">
+    <div data-filtres-groupe className="flex flex-wrap gap-3 items-end">
       {/* ⚠ UN LIBELLE VISIBLE, ET PAS SEULEMENT UN `placeholder`. Un placeholder
           disparait des qu'on tape : celui qui revient sur un champ rempli ne
           sait plus ce qu'il contient, et un lecteur d'ecran n'a rien de stable a
