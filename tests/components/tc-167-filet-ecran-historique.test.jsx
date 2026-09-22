@@ -49,7 +49,11 @@ import HistoriqueTable from '../../src/components/historique/HistoriqueTable.jsx
 const COLONNES = [
   'Date & heure',
   'Client',
-  'Type',
+  // ⚠ « Type » est devenu « Nature » le 2026-09-21. L'ecran Transactions et la
+  // maquette emploient « Nature » ; deux noms pour une meme colonne faisaient
+  // apprendre deux langues au caissier. Le CONTENU de la colonne n'a pas bouge,
+  // et c'est ce que les autres cas de ce fichier verifient.
+  'Nature',
   'Réseau',
   'Code',
   'Montant',

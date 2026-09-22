@@ -11,6 +11,8 @@ import DailyPagination from '../components/historique/DailyPagination'
 import { useHistoriqueFilters } from '../hooks/useHistoriqueFilters'
 import { useTransactions } from '../context/transactions.jsx'
 import { tabButtonClass, TabBadge } from '../components/ui/Tabs.jsx'
+import { exporterHistoriqueXLSX } from '../utils/exportHistorique.js'
+import { HISTORY_PAGE_SIZE } from '../utils/constants.js'
 import { themedTableClasses } from '../components/ui/themedTable.js'
 import StatusBadge from '../components/ui/StatusBadge'
 import DirectionBadge from '../components/ui/DirectionBadge'
@@ -161,25 +163,40 @@ function Historique() {
   return (
     <div data-chassis className="min-h-screen bg-gray-100">
       <div data-chassis className="max-w-7xl mx-auto px-4 py-6">
-        <h1 data-titre-ecran className="text-3xl font-bold text-gray-800 mb-8 border-b-2 border-green-500 pb-2">
-          Historique
-        </h1>
-        <ConventionDeSigne />
-
-        <div className="space-y-6">
-          {/* Filtres — partagés par les trois onglets */}
-          <div data-surface className="bg-white rounded-lg shadow-md p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
-              <div className="lg:col-span-1">
-                <DateFilter onDateChange={applyDateFilter} onResetToToday={resetToToday} />
-              </div>
-              <div className="lg:col-span-2">
-                <ClientSearch onSearch={applySearchFilter} onSearchChange={handleSearchChange} />
-              </div>
-            </div>
+        <div data-ecran-tete className="flex flex-wrap items-end gap-3 mb-4">
+          <div>
+            <h1 data-titre-ecran className="text-3xl font-bold text-gray-800">
+              Historique
+            </h1>
+            {/* « fenetre en direct » n'est pas une formule : l'historique de
+                salawu est borne (history.pageSize), et « Voir plus » elargit la
+                fenetre. Dire « N operations chargees » et non « N operations »
+                evite de laisser croire que c'est tout ce qui existe. */}
+            <p data-ecran-compte>
+              {allTransactions.length} opération{allTransactions.length > 1 ? 's' : ''} chargée{allTransactions.length > 1 ? 's' : ''}
+              {' · fenêtre en direct'}
+            </p>
           </div>
 
-          {/* Sous-onglets */}
+          <div data-ecran-actions className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => exporterHistoriqueXLSX(filteredTransactions)}
+              data-rang="second"
+              className="inline-flex items-center gap-2"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M4 19h16" />
+              </svg>
+              Exporter en Excel
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Sous-onglets — AVANT les filtres, comme la maquette : on choisit
+              d'abord CE QU'ON REGARDE, puis on restreint. */}
           <div className="flex flex-wrap gap-2">
             <button type="button" aria-pressed={tab === 'clients'} className={tabButtonClass(tab === 'clients')} onClick={() => setTab('clients')}>
               Transactions clients
@@ -203,6 +220,23 @@ function Historique() {
             )}
           </div>
 
+          {/* Filtres — partagés par les trois onglets */}
+          <div data-surface data-filtres data-cadre className="bg-white rounded-lg shadow-md p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
+              <div className="lg:col-span-1">
+                <DateFilter onDateChange={applyDateFilter} onResetToToday={resetToToday} />
+              </div>
+              <div className="lg:col-span-2">
+                <ClientSearch onSearch={applySearchFilter} onSearchChange={handleSearchChange} />
+              </div>
+            </div>
+          </div>
+
+          {/* La convention de signe vient APRES les filtres : elle explique le
+              signe des montants du tableau, pas le choix de l'onglet ni la
+              periode. */}
+          <ConventionDeSigne />
+
           {/* Onglet Transactions clients — comportement historique inchangé */}
           {tab === 'clients' && (
             <>
@@ -217,7 +251,7 @@ function Historique() {
                       data-testid="btn-load-more-history"
                       className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                     >
-                      Voir plus
+                      Voir {HISTORY_PAGE_SIZE ? `${HISTORY_PAGE_SIZE} de plus` : 'plus'}
                     </button>
                   </div>
                 )}

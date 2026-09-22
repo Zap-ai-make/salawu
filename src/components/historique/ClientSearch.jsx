@@ -28,16 +28,30 @@ function ClientSearch({ onSearch, onSearchChange }) {
   }
 
   return (
-    <div className="flex gap-4 items-end">
-      <div className="flex-1">
-        <input
-          type="text"
-          placeholder="Rechercher par nom, prénom ou code réseau..."
-          value={searchTerm}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          className="w-full px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:border-green-500 bg-white transition-colors"
-        />
+    <div className="flex flex-wrap gap-3 items-end">
+      {/* ⚠ UN LIBELLE VISIBLE, ET PAS SEULEMENT UN `placeholder`. Un placeholder
+          disparait des qu'on tape : celui qui revient sur un champ rempli ne
+          sait plus ce qu'il contient, et un lecteur d'ecran n'a rien de stable a
+          annoncer. Le libelle reste. */}
+      <div data-filtre-bloc data-filtre-bloc-large>
+        <label htmlFor="historique-recherche" className="block font-semibold text-gray-700 mb-1">
+          Rechercher
+        </label>
+        <span data-champ-icone>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" /><path d="M16.5 16.5 21 21" />
+          </svg>
+          <input
+            id="historique-recherche"
+            type="search"
+            placeholder="Rechercher par nom, prénom ou code réseau..."
+            value={searchTerm}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            className="w-full px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:border-green-500 bg-white transition-colors"
+          />
+        </span>
       </div>
       
       <button data-rang="primaire"

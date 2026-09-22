@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useTransactions } from '../../context/transactions.jsx'
 import { EXPORT_CONFIG, MESSAGES } from '../../utils/constants.js'
-import { createExportData, generateExportFilename } from '../../utils/helpers.js'
+import { exporterHistoriqueXLSX } from '../../utils/exportHistorique.js'
 
 function ActionButtons({ filteredTransactions = [], resetFilters }) {
   const { addTransaction } = useTransactions()
@@ -9,23 +9,13 @@ function ActionButtons({ filteredTransactions = [], resetFilters }) {
   const [message, setMessage] = useState(null)
 
 
+  // La logique vit dans `exporterHistoriqueXLSX` : la tete d'ecran porte le meme
+  // bouton, et deux copies auraient diverge le jour ou les colonnes changent.
   const handleExport = async () => {
-    if (filteredTransactions.length === 0) {
+    const r = await exporterHistoriqueXLSX(filteredTransactions)
+    if (r.vide) {
       setMessage({ type: 'error', text: MESSAGES.ERRORS.NO_EXPORT_DATA })
-      return
     }
-
-    const exportData = createExportData(filteredTransactions)
-    const XLSX = await import('xlsx')
-
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(exportData)
-    ws['!cols'] = EXPORT_CONFIG.COLUMN_WIDTHS
-    XLSX.utils.book_append_sheet(wb, ws, EXPORT_CONFIG.SHEET_NAME)
-    const filename = generateExportFilename(filteredTransactions.length)
-
-    // Télécharger le fichier
-    XLSX.writeFile(wb, filename)
   }
 
   const handleImport = () => {

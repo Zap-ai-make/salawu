@@ -37,12 +37,19 @@ function DateFilter({ onDateChange, onResetToToday }) {
     return new Date(dateFrom) <= new Date(dateTo)
   }
 
+  // ⚠ UNE RANGEE, PAS UNE PILE. « Du », « Au », « Filtrer » et « Aujourd'hui »
+  // forment UNE seule action : choisir une periode. Empiles, ils se lisaient
+  // comme quatre reglages independants, et poussaient la recherche hors de
+  // l'ecran. `flex-wrap` les laisse retomber en pile sur un telephone, ou c'est
+  // la bonne forme.
   return (
-    <div data-filtres className="space-y-4">
+    <div data-filtres className="flex flex-wrap items-end gap-3">
       {/* Date Du */}
       <div data-filtre-bloc>
-        <label htmlFor={`${idBase}-du`} className="block text-lg font-semibold text-gray-700 mb-1">
-          Du :
+        {/* Le deux-points s'en va : c'est la position sous le libelle qui dit
+            « ceci nomme le champ d'en dessous », pas la ponctuation. */}
+        <label htmlFor={`${idBase}-du`} className="block font-semibold text-gray-700 mb-1">
+          Du
         </label>
         <input
           id={`${idBase}-du`}
@@ -55,8 +62,8 @@ function DateFilter({ onDateChange, onResetToToday }) {
 
       {/* Date Au */}
       <div data-filtre-bloc>
-        <label htmlFor={`${idBase}-au`} className="block text-lg font-semibold text-gray-700 mb-1">
-          Au :
+        <label htmlFor={`${idBase}-au`} className="block font-semibold text-gray-700 mb-1">
+          Au
         </label>
         <input
           id={`${idBase}-au`}
@@ -69,7 +76,7 @@ function DateFilter({ onDateChange, onResetToToday }) {
 
       {/* Validation et actions */}
       {!isValidDateRange() && (
-        <div className="text-red-600 text-sm">
+        <div className="w-full text-red-600 text-sm">
           La date de fin doit être postérieure à la date de début
         </div>
       )}

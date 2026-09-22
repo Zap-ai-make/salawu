@@ -23,7 +23,10 @@ function HistoriqueTable({ transactions = [] }) {
   const headers = [
     'Date & heure',
     'Client',
-    'Type',
+    // ⚠ « Nature » et non « Type » : c'est le mot employe sur l'ecran
+    // Transactions et dans la maquette. Deux noms pour une meme colonne font
+    // apprendre deux langues au caissier.
+    'Nature',
     'Réseau',
     'Code',
     'Montant',

@@ -1266,6 +1266,55 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   LE RECAPITULATIF D'UNE MODALE DE CONFIRMATION (lot L9.16)
+   ───────────────────────────────────────────────────────────────────────────
+   La modale qui demande « Confirmer la transaction » recapitule cinq faits :
+   client, nature, montant, reseau, statut. Le produit les ecrivait en cinq
+   paragraphes — « Client: X », « Nature: Y » — ou l'etiquette n'est reliee a sa
+   valeur que par un deux-points et l'habitude de lire.
+
+   C'est desormais un <dl>, et le gain n'est pas qu'esthetique : un lecteur
+   d'ecran annonce une liste de definitions, son nombre de termes, et rattache
+   chaque valeur a son etiquette. Cinq <p> ne disent rien de tout cela.
+
+   La maquette pose une grille `auto 1fr` : les etiquettes s'alignent sur la plus
+   longue, les valeurs demarrent toutes au meme endroit. Les deux-points
+   disparaissent — c'est la grille qui separe, pas la ponctuation.
+
+   ⚠ LE STATUT PREND LA PASTILLE DU LOT L9.5, pas une couleur ecrite ici. Il
+   herite donc de la meme regle que l'historique : une forme en plus de la
+   teinte, et jamais le vert de la reussite sur un mot qui dit l'echec.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-recap] {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 14px 0 0;
+  font-size: 0.84375rem; /* 13,5px */
+}
+
+.design-registre [data-espace='boutique'] [data-recap] dt {
+  font-weight: 600;
+  color: var(--color-encre-doux);
+}
+
+.design-registre [data-espace='boutique'] [data-recap] dd {
+  margin: 0;
+  color: var(--color-encre);
+}
+
+/* Le montant garde la chasse de l'argent, alignee a GAUCHE ici : dans une
+   colonne de valeurs, l'aligner a droite le decrocherait des quatre autres. */
+.design-registre [data-espace='boutique'] [data-recap] dd[data-champ-montant] {
+  font-family: var(--font-plex-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 600;
+  text-align: left;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    LES MARGES LATERALES DE L'ESPACE DE TRAVAIL (lot L9.14)
    ───────────────────────────────────────────────────────────────────────────
    DEMANDE DU CLIENT : « les marges left et right sont trop, ca doit pas etre
@@ -1282,16 +1331,23 @@ body {
    cinquieme de la largeur — sur un ecran dont le travail est de montrer un
    tableau de huit colonnes. C'est la largeur utile qui payait.
 
-   On ramene le total a SEIZE pixels, repartis ainsi : ZERO sur <main>, SEIZE sur
-   la carte. La carte garde donc son filet au bord de la fenetre, et le contenu
-   respire a l'interieur. L'inverse — la marge sur <main>, rien sur la carte —
-   collerait le texte contre le filet.
+   On repartit la marge ainsi : ZERO sur <main>, tout sur la carte. Elle garde
+   donc son filet au bord de la fenetre, et le contenu respire a l'interieur.
+   L'inverse — la marge sur <main>, rien sur la carte — collerait le texte contre
+   le filet.
 
-   ⟲ PREMIER JET A 10 px, CORRIGE LE MEME JOUR. Le client avait donne « max
-   10px » ; au rendu il a repondu « ajoute quelques px, c'est colle ». Les deux
-   remarques ne se contredisent pas : la premiere visait les 154 px que le
-   plafond de largeur laissait a 1440 px, la seconde le confort de lecture une
-   fois ce plafond retire. 16 px repond aux deux.
+   ⟲ LA VALEUR A ETE REGLEE EN TROIS PASSES, ET C'EST NORMAL : une marge se juge
+   a l'oeil, sur le rendu, pas dans une feuille de style.
+
+       10 px   premier jet, sur la consigne « max 10px »
+               -> « ajoute quelques px, c'est colle »
+       16 px   -> « le truc ne respire meme pas, met un peu de marge »
+       24 px   retenu
+
+   Les trois remarques ne se contredisent pas. La premiere visait les 154 px que
+   le plafond de largeur laissait a 1440 px — un defaut de CENTRAGE. Les deux
+   suivantes jugent le confort de lecture une fois ce plafond retire, ce qui est
+   une autre question. On a corrige un defaut, puis regle un reglage.
 
    ⚠ ON NE TOUCHE QUE L'HORIZONTAL. Le `padding-top` de <main> est calcule en
    JavaScript (il compense la navigation quand elle passe en `fixed`) et le
@@ -1305,8 +1361,8 @@ body {
 }
 
 .design-registre [data-espace='boutique'] [data-surface] {
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

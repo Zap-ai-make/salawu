@@ -1011,7 +1011,7 @@ test.describe('Écrans de travail', () => {
       .toBe('rgb(27, 98, 176)')
   })
 
-  test('l espace de travail ne perd pas plus de 10 px de chaque cote', async ({ page }) => {
+  test('l espace de travail respire, sans s envoler au centre', async ({ page }) => {
     // ⚠ CHIFFRE DONNE PAR LE CLIENT : « les marges left et right sont trop, ca
     // doit pas etre max 10px ».
     //
@@ -1043,14 +1043,21 @@ test.describe('Écrans de travail', () => {
     // ⚠ UN ENCADREMENT, ET NON UN PLAFOND — les deux bornes ont ete demandees.
     //
     // Le client a d'abord dit « max 10px », en visant les 154 px que le plafond
-    // de largeur laissait a 1440 px. Au rendu, il a repondu « ajoute quelques
-    // px, c'est colle ». Un controle qui n'aurait garde que le maximum aurait
-    // laisse quelqu'un revenir a zero sans rien dire.
+    // de largeur laissait a 1440 px — un defaut de CENTRAGE. Au rendu il a
+    // repondu « ajoute quelques px, c'est colle », puis, a 16 px, « le truc ne
+    // respire meme pas ». Ces deux dernieres remarques jugent le confort de
+    // lecture, ce qui est une autre question que la premiere.
+    //
+    // Un controle qui n'aurait garde que le MAXIMUM aurait laisse quelqu'un
+    // revenir a zero sans rien dire. Les deux bornes sont donc tenues, et
+    // larges : elles gardent contre les deux fautes vues — le contenu qui
+    // s'envole au centre, et le contenu colle au filet — sans transformer un
+    // reglage a l'oeil en valeur gravee.
     for (const [cote, valeur] of [['gauche', mesure.gauche], ['droit', mesure.droite]]) {
       expect(valeur, `le contenu est a ${valeur}px du bord ${cote} — trop loin`)
-        .toBeLessThanOrEqual(20)
+        .toBeLessThanOrEqual(40)
       expect(valeur, `le contenu est a ${valeur}px du bord ${cote} — colle`)
-        .toBeGreaterThanOrEqual(12)
+        .toBeGreaterThanOrEqual(18)
     }
   })
 

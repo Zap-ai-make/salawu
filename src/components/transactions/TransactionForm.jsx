@@ -9,6 +9,8 @@ import { NETWORK_OPTIONS, TRANSACTION_TYPES, NETWORK_CODES, MESSAGES } from '../
 import { validateTransactionForm, validateTransactionAction } from '../../utils/helpers.js'
 import logger from '../../utils/logger.js'
 import { parseFcfaAmount } from '../../utils/fcfaAmount.js'
+import { cleDuStatut, formeDuStatut } from '../../utils/statutDuMouvement.js'
+import { IS_REGISTRE } from '../../constants/designSystem.js'
 import useDialog from '../../hooks/useDialog'
 import { Lightbulb } from 'lucide-react'
 
@@ -620,18 +622,45 @@ function TransactionForm({ clients }) {
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
           >
             <h3 data-modale-tete id="tx-confirm-title" className="text-xl font-bold text-gray-900">Confirmer la transaction</h3>
-            <div className="mt-4 space-y-2 text-sm text-gray-700">
-              <p><span className="font-semibold">Client:</span> {pendingConfirmation.details.clientName}</p>
-              <p><span className="font-semibold">Nature:</span> {pendingConfirmation.details.type}</p>
-              <p><span className="font-semibold">Montant:</span> {pendingConfirmation.details.amount} FCFA</p>
-              <p><span className="font-semibold">Réseau:</span> {pendingConfirmation.details.network}</p>
-              <p><span className="font-semibold">Statut:</span> {pendingConfirmation.details.statut}</p>
-            </div>
+            {/* ⚠ UN <dl> ET NON CINQ <p>. Ce bloc est une suite de paires
+                terme/valeur : c'est exactement ce qu'une liste de definitions
+                decrit. Cinq paragraphes « Client: X » disent la meme chose a
+                l'oeil et rien du tout a un lecteur d'ecran, qui ne peut pas
+                relier l'etiquette a sa valeur ni annoncer « 5 elements ».
+
+                La maquette pose `.recap` en grille `auto 1fr` : les etiquettes
+                s'alignent sur la plus longue, les valeurs sur une colonne. Les
+                deux-points disparaissent — c'est la grille qui separe, pas la
+                ponctuation. */}
+            <dl data-recap>
+              <dt>Client</dt>
+              <dd>{pendingConfirmation.details.clientName}</dd>
+              <dt>Nature</dt>
+              <dd>{pendingConfirmation.details.type}</dd>
+              <dt>Montant</dt>
+              {/* `data-champ-montant` donne la chasse tabulaire : les chiffres
+                  d'un montant s'alignent, ici comme dans le tableau. */}
+              <dd data-champ-montant>{pendingConfirmation.details.amount} FCFA</dd>
+              <dt>Réseau</dt>
+              <dd>{pendingConfirmation.details.network}</dd>
+              <dt>Statut</dt>
+              <dd>
+                <span
+                  data-statut={IS_REGISTRE ? cleDuStatut(pendingConfirmation.details.statut) : undefined}
+                >
+                  {IS_REGISTRE && (
+                    <span data-forme={formeDuStatut(pendingConfirmation.details.statut)} aria-hidden="true" />
+                  )}
+                  {pendingConfirmation.details.statut}
+                </span>
+              </dd>
+            </dl>
             <div data-modale-pied className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 onClick={cancelPendingSubmit}
                 disabled={isSubmitting}
+                data-rang="second"
                 className="rounded border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
               >
                 Annuler
