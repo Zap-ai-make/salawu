@@ -692,7 +692,16 @@ test.describe('Écrans de travail', () => {
     // libelles de champ : c'est la valeur retenue pour les trente-neuf.
     await allerA(page, ECRANS[2]) // historique
 
-    const legende = page.locator('label', { hasText: /^Du\s*:/ }).first()
+    // ⚠ LE DEUX-POINTS A DISPARU AU LOT L9.17, et ce controle l'a dit : il
+    // cherchait /^Du\s*:/ et n'a rien trouve, aux trois largeurs. C'est le bon
+    // comportement — un locateur qui suit le texte a la lettre signale qu'on a
+    // touche au texte.
+    //
+    // Le motif accepte desormais les deux formes. Ce n'est pas un relachement :
+    // ce que ce cas garde est la TAILLE et la GRAISSE d'une legende de filtre,
+    // pas sa ponctuation. Le lier a un deux-points le ferait rougir a chaque
+    // retouche de libelle, et un test qui rougit pour rien finit par etre ignore.
+    const legende = page.locator('label', { hasText: /^Du\s*:?\s*$/ }).first()
     await expect(legende).toBeVisible({ timeout: 30_000 })
 
     const rendu = await legende.evaluate((el) => {
