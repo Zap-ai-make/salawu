@@ -173,3 +173,46 @@ describe('TC-172 — le silence plutôt qu’un chiffre faux', () => {
     expect(resultat.ventes).toBe(1)
   })
 })
+
+describe('TC-172 — ⚠ un statut mal accentué ne doit pas fausser la caisse', () => {
+  /**
+   * LE DEFAUT QUE CES CAS EXISTENT POUR FERMER, ET IL PORTAIT SUR DE L'ARGENT.
+   *
+   * Ce module NORMALISE le `type` — il le dit lui-meme : « le type est saisi
+   * "Dépôt" par le formulaire, mais d'anciennes lignes portent "Depot" ». Il
+   * comparait pourtant le `statut` au caractere pres, avec `===` contre des
+   * litteraux accentues.
+   *
+   * La meme base qui porte « Depot » porte « Annulee », « VALIDÉE » ou
+   * « Validée » avec une espace de fin. Consequence :
+   *
+   *   • une annulation ecrite « Annulee » etait COMPTEE dans l'activite du
+   *     jour, alors qu'elle n'a jamais eu lieu ;
+   *   • une validation ecrite « Validee » etait EXCLUE du chiffre d'affaires,
+   *     qui se retrouvait plus bas que la caisse reelle.
+   *
+   * `financialImpact.js` exporte `normalizeTransactionLabel` et
+   * `isValidatedStatus` depuis toujours, pour exactement cela.
+   */
+  it("une annulation sans accent reste une annulation", () => {
+    const resultat = chiffresDuJour([
+      op({ statut: 'Annulee' }),
+      op({ statut: 'ANNULÉE' }),
+      op({ statut: 'Annulée ' }),
+      op({ statut: 'Validée' }),
+    ], AUJOURDHUI)
+
+    expect(resultat.ventes, 'seule la validée a eu lieu').toBe(1)
+    expect(resultat.chiffreAffaires).toBe(100000)
+  })
+
+  it("une validation mal accentuée entre quand même en caisse", () => {
+    const resultat = chiffresDuJour([
+      op({ statut: 'Validee', montant: 50000 }),
+      op({ statut: 'VALIDÉE', montant: 30000 }),
+      op({ statut: 'Validée ', montant: 20000 }),
+    ], AUJOURDHUI)
+
+    expect(resultat.chiffreAffaires, 'les trois sont validées').toBe(100000)
+  })
+})
