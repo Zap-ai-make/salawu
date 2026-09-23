@@ -110,6 +110,13 @@ describe('TC-156 — DirectionBadge', () => {
 
     expect(screen.getByText(label)).toBeInTheDocument()
   })
+
+  // ⚠ LE SENS PEINT PAR CE BADGE N'EST PAS VERIFIE ICI, ET C'EST DELIBERE.
+  // Sa regle vit derriere `IS_REGISTRE` ; ce fichier tourne sous le profil des
+  // tests (TAOFIC), ou la branche n'est pas prise. Un cas pose ici passerait au
+  // vert sans rien avoir observe. La regle a donc ete sortie du composant :
+  // `sensAvecDirection`, dans `utils/signeDuStock.js`, est pure et gardee par
+  // TC-174.
 })
 
 describe('TC-156 — EmptyState', () => {

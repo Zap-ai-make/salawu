@@ -154,7 +154,16 @@ afterEach(() => {
 })
 
 describe("TC-162 — les entrées de navigation de l'espace boutique", () => {
-  it('ESAHAF (multi-réseaux) : huit entrées, dans cet ordre', async () => {
+  it('ESAHAF (multi-réseaux) : sept entrées, dans cet ordre', async () => {
+    // ⟲ HUIT ENTRÉES, PUIS SEPT (2026-09-23). « Formulaire » a été retiré : il
+    // ouvrait un écran qui ne faisait qu'ajouter un client, et la liste Clients
+    // offrait déjà « Ajouter un client », qui y menait. Deux chemins pour une
+    // seule saisie, et un libellé qui ne disait pas ce qu'il ouvrait.
+    //
+    // ⚠ CE N'EST PAS UN CHANGEMENT D'APPARENCE. Une entrée de navigation qui
+    // disparaît change la carte mentale de qui l'utilisait tous les jours. Le
+    // client l'a demandé ; la route redirige vers /clients (TC-028, A-7) pour
+    // que les signets et le raccourci PWA ne tombent pas dans le vide.
     await monterLaNavigation(ESAHAF)
 
     expect(libellesDesLiens()).toEqual([
@@ -162,18 +171,28 @@ describe("TC-162 — les entrées de navigation de l'espace boutique", () => {
       'Clients',
       'Transactions',
       'Historique',
-      'Formulaire',
       'Demandes Dealer',
       'Dettes internes',
       'Profil',
     ])
   })
 
-  it('TAOFIC (mono-réseau) : sept entrées — « Dettes internes » est absent', async () => {
+  it('TAOFIC (mono-réseau) : sept entrées — « Formulaire » est GARDÉ', async () => {
+    // ⚠ C'EST LE CŒUR DE CE CAS, ET IL COMPTE PLUS QUE LE COMPTE.
+    //
+    // TAOFIC est en production et n'a rien demandé. Le retrait de « Formulaire »
+    // est une demande d'ESAHAF, et il est gardé par `IS_REGISTRE` — le même
+    // drapeau que le bandeau de marque et la bande des réserves, lu une seule
+    // fois, dans designSystem.js.
+    //
+    // Sans ce cas, un lot futur pourrait « simplifier » la liste en retirant
+    // l'entrée pour tout le monde, et rien ne rougirait : le cas ESAHAF
+    // ci-dessus resterait vert.
     await monterLaNavigation(TAOFIC)
 
     const libelles = libellesDesLiens()
     expect(libelles).toHaveLength(7)
+    expect(libelles).toContain('Formulaire')
     expect(libelles).not.toContain('Dettes internes')
   })
 
@@ -194,7 +213,6 @@ describe("TC-162 — les entrées de navigation de l'espace boutique", () => {
       '/clients',
       '/transactions',
       '/historique',
-      '/formulaire',
       '/dealer-requests',
       '/store/debts',
       '/profil',

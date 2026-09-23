@@ -89,3 +89,74 @@ export function montantSigne(montant, type) {
   // Un montant stocké négatif ne doit pas produire « −−1 250 000 ».
   return `${signe}${absolu.toLocaleString('fr-FR')}`
 }
+
+/**
+ * Le montant TEL QU'IL S'AFFICHE : le nombre signé, et son unité.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠ DEUX DÉFAUTS SYMÉTRIQUES, DANS DEUX TABLEAUX, NÉS DE LA MÊME CAUSE : chaque
+ * appelant recollait lui-même le montant et « FCFA ».
+ *
+ *   `TransactionTable` concaténait ` FCFA` SANS CONDITION. Sur un montant
+ *   absent, `montantSigne` rend `''` : la cellule affichait « FCFA » tout seul —
+ *   une devise sans somme, dans la colonne d'argent d'un écran de caisse.
+ *
+ *   `HistoriqueTable` conditionnait l'unité à `montant || amount`. Sur un
+ *   montant de ZÉRO ce test est faux, et la cellule affichait un « 0 » nu
+ *   pendant que ses voisines portaient leur devise.
+ *
+ * Recoller un nombre et son unité n'est pas l'affaire d'un tableau : c'est la
+ * même décision que le signe, et elle vit donc ici.
+ *
+ * ⚠ LE REPLI EST UN TIRET, ET NON « 0 FCFA ». Un montant illisible n'est pas un
+ * montant nul : écrire « 0 FCFA » AFFIRME qu'il ne s'est rien passé, là où l'on
+ * sait seulement qu'on ne sait pas. C'est la règle de TC-172 — le silence plutôt
+ * qu'un chiffre faux — appliquée à une cellule.
+ *
+ * @param {*} montant
+ * @param {string} type
+ * @param {{vide?: string}} [options] `vide` : ce qu'affiche un montant illisible.
+ * @returns {string}
+ */
+export function montantSigneAffiche(montant, type, { vide = '—' } = {}) {
+  const texte = montantSigne(montant, type)
+  return texte === '' ? vide : `${texte} FCFA`
+}
+
+/**
+ * Le sens d'une ligne, dans l'ordre de ce qui est le plus sûr.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⚠ LE LIBELLÉ D'ABORD, ET C'EST LE POINT DÉLICAT. Pour une OPÉRATION, le sens
+ * se lit sur le STOCK — un dépôt le fait sortir — alors que sa `direction` dit
+ * la CAISSE, où le même dépôt fait entrer. Les deux lectures sont vraies, et le
+ * produit a tranché pour le stock. Laisser la direction passer devant annulerait
+ * cette décision en silence, sur la colonne la plus regardée de l'historique.
+ *
+ * ⚠ LA DIRECTION ENSUITE, ET ELLE MANQUAIT. `sensDuStock` ne connaît que
+ * « Dépôt » et « Retrait ». L'Historique emploie pourtant le même badge pour ses
+ * onglets Collaborations (« Reçue » / « Envoyée ») et Dettes internes
+ * (« Dette » / « Créance ») : les quatre tombaient sur `neutre`, donc GRIS. Et
+ * comme le rendu « registre » vide aussi le liseré et le fond de ligne, l'entrée
+ * et la sortie n'étaient plus dites par RIEN sur ces deux onglets.
+ *
+ * La `direction` était pourtant là, calculée par l'écran juste avant l'appel
+ * (`directionFromSens`), et déjà employée par le rendu historique pour ces mêmes
+ * quatre mots. On ne décide donc rien de neuf : on cesse de jeter ce que
+ * l'appelant a déjà établi.
+ *
+ * ⚠ ÉCRITE ICI ET NON DANS `DirectionBadge`, pour qu'elle soit éprouvable. Dans
+ * le composant, elle vivait derrière `IS_REGISTRE` : sous le profil des tests
+ * (TAOFIC), la branche n'est pas prise et un cas qui l'interroge passe au vert
+ * sans avoir rien vérifié. Une règle qu'on ne peut tester que sous un profil
+ * n'est pas gardée.
+ *
+ * @param {'in'|'out'|'neutral'|undefined} direction
+ * @param {string} libelle
+ * @returns {{cle: string, signe: string}}
+ */
+export function sensAvecDirection(direction, libelle) {
+  const parLeLibelle = sensDuStock(libelle)
+  if (parLeLibelle !== SENS_STOCK.NEUTRE) return parLeLibelle
+  if (direction === 'in') return SENS_STOCK.ENTREE
+  if (direction === 'out') return SENS_STOCK.SORTIE
+  return SENS_STOCK.NEUTRE
+}

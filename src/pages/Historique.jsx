@@ -26,6 +26,10 @@ import {
   subscribeMyDebts,
   subscribeMyCredits,
 } from '../services/collaborationService'
+import { classesDuRang } from '../components/ui/rangs.js'
+import { useToast } from '../hooks/useToast'
+import Toast from '../components/Toast'
+import { MESSAGES } from '../utils/constants'
 import {
   STORE_TRANSFER_TYPE_LABELS,
   DEALER_REQUEST_STATUS_LABELS,
@@ -139,6 +143,15 @@ function Historique() {
   }, [incoming, outgoing, filterArgs])
 
   // Une fenêtre est pleine d'un côté → il peut rester des collaborations plus anciennes.
+  const { toasts, showToast, removeToast } = useToast()
+
+  const exporter = async () => {
+    const r = await exporterHistoriqueXLSX(filteredTransactions)
+    if (r.vide) showToast(MESSAGES.ERRORS.NO_EXPORT_DATA, 'warning')
+    else if (r.success) showToast(`Export réussi : ${r.count} opération${r.count > 1 ? 's' : ''}.`, 'success')
+    else showToast(`Erreur lors de l'export : ${r.error ?? 'inconnue'}`, 'error')
+  }
+
   const collabCanLoadMore = incoming.length >= collabLimit || outgoing.length >= collabLimit
   const loadMoreCollabs = () => setCollabLimit((l) => l + COLLABORATIONS_HISTORY_PAGE_SIZE)
 
@@ -162,7 +175,7 @@ function Historique() {
 
   return (
     <div data-chassis className="min-h-screen bg-gray-100">
-      <div data-chassis className="max-w-7xl mx-auto px-4 py-6">
+      <div data-chassis data-ecran className="max-w-7xl mx-auto px-4 py-6">
         <div data-ecran-tete className="flex flex-wrap items-end gap-3 mb-4">
           <div>
             <h1 data-titre-ecran className="text-3xl font-bold text-gray-800">
@@ -179,11 +192,18 @@ function Historique() {
           </div>
 
           <div data-ecran-actions className="flex flex-wrap gap-2">
+            {/* ⚠ LE RESULTAT EST LU, ET PLUS JETE. `exporterHistoriqueXLSX`
+                rend `{ success: false, vide: true }` sur une selection vide —
+                son en-tete le dit : « Elle rend un resultat plutot que
+                d'afficher : c'est a l'appelant de dire ce qu'il en fait ».
+                Son unique appelant n'en faisait rien : filtrer sur un jour sans
+                operation puis cliquer « Exporter » ne produisait NI fichier NI
+                message. Le bouton semblait casse. */}
             <button
               type="button"
-              onClick={() => exporterHistoriqueXLSX(filteredTransactions)}
+              onClick={exporter}
               data-rang="second"
-              className="inline-flex items-center gap-2"
+              className={`inline-flex items-center gap-2 ${classesDuRang('second')}`}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -194,7 +214,7 @@ function Historique() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div data-ecran className="space-y-4">
           {/* Sous-onglets — AVANT les filtres, comme la maquette : on choisit
               d'abord CE QU'ON REGARDE, puis on restreint. */}
           <div className="flex flex-wrap gap-2">
@@ -410,6 +430,21 @@ function Historique() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Le resultat de l'export. Un export qui ne produit rien DOIT le dire :
+          sans cela, un filtre sans resultat rend le bouton muet, ce qui se lit
+          comme une panne. */}
+      <div className="fixed top-0 right-0 z-[9999] space-y-2 p-4">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            duration={toast.duration}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
       </div>
     </div>
   )

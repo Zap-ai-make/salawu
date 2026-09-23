@@ -44,7 +44,7 @@ function Dashboard() {
   // Affichage de chargement
   if (isLoading) {
     return (
-      <div className="space-y-8">
+      <div data-ecran className="space-y-8">
         {/* Titre */}
         <div data-tete-ecran className={`border-b-2 border-current pb-4 ${themeClasses.text}`}>
           <h1 data-titre-ecran className={`text-3xl font-bold ${themeClasses.text}`}>Tableau de bord</h1>
@@ -62,7 +62,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div data-ecran className="space-y-8">
       {/* Titre */}
       <div data-tete-ecran className={`border-b-2 border-current pb-4 ${themeClasses.text}`}>
         <h1 data-titre-ecran className={`text-3xl font-bold ${themeClasses.text}`}>Tableau de bord</h1>

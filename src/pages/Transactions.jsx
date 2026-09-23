@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import useDialog from '../hooks/useDialog'
 import ConventionDeSigne from '../components/ui/ConventionDeSigne.jsx'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '../hooks/useClients'
@@ -15,6 +16,7 @@ import { useTransactions } from '../context/transactions.jsx'
 import { exportTransactionsToXLSM } from '../utils/excelUtils'
 import { useToast } from '../hooks/useToast'
 import Toast from '../components/Toast'
+import { classesDuRang } from '../components/ui/rangs.js'
 
 const MODES = ['client', 'dealer', 'collaborations']
 
@@ -38,7 +40,56 @@ function Transactions() {
 
   // `pendingTransactions` vient du CONTEXTE, pas d'un etat de TransactionTable :
   // la page peut le lire sans qu'on remonte quoi que ce soit.
-  const { pendingTransactions } = useTransactions()
+  const { pendingTransactions, editingTransaction, clearEditTransaction } = useTransactions()
+
+  /**
+   * ⚠ LA MODALE A DEUX PORTES, ET LA SECONDE AVAIT ETE MUREE.
+   * ───────────────────────────────────────────────────────────────────────────
+   * « Enregistrer une transaction » ouvre une saisie neuve — c'est `saisieOuverte`.
+   * Mais « Modifier », sur une ligne en attente, ne passe pas par ce bouton :
+   * `TransactionTable` appelle `startEditTransaction` sur le CONTEXTE, et c'est
+   * tout ce qu'il fait. Les deux ne se connaissent pas autrement.
+   *
+   * Tant que le formulaire etait pose en pleine page, cela suffisait : il etait
+   * deja monte, il lisait `editingTransaction` et se pre-remplissait. Le lot
+   * L9.14 l'a mis derriere `{saisieOuverte && …}` — qui vaut `false` quand on
+   * clique « Modifier ». MODIFIER UNE TRANSACTION N'OUVRAIT PLUS RIEN.
+   *
+   * Et le defaut ne s'arretait pas la : `editingTransaction` restait arme dans
+   * le contexte. La saisie SUIVANTE s'ouvrait donc pre-remplie avec l'ancienne
+   * operation, en mode modification, sans que rien ne l'annonce — on croyait
+   * enregistrer une transaction neuve, on en reecrivait une autre.
+   *
+   * La modale est donc visible si l'une OU l'autre porte est ouverte, et la
+   * fermer referme les deux.
+   */
+  const saisieVisible = saisieOuverte || Boolean(editingTransaction)
+
+  /**
+   * ⚠ LE COMPORTEMENT CLAVIER MANQUAIT, ET LA MODALE SE DECLARAIT POURTANT
+   * `aria-modal="true"` — c'est-a-dire qu'elle annoncait aux technologies
+   * d'assistance que le reste de la page est inerte. Sans piege de focus, la
+   * tabulation en sortait quand meme : l'utilisateur se retrouvait a naviguer
+   * dans un contenu declare inexistant, sans le voir. Echap ne fermait rien, et
+   * le focus ne revenait pas au bouton d'ouverture.
+   *
+   * `ClientFormModal` nommait ce manque en toutes lettres (« La modale de
+   * transaction du lot L9.14 ne l'a PAS — c'est un manque releve, pas un
+   * precedent a suivre »). Il est comble ici.
+   *
+   * `isOpen` : cette modale est montee/demontee avec son ouverture, mais le hook
+   * le recoit explicitement — c'est ce qui rend l'intention lisible.
+   */
+  const dialogRef = useDialog({ isOpen: saisieVisible, onClose: () => fermerLaSaisie() })
+
+  const fermerLaSaisie = () => {
+    setSaisieOuverte(false)
+    // ⚠ INDISPENSABLE, ET C'EST LA MOITIE LA PLUS DISCRETE DE LA CORRECTION.
+    // Sans cela, fermer la modale d'une modification laisserait le contexte
+    // arme : la modale se rouvrirait toute seule au rendu suivant, et la saisie
+    // d'apres heriterait de l'operation abandonnee.
+    if (editingTransaction) clearEditTransaction()
+  }
   const { toasts, showToast, removeToast } = useToast()
 
   const enAttente = pendingTransactions || []
@@ -91,7 +142,7 @@ function Transactions() {
 
   return (
     <div data-chassis className="min-h-screen bg-gray-100">
-      <div data-chassis className="max-w-7xl mx-auto px-4 py-6">
+      <div data-chassis data-ecran className="max-w-7xl mx-auto px-4 py-6">
         <div data-ecran-tete className="flex flex-wrap items-end gap-3 mb-4">
           <div>
             <h1 data-titre-ecran className="text-3xl font-bold text-gray-800">
@@ -109,7 +160,7 @@ function Transactions() {
               type="button"
               onClick={exporter}
               data-rang="second"
-              className="inline-flex items-center gap-2"
+              className={`inline-flex items-center gap-2 ${classesDuRang('second')}`}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -121,7 +172,7 @@ function Transactions() {
               type="button"
               onClick={() => setSaisieOuverte(true)}
               data-rang="primaire"
-              className="inline-flex items-center gap-2"
+              className={`inline-flex items-center gap-2 ${classesDuRang('primaire')}`}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -193,26 +244,31 @@ function Transactions() {
             `data-modale`) et du lot L9.10 (`data-modale-tete`,
             `data-modale-fermer`) : aucune apparence n'est inventee ici, elle
             vient de src/index.css comme pour les onze autres modales. */}
-        {saisieOuverte && (
+        {saisieVisible && (
           <div
             data-modale-voile
             className="fixed inset-0 z-[9998] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="saisie-transaction-titre"
           >
             <div
+              ref={dialogRef}
               data-modale
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="saisie-transaction-titre"
               className="my-8 w-full max-w-3xl rounded-lg bg-white p-6 shadow-2xl"
             >
               <div data-modale-tete data-modale-bande className="flex items-start justify-between gap-4 pb-3">
+                {/* Le titre DIT dans quel mode on est. Ouvrir le meme panneau
+                    sous « Enregistrer une transaction » pour une modification
+                    ferait croire a une saisie neuve — et c'est exactement ce qui
+                    arrivait quand l'edition restait armee. */}
                 <h2 id="saisie-transaction-titre" className="text-base font-semibold text-gray-900">
-                  Enregistrer une transaction
+                  {editingTransaction ? 'Modifier la transaction' : 'Enregistrer une transaction'}
                 </h2>
                 <button
                   type="button"
                   data-modale-fermer
-                  onClick={() => setSaisieOuverte(false)}
+                  onClick={fermerLaSaisie}
                   aria-label="Fermer"
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -227,7 +283,27 @@ function Transactions() {
           </div>
         )}
 
-        <Toast toasts={toasts} removeToast={removeToast} />
+        {/* ⚠ `Toast` REND UN SEUL MESSAGE — il attend `message`, `type`,
+            `duration`, `onClose`. Cette ligne lui passait `toasts` et
+            `removeToast`, qu'il n'accepte pas, HORS de tout `.map` et de toute
+            condition : chaque visite de l'ecran peignait donc une notification
+            VIDE en haut a droite, puis jetait `TypeError: onClose is not a
+            function` au bout de 4 secondes, quand son minuteur appelait un
+            `onClose` inexistant.
+
+            Et pendant ce temps le VRAI message — le resultat de l'export,
+            construit plus haut — n'etait montre a personne. */}
+        <div className="fixed top-0 right-0 z-[9999] space-y-2 p-4">
+          {toasts.map(toast => (
+            <Toast
+              key={toast.id}
+              message={toast.message}
+              type={toast.type}
+              duration={toast.duration}
+              onClose={() => removeToast(toast.id)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )

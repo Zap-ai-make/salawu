@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { IS_REGISTRE } from './constants/designSystem.js'
 import { lazy, Suspense, useEffect } from 'react'
 import { ClientsProvider } from './context/ClientsContext.jsx'
 import { TransactionsProvider } from './context/transactions.jsx'
@@ -130,13 +131,27 @@ export function AppContent() {
         <Route path="/clients" element={<Clients />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/historique" element={<Historique />} />
-        <Route path="/formulaire" element={<Formulaire />} />
         <Route path="/profil" element={<Profil />} />
         <Route path="/dealer-requests" element={<StoreAdminDealerRequests />} />
         <Route path="/dealer-requests/:requestId" element={<StoreAdminDealerRequestDetails />} />
         <Route path="/store/closures" element={<StoreAdminClosures />} />
-        {/* Les collaborations sont un sous-onglet de Transactions, et le formulaire une
-            modal : les deux anciennes URL redirigent pour ne casser aucun lien existant. */}
+        {/* Les collaborations sont un sous-onglet de Transactions, et les deux
+            formulaires de saisie sont des modales : les anciennes URL redirigent
+            pour ne casser aucun lien existant.
+
+            ⚠ `/formulaire` N'EST PAS SIMPLEMENT SUPPRIMEE SOUS L'IDENTITE. Elle a
+            eu une entree de navigation pendant toute la vie du produit : elle est
+            dans les signets, dans les raccourcis d'ecran d'accueil PWA, et dans
+            l'historique du navigateur de chaque caissier. Une route retiree y
+            repondrait par la page de repli, ce qui ressemble a une panne.
+
+            ⚠ ET HORS IDENTITE, ELLE REND TOUJOURS SA PAGE. TAOFIC est en
+            production : son onglet, son ecran et son formulaire pleine page ne
+            bougent pas. */}
+        <Route
+          path="/formulaire"
+          element={IS_REGISTRE ? <Navigate to="/clients" replace /> : <Formulaire />}
+        />
         <Route path="/store/collaborations" element={<Navigate to="/transactions?tab=collaborations" replace />} />
         <Route path="/store/collaborations/new" element={<Navigate to="/transactions?tab=collaborations" replace />} />
         <Route path="/store/debts" element={<StoreInternalDebts />} />

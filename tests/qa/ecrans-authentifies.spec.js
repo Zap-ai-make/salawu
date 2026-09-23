@@ -103,7 +103,20 @@ const ECRANS = [
   // visibles sur TOUTES les pages au-dessus de 768 px. L'URL est verifiee en
   // premier (cf. allerA), mais un marqueur qui accroche la barre de navigation
   // rend l'assertion de contenu creuse.
-  { nom: 'formulaire', lien: 'Formulaire', chemin: '/formulaire', marqueur: /ajouter un client/i },
+  // ⟲ L'ECRAN « formulaire » EST RETIRE DE CETTE LISTE LE 2026-09-23.
+  //
+  // Il n'y a plus ni entree de navigation ni page : `/formulaire` redirige vers
+  // `/clients`, et l'ajout d'un client se fait dans une modale posee sur la
+  // liste. `allerA` navigue par LIEN ou par LISTE DEROULANTE — les deux ont
+  // perdu « Formulaire », donc il n'y a plus de chemin a emprunter.
+  //
+  // ⚠ CE QUI EST PERDU AVEC LUI, ET OU CELA A ETE REPRIS. Cet ecran etait le
+  // seul de la liste a etre SCANNE PAR axe et MESURE en debordement pour le
+  // formulaire client. Une modale, elle, ne s'ouvre pas toute seule : les
+  // controles qui y touchent l'ouvrent maintenant eux-memes (`ouvrirLAjoutDeClient`).
+  // Le scan axe du formulaire, lui, n'est PLUS joue aux trois largeurs — c'est
+  // une perte de couverture, elle est ecrite ici plutot que passee sous silence,
+  // et la meme vaut depuis le lot L9.14 pour la saisie d'une transaction.
   // ⚠ `/actualiser/i` et NON `/actualiser la liste/i` : « Actualiser la liste »
   // est un `aria-label`, et `getByText` lit le CONTENU TEXTUEL, pas les noms
   // accessibles. Premier jet rouge aux trois largeurs, sur un ecran parfaitement
@@ -360,6 +373,23 @@ test.describe('Écrans de travail', () => {
     expect(rendu.chiffres, 'chiffres tabulaires').toContain('tabular-nums')
   })
 
+  /**
+   * Ouvre la modale d'ajout d'un client depuis la liste.
+   *
+   * ⚠ DEUX CONTROLES VISITAIENT L'ECRAN `/formulaire` POUR ATTEINDRE CES CHAMPS.
+   * Cet ecran n'existe plus ; les champs, eux, sont les memes, au meme endroit
+   * du meme composant. Seul le chemin pour y arriver change — un clic au lieu
+   * d'une navigation.
+   */
+  async function ouvrirLAjoutDeClient(page) {
+    await allerA(page, ECRANS[3]) // clients
+    const bouton = page.getByRole('button', { name: /Ajouter un client/ })
+    await expect(bouton).toBeVisible({ timeout: 30_000 })
+    await bouton.click()
+    // On attend le panneau, pas un delai : la modale monte son formulaire.
+    await expect(page.locator('[data-modale]').first()).toBeVisible({ timeout: 30_000 })
+  }
+
   test('les champs de saisie sont bornes et montrent ou lon tape', async ({ page }) => {
     // ⚠ CE CONTROLE NE PEUT PAS ETRE UN TEST UNITAIRE, et c'est le coeur de son
     // interet. jsdom ne calcule aucune couleur, aucune specificite, aucun
@@ -375,7 +405,7 @@ test.describe('Écrans de travail', () => {
     // axe ne voit ni l'un ni l'autre : 1.4.11 sur une bordure n'est pas
     // automatisable, et un anneau de focus n'existe qu'une fois le champ focus,
     // alors que le scan lit la page au repos. D'ou ces assertions nommees.
-    await allerA(page, ECRANS[5]) // formulaire
+    await ouvrirLAjoutDeClient(page)
 
     const champ = page.locator('input[name="nom"]').first()
     await expect(champ).toBeVisible({ timeout: 30_000 })
@@ -563,74 +593,16 @@ test.describe('Écrans de travail', () => {
     ).toBeLessThanOrEqual(1)
   })
 
-  test('les comptes agent par reseau tiennent en grille, pas en pile', async ({ page }) => {
-    // Le formulaire client demande deux valeurs par reseau. Chez salawu, qui en
-    // compte six, cela faisait six blocs empiles : un ecran entier de
-    // defilement pour douze champs.
-    //
-    // ⚠ ON MESURE LA MISE EN PAGE RENDUE, PAS LA REGLE ECRITE. Une grille
-    // `auto-fill` ne produit plusieurs colonnes que si la largeur disponible le
-    // permet : une regle presente peut ne rien changer. Comparer les
-    // ORDONNEES des blocs est la seule facon de savoir s'ils sont cote a cote.
-    await allerA(page, ECRANS[5]) // formulaire
-
-    const grille = page.locator('[data-reseaux-grille]')
-    await expect(grille).toBeVisible({ timeout: 30_000 })
-
-    const dispose = await grille.evaluate((el) => ({
-      affichage: getComputedStyle(el).display,
-      blocs: el.querySelectorAll('fieldset').length,
-      largeur: Math.round(el.getBoundingClientRect().width),
-      // Combien de blocs partagent la meme ordonnee que le premier ?
-      surLaPremiereRangee: (() => {
-        const f = [...el.querySelectorAll('fieldset')]
-        if (!f.length) return 0
-        const y = Math.round(f[0].getBoundingClientRect().top)
-        return f.filter((b) => Math.abs(Math.round(b.getBoundingClientRect().top) - y) < 4).length
-      })(),
-    }))
-
-    expect(dispose.affichage, 'la serie de reseaux doit etre une grille').toBe('grid')
-    expect(dispose.blocs, 'salawu declare six reseaux').toBe(6)
-
-    /**
-     * ⚠ PREMIER JET ROUGE A 375 px, ET C'ETAIT MON CONTROLE, PAS LE PRODUIT.
-     *
-     * Il exigeait plusieurs colonnes A TOUTES LES LARGEURS. Or la regle est
-     * `repeat(auto-fill, minmax(232px, 1fr))` : sur un telephone, une seule
-     * colonne tient, et c'est EXACTEMENT ce qu'on veut — deux blocs de 232 px
-     * dans 343 px de contenu se chevaucheraient ou deborderaient.
-     *
-     * Un controle qui exige d'une grille responsive le meme rendu partout n'en
-     * verifie pas la regle : il verifie une largeur d'ecran. On calcule donc le
-     * nombre de colonnes que la largeur PERMET, et on n'exige la mise cote a
-     * cote que la ou elle a un sens.
-     *
-     * 232 px et 10 px de gouttiere sont les valeurs de src/index.css ; les
-     * ecrire ici serait les dupliquer, mais les LIRE demanderait de parser la
-     * feuille. Elles sont donc recopiees avec cette note, et le jour ou l'une
-     * change, ce chiffre est le seul endroit a corriger.
-     */
-    const MIN_COLONNE = 232
-    const GOUTTIERE = 10
-    const colonnesPossibles = Math.floor(
-      (dispose.largeur + GOUTTIERE) / (MIN_COLONNE + GOUTTIERE),
-    )
-
-    if (colonnesPossibles > 1) {
-      expect(
-        dispose.surLaPremiereRangee,
-        `${dispose.largeur}px permettent ${colonnesPossibles} colonnes, mais ` +
-          `${dispose.surLaPremiereRangee} bloc(s) tiennent la premiere rangee — ` +
-          'ils sont encore empiles',
-      ).toBeGreaterThan(1)
-    } else {
-      expect(
-        dispose.surLaPremiereRangee,
-        `${dispose.largeur}px ne permettent qu une colonne : un seul bloc par rangee`,
-      ).toBe(1)
-    }
-  })
+  // ⟲ CONTROLE RETIRE LE 2026-09-23 — « les comptes agent par reseau tiennent
+  //   en grille, pas en pile ».
+  //
+  //   Il gardait une decision de dessin du lot L9.8 : mettre les six blocs
+  //   reseau en grille plutot qu'en pile. Le client a demande la disposition
+  //   d'avant pour ces champs. Ce n'etait pas un defaut corrige, c'etait un
+  //   choix — et un test qui garde un choix abandonne ne garde rien, il rougit.
+  //
+  //   Il avait servi : son premier jet exigeait plusieurs colonnes A TOUTES LES
+  //   LARGEURS, ce qui etait faux a 375 px. La lecon reste ecrite au BILAN.
 
   test('un champ de montant porte la chasse de l argent, un numero d agent non', async ({ page }) => {
     // ⚠ LES DEUX MOITIES DE CE CONTROLE COMPTENT AUTANT L'UNE QUE L'AUTRE.
@@ -644,10 +616,14 @@ test.describe('Écrans de travail', () => {
     // La seconde assertion garde donc ce qui NE DOIT PAS changer. Sans elle, un
     // lot futur pourrait « simplifier » le marqueur en `inputMode` et ce
     // controle resterait vert.
-    await allerA(page, ECRANS[5]) // formulaire
+    await ouvrirLAjoutDeClient(page)
 
+    // ⚠ LE LOCATEUR NE PASSE PLUS PAR `[data-reseaux-grille]` : ce marqueur a
+    // ete retire le 2026-09-23 avec la grille. `fieldset` designe la meme chose
+    // et ne depend d'aucune decision de mise en page — c'est le bloc d'un
+    // reseau, et l'espace boutique n'en compte pas d'autre.
     const numeroAgent = page
-      .locator('[data-reseaux-grille] input[inputmode="numeric"]')
+      .locator('main[data-espace="boutique"] fieldset input[inputmode="numeric"]')
       .first()
     await expect(numeroAgent).toBeVisible({ timeout: 30_000 })
 
@@ -661,6 +637,13 @@ test.describe('Écrans de travail', () => {
       .not.toBe('right')
 
     // Et le champ qui EST une somme : celui de la modale de transaction.
+    //
+    // ⚠ ON FERME D'ABORD. La modale d'ajout d'un client est encore ouverte, et
+    // son voile couvre la navigation : `allerA` cliquerait un lien que
+    // Playwright voit et que l'utilisateur ne peut pas atteindre.
+    await page.locator('[data-modale-fermer]').first().click()
+    await expect(page.locator('[data-modale]')).toHaveCount(0, { timeout: 30_000 })
+
     await allerA(page, ECRANS[1]) // transactions
     await ouvrirLaSaisie(page)
     const montant = page.locator('input[data-champ-montant]').first()

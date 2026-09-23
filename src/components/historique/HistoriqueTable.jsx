@@ -3,7 +3,7 @@ import { useTheme } from '../../context/ThemeContext.jsx'
 import { getClientName, formatTransactionDateTime } from '../../utils/helpers.js'
 import { directionFromType, directionStyles } from '../../utils/transactionDirection.js'
 import DirectionBadge from '../ui/DirectionBadge.jsx'
-import { sensDuStock, montantSigne } from '../../utils/signeDuStock.js'
+import { sensDuStock, montantSigneAffiche } from '../../utils/signeDuStock.js'
 import { cleDuStatut, formeDuStatut } from '../../utils/statutDuMouvement.js'
 import { IS_REGISTRE } from '../../constants/designSystem.js'
 import { useWindowedRows } from '../../hooks/useWindowedRows.js'
@@ -89,9 +89,13 @@ function HistoriqueTable({ transactions = [] }) {
           data-sens={IS_REGISTRE ? sensDuStock(transaction.type).cle : undefined}
           className="border border-gray-200 px-4 py-3 text-base font-medium whitespace-nowrap"
         >
+          {/* ⚠ L'UNITE SUIVAIT `montant || amount`, ET ZERO EST FAUX.
+              Sur un montant de zero — que `montantSigne` rend bien « 0 », sans
+              signe — ce test echouait et la cellule affichait un « 0 » nu,
+              pendant que ses voisines portaient « … FCFA ». Le helper recolle
+              les deux, et rend un tiret quand il n'y a rien a lire. */}
           {IS_REGISTRE
-            ? (montantSigne(transaction.montant ?? transaction.amount, transaction.type) || '-')
-              + (transaction.montant || transaction.amount ? ' FCFA' : '')
+            ? montantSigneAffiche(transaction.montant ?? transaction.amount, transaction.type, { vide: '-' })
             : (transaction.montant ? `${(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA` :
                transaction.amount ? `${transaction.amount} FCFA` : '-')}
         </td>

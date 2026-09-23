@@ -302,7 +302,18 @@ describe('TC-028-A — URL finale par rôle', () => {
     expect(await screen.findByTestId('page-historique')).toBeInTheDocument()
   })
 
-  it('A-7 : store_admin sur "/formulaire" → Formulaire rendu', async () => {
+  it('A-7 : store_admin sur "/formulaire" → Formulaire rendu (hors identité)', async () => {
+    // ⚠ CE CAS EST DEVENU UNE GARDE DE NON-RÉGRESSION POUR TAOFIC (2026-09-23).
+    //
+    // `vitest.config.js:14` épingle `VITE_CLIENT_ID: 'taofic_ajagbe'` : toute
+    // cette suite tourne sous le profil TAOFIC, donc `IS_REGISTRE` est FAUX. La
+    // route rend bien sa page, et c'est exactement ce qu'on veut lire ici — le
+    // client en production garde son onglet, son écran et son formulaire pleine
+    // page.
+    //
+    // Sous l'identité « registre » (ESAHAF), la même route redirige vers
+    // `/clients` : l'écran a été retiré et l'ajout passe par une modale. Cette
+    // moitié-là est gardée par TC-162 (la navigation) et par le banc.
     renderApp(storeAdminCtx(), '/formulaire')
     expect(await screen.findByTestId('page-formulaire')).toBeInTheDocument()
   })

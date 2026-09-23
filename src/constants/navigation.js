@@ -1,4 +1,5 @@
 import { activeProfile } from '../config/activeClientProfile.js'
+import { IS_REGISTRE } from './designSystem.js'
 
 // Collaborations inter-boutiques : pertinentes uniquement en multi-réseaux (une
 // boutique sans SIM sur un réseau s'appuie sur une autre). En mono-réseau (ex.
@@ -10,7 +11,23 @@ export const NAV_ITEMS = [
   { name: 'Clients', path: '/clients' },
   { name: 'Transactions', path: '/transactions' },
   { name: 'Historique', path: '/historique' },
-  { name: 'Formulaire', path: '/formulaire' },
+  // ⟲ « Formulaire » N'EXISTE PLUS QUE HORS DE L'IDENTITE « REGISTRE ».
+  //
+  // C'est une entrée de navigation vers un écran qui ne fait qu'UNE chose :
+  // ajouter un client. La liste Clients offre déjà « Ajouter un client », qui y
+  // mène — deux chemins pour une seule saisie, et un onglet dont le nom ne dit
+  // pas ce qu'il ouvre. Sous l'identité, l'ajout passe par une modale ouverte
+  // depuis la liste, et la route `/formulaire` redirige vers `/clients`
+  // (src/App.jsx) : ni signet ni raccourci PWA ne tombe dans le vide.
+  //
+  // ⚠ `IS_REGISTRE` ET NON UN IDENTIFIANT DE CLIENT, et surtout pas un booléen
+  // de plus. TAOFIC est en production et n'a rien demandé : il garde son onglet,
+  // son écran et son formulaire pleine page, à l'octet près. C'est le même
+  // mécanisme que le bandeau de marque et la bande des réserves — une seule
+  // lecture de `profil.design`, dans designSystem.js, et jamais ailleurs.
+  ...(IS_REGISTRE ? [] : [
+    { name: 'Formulaire', path: '/formulaire' },
+  ]),
   { name: 'Demandes Dealer', path: '/dealer-requests' },
   // Les collaborations sont un sous-onglet de Transactions (une collaboration EST
   // une transaction) — pas d'entrée de premier niveau. Les dettes internes gardent

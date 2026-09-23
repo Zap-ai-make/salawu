@@ -160,7 +160,7 @@ function StoreAdminClosures() {
 
   if (!storeId) {
     return (
-      <div data-testid="store-admin-closures">
+      <div data-ecran data-testid="store-admin-closures">
         <PageHeader title="Clôtures Dealer" subtitle="Clôtures soumises pour votre boutique" />
         <ErrorState message="Votre profil n'est associé à aucune boutique." />
       </div>
@@ -168,7 +168,7 @@ function StoreAdminClosures() {
   }
 
   return (
-    <div data-testid="store-admin-closures">
+    <div data-ecran data-testid="store-admin-closures">
       {rejectTarget && (
         <RejectModal
           closureId={rejectTarget}

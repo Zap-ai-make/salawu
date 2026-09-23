@@ -1289,9 +1289,21 @@ body {
    qui garde la grille du lot L9.8 utile.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.design-registre [data-espace='boutique'] [data-colonne-lecture] {
-  max-width: 46rem;
-}
+/* ⟲ CETTE REGLE A ETE RETIREE LE 2026-09-23, ET SON DEFAUT AVEC ELLE.
+   ───────────────────────────────────────────────────────────────────────────
+   Elle posait :
+
+       [data-colonne-lecture] { max-width: 46rem }
+
+   L'ECRAN QU'ELLE BORNAIT N'EXISTE PLUS. L'ajout d'un client se fait dans une
+   modale, dont la boite est deja bornee (`max-w-3xl`, comme la saisie d'une
+   transaction du lot L9.14). Le marqueur n'etait porte que par `ClientForm`, et
+   par lui seul.
+
+   Garder la regle aurait laisse un selecteur sans cible : du code mort que rien
+   ne signale, et que le prochain lecteur croirait actif. Le raisonnement, lui,
+   reste ecrit au-dessus — il vaudra encore le jour ou un ecran se lira en
+   colonne. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LA BARRE DE FILTRES TIENT SUR UNE SEULE RANGEE (lot L9.18)
@@ -1431,13 +1443,100 @@ body {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .design-registre [data-espace='boutique'] {
+  /* ⚠ LA MARGE DE L'ECRAN EST UNE VALEUR, ET PLUS UN NOMBRE RECOPIE.
+     Elle est lue a trois endroits desormais (la carte ci-dessous, et les deux
+     regles du lot L9.22). Recopier « 24px » trois fois, c'est accepter qu'un
+     jour deux d'entre elles disent autre chose — et le defaut que L9.22 corrige
+     vient exactement de la : une marge decidee a un endroit, et pas a l'autre. */
+  --marge-ecran: 24px;
   padding-left: 0;
   padding-right: 0;
 }
 
 .design-registre [data-espace='boutique'] [data-surface] {
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: var(--marge-ecran);
+  padding-right: var(--marge-ecran);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA MARGE VAUT AUSSI POUR CE QUI N'EST PAS DANS UNE CARTE (lot L9.22)
+   ───────────────────────────────────────────────────────────────────────────
+   DEMANDE DU CLIENT : « fais respirer les pages des onglets, sauf l'onglet
+   Clients qui a de la marge de gauche a droite, et ca doit etre exactement la
+   meme marge ».
+
+   CE QUI SE PASSAIT, ET POURQUOI CLIENTS ETAIT LE SEUL EPARGNE
+
+   Le lot L9.14 a deplace la marge laterale de <main> vers la carte :
+   `[data-espace='boutique']` a 0, `[data-surface]` a 24 px. Le raisonnement
+   tenait — la carte garde son filet au bord de la fenetre et le contenu respire
+   a l'interieur — mais il ne couvre QUE ce qui est dans une carte.
+
+   Or une seule page met la totalite de son ecran dans une carte : Clients
+   (`ClientsTable` ouvre un `[data-surface]` autour du titre, des filtres ET du
+   tableau). Partout ailleurs, le titre, les onglets, la barre de filtres et la
+   note de convention vivent a nu sur la page. Ils ne recevaient donc RIEN :
+
+     Tableau de bord   « Tableau de bord »   colle a 0 px du bord
+     Transactions      « Transactions »       colle a 0 px du bord
+     Historique        « Historique »         colle a 0 px du bord
+     Demandes Dealer   « Demandes Dealer »    colle a 0 px du bord
+     Dettes internes   « Dettes internes »    colle a 0 px du bord
+
+   Profil, lui, etait deja juste : ses trois blocs sont des cartes, donc son
+   contenu tombait deja a 24 px. Il n'a rien a corriger, et on ne lui invente
+   rien.
+
+   ⚠ POURQUOI PAS SIMPLEMENT REMETTRE LA MARGE SUR <main>
+
+   Parce qu'elle S'AJOUTERAIT a celle de la carte : le contenu de Clients
+   passerait de 24 a 48 px, et celui des tableaux de l'Historique et des
+   Demandes Dealer aussi. C'est precisement la largeur utile que L9.14 etait alle
+   rechercher — a 375 px, 48 px de chaque cote font 26 % de l'ecran. On corrigerait
+   un defaut en en rouvrant un autre, sur la page que le client donne en exemple.
+
+   ⚠ D'OU LA REGLE : LA MARGE VA AUX ENFANTS NUS, PAS AU CONTENEUR
+
+   Un bloc marque `data-ecran` declare « je suis au niveau de l'ecran ». Ses
+   enfants directs prennent la marge — SAUF :
+
+     · `[data-surface]` — une carte la porte deja, en marge interieure. Elle reste
+       donc a fleur de fenetre, exactement comme celle de Clients, et son contenu
+       tombe au meme endroit : 24 px. C'est ce qui rend la marge « exactement la
+       meme » d'un onglet a l'autre, et pas seulement voisine.
+
+     · `[data-ecran]` — un bloc qui relaie lui-meme la marge a ses propres
+       enfants. L'Historique en a besoin : sa tete et son corps (`space-y-4`) ne
+       sont pas au meme niveau, et sans cette exception le corps prendrait la
+       marge une premiere fois, puis ses cartes une seconde.
+
+     · `.fixed` — un voile de modale (`inset-0`) ou une pile de notifications
+       sont hors du flux. Une marge laterale sur un `inset-0` retrecit le voile
+       de 48 px : le fond sombre cesserait de couvrir les bords de la fenetre.
+
+   ⚠ SAUF UN CADRE, QUI REPREND LA MARGE MEME S'IL EST UNE SURFACE. La barre de
+   filtres de l'Historique porte les deux faits (`data-surface data-filtres
+   data-cadre`), celle des Demandes Dealer un seul. Traitees comme des cartes,
+   l'une serait allee a fleur de fenetre pendant que l'autre restait a 24 px —
+   et, sur l'Historique, la barre aurait debordé sous ses propres onglets.
+
+   Un `data-cadre` n'est pas une carte de page : c'est une RANGEE encadree posee
+   dans l'ecran, et c'est ainsi que Clients la montre — a 24 px, dans la marge
+   de sa carte. Les deux autres ecrans s'y rangent, et le contenu des trois
+   barres tombe au meme endroit.
+
+   ⚠ MARGE ET NON REMBOURRAGE, ET CE N'EST PAS UN DETAIL. Ce selecteur pese
+   (0,5,1) : il l'emporterait sur le rembourrage propre de n'importe quel enfant.
+   Pose en `padding`, il aurait efface celui de la note de convention
+   (`[data-convention]`, 9 px / 13 px) et jete son texte a 24 px de sa propre
+   barre d'accent. La marge, elle, deplace le bloc sans toucher a son dedans.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre main[data-espace='boutique'] [data-ecran]
+  > *:not([data-surface]):not([data-ecran]):not(.fixed),
+.design-registre main[data-espace='boutique'] [data-ecran] > [data-cadre] {
+  margin-left: var(--marge-ecran);
+  margin-right: var(--marge-ecran);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2029,10 +2128,139 @@ body {
    affaire de contexte.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.design-registre [data-espace='boutique'] [data-reseaux-grille] {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
-  gap: 10px;
+/* ⟲ LA GRILLE DES RÉSEAUX EST RETIRÉE (2026-09-23), SUR DEMANDE DU CLIENT.
+   ───────────────────────────────────────────────────────────────────────────
+   Ce bloc posait :
+
+       [data-reseaux-grille] { display: grid;
+         grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 10px }
+
+   L'argument tenait : six blocs empilés occupent un écran entier pour douze
+   champs. Mais c'était MA décision de dessin, pas la correction d'un défaut, et
+   le client a demandé la disposition d'avant pour ces champs — et seulement pour
+   ceux-là.
+
+   Le marqueur est retiré du JSX et le contrôle de banc qui exigeait plusieurs
+   colonnes est retiré avec lui : un test qui garde une décision abandonnée garde
+   du vide, et il rougirait à chaque passage sans rien protéger.
+
+   ⚠ CE QUI RESTE : la chasse tabulaire du champ de montant, et le cadre du bloc
+   réseau. Ils ne dépendaient pas de la grille. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES TROIS DERNIERS ÉCRANS : TUILES, FAUX LIBELLÉS, CELLULE DE RÉSEAU
+   (lot L9.21 — Demandes Dealer, Dettes internes, Profil)
+   ───────────────────────────────────────────────────────────────────────────
+   CES TROIS ÉCRANS ÉTAIENT LES SEULS À N'AVOIR REÇU AUCUN MARQUEUR. Relevé
+   avant le lot : `grep` de `data-montant|data-statut|data-nombre|data-pastille|
+   data-surface|data-ecran-tete` sur les trois fichiers rend **0, 1 et 3**
+   occurrences, contre plusieurs dizaines sur Clients, Transactions et
+   Historique. Ils rendaient donc encore l'apparence d'avant la refonte, au
+   milieu d'un espace redessiné — c'est ce que le client voyait.
+
+   Rien n'est inventé ici : `data-montant`, `data-nombre`, `data-statut`,
+   `data-forme`, `data-surface`, `data-tuile`, `data-ecran-tete`,
+   `data-ecran-compte`, `data-filtres` et `.onglet` existent tous depuis les
+   lots L7 à L9.11, et les trois écrans les portent désormais. CE BLOC n'ajoute
+   que les trois faits qu'aucun écran précédent n'avait eu besoin de nommer.
+
+   ⚠ CE QUE LA MAQUETTE DEMANDE ET QUI N'EST PAS FAIT, écrit plutôt que tu.
+   Elle dessine sur le Profil un panneau « Clôture du jour » (transactions
+   enregistrées, encaissé, payé, caisse attendue, et un bouton « Clôturer la
+   journée »). Ce panneau N'EXISTE PAS dans le produit : la clôture est un écran
+   à part (`/store/closures`), avec sa logique et ses écritures. L'apporter ici
+   serait une FONCTIONNALITÉ, pas un restylage — et une fonctionnalité qui
+   touche à l'arrêt de caisse. Elle relève d'une décision, pas d'un lot de
+   design.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── La tuile de bilan ──────────────────────────────────────────────────────
+   `[data-tuile]` est déjà aplati plus haut (fond papier, filet, pas d'ombre,
+   pas d'arrondi) par le bloc du lot L8.1. Il ne manquait que ses PARTIES.
+
+   Le titre : 12px, `--encre-doux`, une graisse de 600. C'est le même libellé
+   qu'une légende de filtre — et c'est volontaire, les deux disent « voici de
+   quoi parle ce qui suit », jamais « ceci est un titre ». */
+.design-registre [data-espace='boutique'] [data-tuile-titre] {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-encre-doux);
+  margin: 0 0 6px;
+  text-transform: none; /* neutralise `uppercase` : le registre ne crie pas */
+}
+
+/* Le pied : l'unité, et la phrase qui dit de quel côté penche le compte.
+   Calé à DROITE, sous le chiffre qu'il qualifie — un pied aligné à gauche se
+   lirait comme le début d'un nouveau paragraphe. */
+.design-registre [data-espace='boutique'] [data-tuile-pied] {
+  font-size: 0.75rem;
+  color: var(--color-encre-doux);
+  margin: 6px 0 0;
+  text-align: right;
+}
+
+/* La valeur d'une tuile. Le filet vertical à sa gauche est la signature de la
+   maquette (`.tuile__valeur--argent`) : il tient le chiffre comme la marge d'un
+   registre tient une colonne, et il donne à trois tuiles côte à côte un aplomb
+   que trois nombres flottants n'ont pas.
+
+   ⚠ `[data-montant]` A DÉJÀ SA CHASSE ET SON CALAGE (lot L7) : on n'ajoute ici
+   que le filet et la taille. Le sélecteur est plus spécifique que la règle
+   générale, donc il gagne sans `!important`. */
+.design-registre [data-espace='boutique'] [data-tuile] [data-montant] {
+  border-left: 2px solid var(--color-filet);
+  padding-left: 12px;
+  font-size: 1.5625rem; /* 25px, la maquette */
+  line-height: 1.15;
+}
+
+/* ── Le faux libellé d'une valeur en lecture ────────────────────────────────
+   Il a la graisse et la taille d'un libellé de champ, et AUCUN cadre autour de
+   la valeur qui suit. C'est tout l'objet du marqueur : sur le Profil, chaque
+   valeur était posée dans un `bg-gray-50 rounded-md border`, c'est-à-dire le
+   dessin exact d'un champ de saisie désactivé. Rien ne s'y modifie.
+
+   13px / 600 : la taille unique tranchée au lot L9.7 pour les trente-neuf
+   libellés de l'espace. Un faux libellé n'a aucune raison d'y déroger. */
+.design-registre [data-espace='boutique'] [data-faux-label] {
+  display: block;
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 600;
+  color: var(--color-encre);
+  margin-bottom: 5px;
+}
+
+/* ── La cellule d'un réseau ─────────────────────────────────────────────────
+   La pastille et le nom, tenus ensemble. `white-space: nowrap` : une cellule de
+   tableau étroite couperait entre la pastille et son nom, ce qui laisserait une
+   rondelle de couleur orpheline en fin de ligne — exactement l'information
+   portée par la seule couleur que le reste du chantier retire. */
+.design-registre [data-espace='boutique'] [data-cellule-reseau] {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ÉTOILE D'UN CHAMP OBLIGATOIRE (lot L9.20)
+   ───────────────────────────────────────────────────────────────────────────
+   `--echec` et non `--sortie` : c'est le rouge que la palette réserve au REJET,
+   à 7,87:1 sur le papier. L'orange de sortie dit « de l'argent quitte la
+   caisse » — il n'a rien à faire sur une règle de saisie.
+
+   ⚠ LA COULEUR NE PORTE AUCUNE INFORMATION SEULE, et c'est ce qui autorise le
+   rouge ici. L'obligation est dite TROIS fois : par `required` sur le champ (que
+   le lecteur d'écran annonce et que le navigateur fait respecter), par la
+   mention en tête de modale (« Les champs marqués d'une étoile sont
+   obligatoires »), et par le GLYPHE — une étoile reste une étoile en noir et
+   blanc. La couleur ne fait que la trouver plus vite.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.design-registre [data-espace='boutique'] [data-requis] {
+  color: var(--color-echec);
+  font-weight: 600;
 }
 
 /* Le bloc d'un réseau. Un seul `<fieldset>` existe dans cet espace — celui-ci —

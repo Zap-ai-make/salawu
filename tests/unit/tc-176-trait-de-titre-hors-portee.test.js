@@ -66,6 +66,17 @@ const ENTREES = [
   'src/pages/Clients.jsx',
   'src/pages/Transactions.jsx',
   'src/pages/Historique.jsx',
+  // ⚠ REMISE LE 2026-09-23, APRES AVOIR ETE RETIREE LE MEME JOUR — ET LA PREMISE
+  //   DU RETRAIT ETAIT FAUSSE.
+  //
+  //   Le retrait disait « la page n'existe plus ». Elle existe : `src/App.jsx`
+  //   rend `IS_REGISTRE ? <Navigate to="/clients"/> : <Formulaire />`. Seule
+  //   l'identite « registre » redirige ; TAOFIC, qui est EN PRODUCTION, ouvre
+  //   toujours cet ecran depuis son onglet « Formulaire ».
+  //
+  //   La sonde aurait donc cesse de voir un ecran vivant : tout defaut de
+  //   structure propre a `Formulaire.jsx` — son titre, sa largeur, son
+  //   vocabulaire — serait sorti du perimetre sans que rien ne le dise.
   'src/pages/Formulaire.jsx',
   'src/pages/Profil.jsx',
   'src/pages/store/StoreAdminDealerRequests.jsx',
@@ -153,6 +164,18 @@ describe('TC-176 — aucun trait de titre hors de portée de la refonte', () => 
     // Ce cas NOMME les porteurs. Sans lui, retirer un marqueur ET la classe
     // `border-b-2` du même geste laisserait le cas précédent vert, alors que le
     // titre aurait perdu la règle qui le tient sous la portée.
+    //
+    // ⚠ `ClientForm.jsx` A ÉTÉ SORTI DE CETTE LISTE LE 2026-09-23, PUIS REMIS LE
+    //   MÊME JOUR. La sortie affirmait que « le titre est monté dans
+    //   ClientFormModal, sans soulignement — donc plus rien à mettre sous la
+    //   portée ». C'est vrai du chemin EN MODALE, et faux du fichier : son
+    //   chemin pleine page rend toujours
+    //   `<h2 data-titre-ecran … border-b-2 border-green-500>`, et c'est l'écran
+    //   que TAOFIC ouvre en production.
+    //
+    //   Retirer le garde pendant que sa cible est vivante, c'est exactement le
+    //   scénario que ce cas existe pour attraper : un futur lot qui ôterait
+    //   `data-titre-ecran` ET `border-b-2` du même geste serait passé inaperçu.
     const connus = [
       'src/components/ClientForm.jsx',
       'src/components/ClientsTable.jsx',

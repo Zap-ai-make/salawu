@@ -479,7 +479,7 @@ function StoreAdminDealerRequestDetails({ requestId: propRequestId = null, onClo
       </div>
     </div>
   ) : (
-    <div data-chassis className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">{inner}</div>
+    <div data-chassis data-ecran className="max-w-2xl mx-auto" data-testid="store-dealer-request-details">{inner}</div>
   ))
 
   // ---------------------------------------------------------------------------

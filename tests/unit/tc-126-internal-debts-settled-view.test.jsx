@@ -82,12 +82,23 @@ describe('TC-126 — l\'espace ne montre que l\'en-cours', () => {
     expect(within(table).getByText('ESAHAF ACTIVE')).toBeInTheDocument()
     expect(within(table).queryByText('ESAHAF SOLDEE')).not.toBeInTheDocument()
 
-    // La carte compte 1 ligne en cours (pas 2) ; plus aucune mention « soldée » ici.
-    const card = norm(screen.getByTestId('debts-card').textContent)
-    expect(card).toContain('20 000 FCFA')
-    expect(card).toContain('1 ligne')
-    expect(card).not.toContain('soldée')
-    expect(card).not.toContain('2 lignes')
+    // ⟲ LE BILAN S'EST SEPARE EN DEUX (lot L9.21) : l'onglet compte les lignes,
+    // la tuile porte le total. La regle verifiee, elle, n'a pas bouge — une
+    // dette reglee ne compte NULLE PART.
+    const tuile = norm(screen.getByTestId('tuile-je-dois').textContent)
+    expect(tuile).toContain('20 000 FCFA')
+    expect(tuile).not.toContain('soldée')
+
+    // ⚠ LE PIED COMPTE DES BOUTIQUES, PAS DES LIGNES, et c'est un changement
+    // assume : une meme boutique peut porter trois dettes sur trois reseaux.
+    // « 3 lignes » ne dit pas combien de partenaires il faudra aller voir.
+    expect(tuile).toContain('1 boutique')
+    expect(tuile).not.toContain('2 boutiques')
+
+    // Le compteur de l'onglet, lui, compte bien les LIGNES en cours : une.
+    const onglet = norm(screen.getByTestId('debts-card').textContent)
+    expect(onglet).toContain('1')
+    expect(onglet).not.toContain('2')
   })
 
   it('plus de bascule Actives / Soldées', () => {
@@ -109,11 +120,22 @@ describe('TC-126 — l\'espace ne montre que l\'en-cours', () => {
     expect(within(table).getByText('Boutique inconnue')).toBeInTheDocument()
   })
 
-  it('langage simple : « Ce que je dois » / « Ce qu\'on me doit »', () => {
+  it('langage simple : « Je dois » / « On me doit », jamais débiteur ni créancier', () => {
+    // ⟲ LE LIBELLE A RACCOURCI (lot L9.21) : « Ce que je dois » → « Je dois ».
+    //
+    // ⚠ CE QUE CE CAS GARDE N'EST PAS LA CHAINE, C'EST LA REGLE. L'ecran parle
+    // a un caissier, pas a un comptable : jamais « debiteur », « crediteur » ni
+    // « creance » dans un libelle de navigation. Asserter la phrase exacte
+    // faisait rougir ce cas pour un mot plus court, ce qui ne prouve rien.
+    //
+    // Les deux formes coexistent maintenant : l'ONGLET dit « Je dois », la
+    // TUILE dit « Je dois, en cours ». D'ou `getAllByText` avec un motif.
     feed({ debts: [debt('d1')] })
     render(<StoreInternalDebts />)
-    expect(screen.getByText('Ce que je dois')).toBeInTheDocument()
-    expect(screen.getByText('Ce qu\'on me doit')).toBeInTheDocument()
+
+    expect(screen.getAllByText(/^Je dois/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/^On me doit/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/débiteur|créancier/i)).toBeNull()
   })
 
   it('une créance en cours garde Confirmer/Rejeter sur une tranche déclarée', () => {

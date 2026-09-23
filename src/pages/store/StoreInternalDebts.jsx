@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
 import PageHeader from '../../components/ui/PageHeader'
-import StatCard from '../../components/ui/StatCard'
 import StatusBadge from '../../components/ui/StatusBadge'
+import CelluleReseau from '../../components/ui/CelluleReseau'
+import { tabButtonClass, TabBadge } from '../../components/ui/Tabs.jsx'
 import { themedTableClasses } from '../../components/ui/themedTable.js'
 import { formatDateTime } from '../../utils/formatters'
 import { parseStrictInteger } from '../../utils/parseStrictInteger'
@@ -155,10 +156,10 @@ function DebtRow({ debt, credits, tbl }) {
 
   return (
     <tr>
-      <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(debt.createdAt)}</td>
+      <td data-nombre className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(debt.createdAt)}</td>
       <td className={`${tbl.cell} font-medium text-gray-800`}>{debt.creditorStoreName || 'Boutique inconnue'}</td>
       <td className={`${tbl.cell} text-gray-700`}>{opLabel(debt.operationType)}</td>
-      <td className={`${tbl.cell} text-gray-700`}>{debt.network}</td>
+      <td className={`${tbl.cell} text-gray-700`}><CelluleReseau reseau={debt.network} /></td>
       <AmountCell debt={debt} tbl={tbl} />
       <td className={`${tbl.cell} whitespace-nowrap`}>
         <StatusBadge status={debt.status} label={DEBT_STATUS_LABELS[debt.status] ?? debt.status} color={DEBT_STATUS_COLOR[debt.status]} />
@@ -232,10 +233,10 @@ function CreditRow({ debt, tbl }) {
 
   return (
     <tr>
-      <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(debt.createdAt)}</td>
+      <td data-nombre className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(debt.createdAt)}</td>
       <td className={`${tbl.cell} font-medium text-gray-800`}>{debt.debtorStoreName || 'Boutique inconnue'}</td>
       <td className={`${tbl.cell} text-gray-700`}>{opLabel(debt.operationType)}</td>
-      <td className={`${tbl.cell} text-gray-700`}>{debt.network}</td>
+      <td className={`${tbl.cell} text-gray-700`}><CelluleReseau reseau={debt.network} /></td>
       <AmountCell debt={debt} tbl={tbl} />
       <td className={`${tbl.cell} whitespace-nowrap`}>
         <StatusBadge status={debt.status} label={DEBT_STATUS_LABELS[debt.status] ?? debt.status} color={DEBT_STATUS_COLOR[debt.status]} />
@@ -271,16 +272,34 @@ function CreditRow({ debt, tbl }) {
   )
 }
 
-/** Carte-total qui sert aussi de sélecteur de vue (ce que je dois / ce qu'on me doit).
- *  Le total et le compte ne concernent que les lignes EN COURS (les réglées sont dans
- *  l'Historique). */
-function TotalCard({ label, total, count, color, active, onClick, testId }) {
-  const sub = `${count} ${count > 1 ? 'lignes' : 'ligne'}`
+/**
+ * Une tuile de bilan.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ⟲ ELLE REMPLACE `TotalCard`, QUI ETAIT DEUX CHOSES A LA FOIS.
+ *
+ * `TotalCard` enveloppait un `StatCard` dans un `<button aria-pressed>` : la
+ * tuile ETAIT le selecteur de vue. Deux fonctions dans un seul objet, et aucune
+ * des deux rendue clairement — un chiffre n'a pas l'air cliquable, et un onglet
+ * n'a pas l'air d'un total.
+ *
+ * La maquette les separe : une rangee d'onglets choisit la liste, une rangee de
+ * tuiles informe. C'est ce qui permet d'ajouter une TROISIEME tuile — le solde
+ * net — qui ne selectionne rien et n'aurait eu nulle part ou aller.
+ *
+ * `data-tuile` : le fait que src/index.css attendait. Le commentaire du lot
+ * L8.1 le note noir sur blanc — « les tuiles de Dettes internes gardent leur
+ * rounded-2xl et leur ombre pour le moment ; elles relevent du lot de cet
+ * ecran-la ». C'est ce lot.
+ */
+function Tuile({ titre, valeur, pied, sens, testId }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} data-testid={testId}
-      className={`block w-full rounded-2xl text-left transition ${active ? 'ring-2 ring-offset-1 ring-blue-500' : 'ring-1 ring-transparent hover:ring-gray-200'}`}>
-      <StatCard label={label} value={fmt(total)} sub={sub} color={color} />
-    </button>
+    <div data-tuile data-testid={testId} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <p data-tuile-titre className="text-xs font-semibold uppercase tracking-wide text-gray-500">{titre}</p>
+      {/* `data-sens` peint l'entree et la sortie, comme dans l'historique et le
+          tableau des transactions. Absent = ni l'un ni l'autre (un solde nul). */}
+      <p data-montant data-sens={sens} className="mt-1 text-2xl font-bold text-gray-900">{valeur}</p>
+      {pied && <p data-tuile-pied className="mt-1 text-xs text-gray-500">{pied}</p>}
+    </div>
   )
 }
 
@@ -331,22 +350,95 @@ function StoreInternalDebts() {
     return [...map.values()].filter((p) => p.debt > 0 || p.credit > 0)
   }, [debts, credits])
 
+  /**
+   * Le solde net, et ce qu'il faut dire pour qu'un signe ait un sens.
+   *
+   * ⚠ LA CONVENTION EST CELLE DES TUILES, ET ELLE EST L'INVERSE DE CELLE DES
+   * DETTES. Une dette est un nombre POSITIF dans Firestore (`remainingAmount`) ;
+   * ce qu'on affiche est un point de vue de caisse : ce que je dois SORT
+   * (negatif), ce qu'on me doit ENTRE (positif). Le solde net suit donc
+   * `credits − debts`, et non l'inverse.
+   */
+  const soldeNet = totalCredits - totalDebts
+  const mentionDuSolde = soldeNet > 0
+    ? 'on me doit plus que je ne dois'
+    : soldeNet < 0
+      ? 'je dois plus qu’on ne me doit'
+      : 'les comptes s’équilibrent'
+
+  // Le nombre de BOUTIQUES concernees, pas de lignes : une meme boutique peut
+  // porter trois dettes sur trois reseaux, et « 3 lignes » ne dit pas combien de
+  // partenaires il faudra aller voir.
+  const nbPartenairesDebiteurs = new Set(activeDebts.map((d) => d.creditorStoreId)).size
+  const nbPartenairesCrediteurs = new Set(activeCredits.map((c) => c.debtorStoreId)).size
+
   return (
-    <div>
+    <div data-ecran>
       <PageHeader title="Dettes internes" subtitle="Ce que je dois et ce qu'on me doit, en cours. Les dettes réglées sont dans l'Historique." />
 
-      {/* Bilan en un coup d'œil : totaux des lignes EN COURS, qui sélectionnent aussi la liste. */}
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <TotalCard label="Ce que je dois" total={totalDebts} count={activeDebts.length} color="blue"
-          active={isDebts} onClick={() => setTab('debts')} testId="debts-card" />
-        <TotalCard label="Ce qu'on me doit" total={totalCredits} count={activeCredits.length} color="green"
-          active={!isDebts} onClick={() => setTab('credits')} testId="credits-card" />
+      {/* LES ONGLETS — ils choisissent la liste, et rien d'autre.
+          Meme vocabulaire que Transactions et Demandes Dealer : `tabButtonClass`
+          et `TabBadge`. Le compteur est ici HONNETE et complet — ces deux
+          nombres sont ceux des lignes en cours reellement abonnees, pas
+          l'echantillon d'une page. */}
+      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Choisir la liste">
+        <button type="button" aria-pressed={isDebts} data-testid="debts-card"
+          className={tabButtonClass(isDebts)} onClick={() => setTab('debts')}>
+          Je dois
+          {activeDebts.length > 0 && (
+            <TabBadge count={activeDebts.length} active={isDebts}
+              label={`${activeDebts.length} dette${activeDebts.length > 1 ? 's' : ''} en cours`} />
+          )}
+        </button>
+        <button type="button" aria-pressed={!isDebts} data-testid="credits-card"
+          className={tabButtonClass(!isDebts)} onClick={() => setTab('credits')}>
+          On me doit
+          {activeCredits.length > 0 && (
+            <TabBadge count={activeCredits.length} active={!isDebts}
+              label={`${activeCredits.length} créance${activeCredits.length > 1 ? 's' : ''} en cours`} />
+          )}
+        </button>
+      </div>
+
+      {/* LE BILAN — trois tuiles, dont une qui n'existait pas.
+          ────────────────────────────────────────────────────────────────────
+          ⚠ « SOLDE NET » EST LE CHIFFRE QUE L'ECRAN NE DONNAIT PAS. Il affichait
+          deux totaux cote a cote et laissait la soustraction a l'utilisateur —
+          or c'est precisement ce qu'on veut savoir en fin de journee : est-ce
+          que je dois, ou est-ce qu'on me doit ?
+
+          ⚠ LE SIGNE NE SUFFIT PAS, ET LE PIED LE DIT EN TOUTES LETTRES. « +42 700 »
+          ne dit pas de quel cote penche le compte : la maquette ecrit « on me
+          doit plus que je ne dois » sous le chiffre, et c'est la regle « aucune
+          information n'est portee par un seul canal » appliquee a un solde. */}
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Tuile
+          titre="Je dois, en cours"
+          valeur={totalDebts > 0 ? `−${fmt(totalDebts)}` : fmt(0)}
+          sens={totalDebts > 0 ? 'sortie' : undefined}
+          pied={`FCFA, ${nbPartenairesDebiteurs} boutique${nbPartenairesDebiteurs > 1 ? 's' : ''}`}
+          testId="tuile-je-dois"
+        />
+        <Tuile
+          titre="On me doit, en cours"
+          valeur={totalCredits > 0 ? `+${fmt(totalCredits)}` : fmt(0)}
+          sens={totalCredits > 0 ? 'entree' : undefined}
+          pied={`FCFA, ${nbPartenairesCrediteurs} boutique${nbPartenairesCrediteurs > 1 ? 's' : ''}`}
+          testId="tuile-on-me-doit"
+        />
+        <Tuile
+          titre="Solde net"
+          valeur={soldeNet === 0 ? fmt(0) : `${soldeNet > 0 ? '+' : '−'}${fmt(Math.abs(soldeNet))}`}
+          sens={soldeNet > 0 ? 'entree' : soldeNet < 0 ? 'sortie' : undefined}
+          pied={`FCFA — ${mentionDuSolde}`}
+          testId="tuile-solde-net"
+        />
       </div>
 
       {/* Solde net par partenaire — repère la boutique où une compensation est possible. */}
       {partners.length > 0 && (
         <div className="mb-6" data-testid="net-by-partner">
-          <h2 className="mb-2 text-sm font-semibold text-gray-600">Solde net par partenaire</h2>
+          <h2 data-bloc-titre className="mb-2 text-sm font-semibold text-gray-600">Solde net par partenaire</h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {partners.map((p) => {
               const net = p.debt - p.credit
@@ -354,7 +446,7 @@ function StoreInternalDebts() {
               const label = net > 0 ? 'Vous devez' : net < 0 ? 'On vous doit' : 'Soldé'
               const tone = net > 0 ? 'text-blue-700' : net < 0 ? 'text-green-700' : 'text-gray-500'
               return (
-                <div key={p.id} data-testid={`partner-net-${p.id}`}
+                <div key={p.id} data-tuile data-testid={`partner-net-${p.id}`}
                   className="rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
                   <p className="truncate text-sm font-medium text-gray-800">{p.name}</p>
                   <p className={`text-sm font-semibold ${tone}`}>{label}{net !== 0 ? ` ${fmt(Math.abs(net))}` : ''}</p>
@@ -379,7 +471,7 @@ function StoreInternalDebts() {
                 <th className={tbl.headerCell}>{isDebts ? 'À qui' : 'Qui'}</th>
                 <th className={tbl.headerCell}>Type</th>
                 <th className={tbl.headerCell}>Réseau</th>
-                <th className={tbl.headerCell}>Montant</th>
+                <th data-montant className={tbl.headerCell}>Montant</th>
                 <th className={tbl.headerCell}>Statut</th>
                 <th className={tbl.headerCell}>{tab === 'debts' ? 'Règlement' : 'Règlements'}</th>
               </tr>

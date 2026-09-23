@@ -1,6 +1,6 @@
 ﻿import { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react'
 import { IS_REGISTRE } from '../../constants/designSystem.js'
-import { sensDuStock, montantSigne } from '../../utils/signeDuStock.js'
+import { sensDuStock, montantSigneAffiche } from '../../utils/signeDuStock.js'
 import { createPortal } from 'react-dom'
 import { useTransactions } from '../../context/transactions.jsx'
 import { useTheme } from '../../context/ThemeContext.jsx'
@@ -59,9 +59,15 @@ const TransactionTable = memo(function TransactionTable() {
     if (actionType === 'modifier') {
       const transaction = pendingTransactions.find(t => t.id === transactionId)
       if (transaction) {
+        // ⟲ LE DEFILEMENT VERS LE HAUT EST RETIRE. Il menait au formulaire quand
+        //   celui-ci etait pose en pleine page, au-dessus de ce tableau. Le lot
+        //   L9.14 l'a mis en modale : le geste fait desormais defiler la PAGE
+        //   DERRIERE le voile, ce que l'utilisateur ne voit pas, et qu'il
+        //   retrouvera en position inattendue a la fermeture.
+        //
+        //   L'ouverture de la modale suit `editingTransaction` (Transactions.jsx) :
+        //   poser l'etat suffit, il n'y a plus rien a atteindre a l'ecran.
         startEditTransaction(transaction)
-        // Scroll vers le haut du formulaire
-        window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     } else if (actionType === 'payerPar' || actionType === 'rembourser' || actionType === 'encaisser') {
       if (activeDropdown === transactionId) {
@@ -309,9 +315,14 @@ const TransactionTable = memo(function TransactionTable() {
                         className={`${tbl.cell} font-medium ${styles.textColor}`}
                       >
                         <span>
+                          {/* ⚠ L'UNITE EST DANS LE HELPER, ET PLUS COLLEE ICI.
+                              ` FCFA` etait concatene SANS CONDITION : sur un
+                              montant absent, `montantSigne` rend '' et la
+                              cellule affichait « FCFA » tout seul — une devise
+                              sans somme, dans la colonne d'argent. */}
                           {IS_REGISTRE
-                            ? montantSigne(transaction.montant, transaction.type)
-                            : (Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA
+                            ? montantSigneAffiche(transaction.montant, transaction.type)
+                            : `${(Number(transaction.montant) || 0).toLocaleString('fr-FR')} FCFA`}
                         </span>
                         {transaction.settlementStatus === 'partial' && transaction.remainingAmount != null && (
                           <div className="text-xs font-normal text-orange-600 mt-0.5">

@@ -80,17 +80,44 @@ beforeEach(() => {
 })
 
 describe('TC-121 — bilan en cartes', () => {
-  it('somme le reste dû dans chaque carte', () => {
+  it('somme le reste dû dans chaque tuile', () => {
+    // ⟲ LE TOTAL A QUITTE LE SELECTEUR (lot L9.21). `debts-card` etait une carte
+    // qui portait A LA FOIS le total et le choix de la liste. La maquette les
+    // separe : une rangee d'onglets choisit, une rangee de tuiles informe.
+    //
+    // ⚠ C'EST CE QUI A PERMIS D'AJOUTER LE SOLDE NET — une troisieme tuile qui
+    // ne selectionne rien, et qui n'aurait eu nulle part ou vivre tant que
+    // « tuile » voulait dire « bouton ».
+    //
+    // Le total lui-meme n'a pas change de regle : il ne somme que l'EN-COURS.
     feed({
       debts: [debt('d1', { remainingAmount: 20000 }), debt('d2', { remainingAmount: 5000 })],
       credits: [debt('c1', { remainingAmount: 40000 })],
     })
     render(<StoreInternalDebts />)
-    expect(norm(screen.getByTestId('debts-card').textContent)).toContain('25 000 FCFA')
-    expect(norm(screen.getByTestId('credits-card').textContent)).toContain('40 000 FCFA')
+    expect(norm(screen.getByTestId('tuile-je-dois').textContent)).toContain('25 000 FCFA')
+    expect(norm(screen.getByTestId('tuile-on-me-doit').textContent)).toContain('40 000 FCFA')
   })
 
-  it('les cartes sont le sélecteur : dettes par défaut, bascule sur créances', () => {
+  it('le solde net dit de quel côté penche le compte, et ne le laisse pas au signe', () => {
+    // ⚠ CE CHIFFRE N'EXISTAIT PAS. L'ecran posait deux totaux cote a cote et
+    // laissait la soustraction a l'utilisateur — or c'est exactement ce qu'on
+    // veut savoir en fin de journee.
+    //
+    // « +15 000 » ne dit pas de quel cote penche le compte : la mention est donc
+    // ECRITE, sous le chiffre. C'est la regle « aucune information n'est portee
+    // par un seul canal », appliquee a un solde.
+    feed({
+      debts: [debt('d1', { remainingAmount: 25000 })],
+      credits: [debt('c1', { remainingAmount: 40000 })],
+    })
+    render(<StoreInternalDebts />)
+    const net = norm(screen.getByTestId('tuile-solde-net').textContent)
+    expect(net).toContain('15 000 FCFA')
+    expect(net).toContain('on me doit plus que je ne dois')
+  })
+
+  it('les onglets sont le sélecteur : dettes par défaut, bascule sur créances', () => {
     feed({ debts: [debt('d1')], credits: [debt('c1', { debtorStoreName: 'ESAHAF KAYA' })] })
     render(<StoreInternalDebts />)
 

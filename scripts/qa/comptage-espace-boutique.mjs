@@ -51,6 +51,17 @@ const POINTS_ENTREE = [
   'src/pages/Clients.jsx',
   'src/pages/Transactions.jsx',
   'src/pages/Historique.jsx',
+  // ⚠ REMISE LE 2026-09-23, APRES AVOIR ETE RETIREE LE MEME JOUR — ET LA PREMISE
+  //   DU RETRAIT ETAIT FAUSSE.
+  //
+  //   Le retrait disait « la page n'existe plus ». Elle existe : `src/App.jsx`
+  //   rend `IS_REGISTRE ? <Navigate to="/clients"/> : <Formulaire />`. Seule
+  //   l'identite « registre » redirige ; TAOFIC, qui est EN PRODUCTION, ouvre
+  //   toujours cet ecran depuis son onglet « Formulaire ».
+  //
+  //   La sonde aurait donc cesse de voir un ecran vivant : tout defaut de
+  //   structure propre a `Formulaire.jsx` — son titre, sa largeur, son
+  //   vocabulaire — serait sorti du perimetre sans que rien ne le dise.
   'src/pages/Formulaire.jsx',
   'src/pages/Profil.jsx',
   'src/pages/store/StoreAdminDealerRequests.jsx',
@@ -340,7 +351,7 @@ async function main() {
   // qui n'ont pas de filet de rendu, faute d'un rapport coût/protection
   // raisonnable. Le dire ici vaut mieux que de laisser croire à une couverture
   // qui n'existe pas.
-  console.log('\nSTRUCTURE — relevé sur les onze points d\'entrée\n')
+  console.log('\nSTRUCTURE — relevé sur les dix points d\'entrée\n')
   console.log(
     'écran'.padEnd(46) + col('h1', 4) + col('largeur', 9) + col('Header', 8) + col('Empty', 7) + col('«Aucun»', 9),
   )

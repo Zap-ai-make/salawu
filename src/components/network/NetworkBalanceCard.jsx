@@ -50,8 +50,19 @@ function NetworkBalanceCard({ network, stockAmount, liquiditeAmount }) {
   // l'indicateur d'origine, strictement inchangé. Sans cela, une configuration
   // que ce lot ne touche pas par ailleurs PERDRAIT son seul signal de rupture.
   // Là où le mot existe, il remplace ce « ! » — c'est tout l'objet du lot.
-  const stockValue = stockAmount || 0
-  const isCritical = !etat && !isLiquiditeCard && stockValue <= 0
+  //
+  // ⚠ ET IL NE SE DECLENCHE QUE SUR UN NOMBRE REELLEMENT LU. `stockAmount || 0`
+  // transformait `null`, `undefined` et `''` en zero, donc en RUPTURE : un
+  // reseau dont le solde n'avait pas encore charge affichait le « ! » rouge.
+  // C'est exactement le faux signal que `etatDeLaReserve` refuse d'emettre —
+  // son commentaire le dit mot pour mot : « une valeur absente ou illisible
+  // n'est PAS zero ». Le repli reprenait par la porte de derriere ce que la
+  // regle avait ecarte par la grande.
+  const stockLu = Number(stockAmount)
+  const stockEstLisible = stockAmount !== null && stockAmount !== undefined
+    && !(typeof stockAmount === 'string' && stockAmount.trim() === '')
+    && Number.isFinite(stockLu)
+  const isCritical = !etat && !isLiquiditeCard && stockEstLisible && stockLu <= 0
 
   return (
     <div

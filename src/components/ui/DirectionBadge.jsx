@@ -1,5 +1,5 @@
 import { directionStyles } from '../../utils/transactionDirection.js'
-import { sensDuStock } from '../../utils/signeDuStock.js'
+import { sensAvecDirection } from '../../utils/signeDuStock.js'
 import { IS_REGISTRE } from '../../constants/designSystem.js'
 
 /**
@@ -28,7 +28,12 @@ import { IS_REGISTRE } from '../../constants/designSystem.js'
  */
 export default function DirectionBadge({ direction, label }) {
   if (IS_REGISTRE) {
-    const sens = sensDuStock(label)
+    // ⚠ LA DIRECTION EST LUE, ET PLUS JETEE. Elle prend le relais quand le
+    // libelle n'est pas une operation — « Recue », « Dette »… — qui tombaient
+    // tous sur `neutre`, donc gris, sur deux onglets entiers de l'Historique.
+    // La regle vit dans `utils/signeDuStock.js` : ici elle serait derriere
+    // `IS_REGISTRE`, donc introuvable pour un test.
+    const sens = sensAvecDirection(direction, label)
     return (
       // `data-sens` est un FAIT : ce mouvement sort du stock, y rentre, ou ne le
       // touche pas. La couleur vient de src/index.css sous la portée.

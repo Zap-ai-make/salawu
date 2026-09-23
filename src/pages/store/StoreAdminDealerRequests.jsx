@@ -9,6 +9,9 @@ import { formatStoredAmount } from '../../utils/formatCurrency'
 import { mergeUniqueRequests } from '../../utils/mergeRequests'
 import { formatFirestoreDate } from '../../utils/formatFirestoreDate'
 import DealerRequestStatusBadge from '../../components/ui/DealerRequestStatusBadge'
+import CelluleReseau from '../../components/ui/CelluleReseau'
+import { tabButtonClass } from '../../components/ui/Tabs.jsx'
+import { IS_REGISTRE } from '../../constants/designSystem.js'
 import {
   DEALER_REQUEST_STATUS_LABELS,
   DEALER_REQUEST_STATUSES,
@@ -206,27 +209,86 @@ function StoreAdminDealerRequests() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div data-chassis className="max-w-6xl mx-auto" data-testid="store-dealer-requests">
-      {/* En-tête */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <h1 data-titre-ecran className="text-xl font-bold text-gray-800">Demandes Dealer</h1>
-        <button
-          data-rang="second"
-          type="button"
-          onClick={() => { setExtraRequests([]); setRefreshKey(k => k + 1) }}
-          disabled={loading}
-          className="rounded bg-gray-100 border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 transition-colors"
-          aria-label="Actualiser la liste"
-          data-testid="btn-refresh"
-        >
-          {loading ? 'Chargement…' : 'Actualiser'}
-        </button>
+    <div data-chassis data-ecran className="max-w-6xl mx-auto" data-testid="store-dealer-requests">
+      {/* LA TETE D'ECRAN — titre et compte a gauche, actions a droite.
+          Meme decoupage que Clients, Transactions et Historique. */}
+      <div data-ecran-tete className="flex flex-wrap items-end justify-between gap-3 mb-5">
+        <div>
+          <h1 data-titre-ecran className="text-xl font-bold text-gray-800">Demandes Dealer</h1>
+          {/* ⚠ CE COMPTE DIT CE QU'IL SAIT, ET RIEN DE PLUS.
+              La maquette ecrit « 20 demandes sur 47 · page 1 ». Ce « 47 » est un
+              total que l'ecran N'A PAS : il charge par pages, et `hasMore` est
+              tout ce qu'il connait de la suite. Afficher un total exigerait un
+              comptage serveur — une requete de plus, pas un geste de dessin.
+              On ecrit donc le nombre CHARGE, et on dit qu'il y en a d'autres
+              quand c'est le cas. C'est la regle de TC-172 : le silence plutot
+              qu'un chiffre faux. */}
+          <p data-ecran-compte>
+            {filtered.length} demande{filtered.length > 1 ? 's' : ''} chargée{filtered.length > 1 ? 's' : ''}
+            {hasMore ? ' · d’autres restent à charger' : ''}
+          </p>
+        </div>
+        <div data-ecran-actions className="flex flex-wrap gap-2">
+          <button
+            data-rang="second"
+            type="button"
+            onClick={() => { setExtraRequests([]); setRefreshKey(k => k + 1) }}
+            disabled={loading}
+            className="rounded bg-gray-100 border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 transition-colors"
+            aria-label="Actualiser la liste"
+            data-testid="btn-refresh"
+          >
+            {loading ? 'Chargement…' : 'Actualiser'}
+          </button>
+        </div>
       </div>
 
-      {/* Filtres */}
-      <div className="bg-white rounded-lg shadow p-4 mb-5 flex flex-wrap gap-4 items-end">
-        {/* Statut */}
-        <div className="flex-1 min-w-36">
+      {/* LES ONGLETS DE STATUT (identite seulement).
+          ────────────────────────────────────────────────────────────────────
+          ⚠ C'EST UN CHANGEMENT DE CONTROLE, PAS DE COMPORTEMENT. L'etat filtre
+          est le MEME (`statusFilter`), la requete qu'il declenche est la meme,
+          et `handleStatusChange` reste le seul chemin pour en changer. Seule la
+          facon de le choisir change : quatre onglets au lieu d'une liste
+          deroulante, comme la maquette et comme l'ecran Transactions.
+
+          ⚠ GARDE PAR `IS_REGISTRE`. TAOFIC ouvre cet ecran et n'a rien demande :
+          il garde sa liste deroulante, avec son `data-testid="filter-status"`.
+
+          ⚠ LES ONGLETS NE PORTENT AUCUN COMPTEUR, contrairement a la maquette.
+          Elle ecrit « Toutes 47 · En attente 9 » ; ces nombres supposent un
+          comptage par statut sur TOUTE la collection, que cet ecran ne fait pas.
+          Un compteur calcule sur la page chargee dirait « 3 en attente » alors
+          qu'il y en a neuf — un chiffre faux est pire que pas de chiffre. */}
+      {IS_REGISTRE && (
+        <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Filtrer par statut">
+          {STATUS_OPTIONS.map(opt => (
+            <button
+              key={opt.value || 'toutes'}
+              type="button"
+              aria-pressed={statusFilter === opt.value}
+              className={tabButtonClass(statusFilter === opt.value)}
+              onClick={() => handleStatusChange(opt.value)}
+              data-testid={`onglet-statut-${opt.value || 'toutes'}`}
+            >
+              {/* « Toutes » et non « Tous les statuts » : un onglet se lit en
+                  rangee avec ses voisins, et le mot « statuts » est deja donne
+                  par le groupe (`aria-label="Filtrer par statut"`). La liste
+                  deroulante, elle, garde son libelle complet — hors contexte,
+                  « Toutes » n'y dirait pas de quoi. */}
+              {opt.value ? opt.label : 'Toutes'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* LA BARRE DE FILTRES — `data-filtres` + `data-cadre`, comme les deux
+          autres barres de l'espace (lot L9.11). La gouttiere, l'alignement en
+          pied et la taille des libelles viennent de src/index.css. */}
+      <div data-filtres data-cadre className="bg-white rounded-lg shadow p-4 mb-5 flex flex-wrap gap-4 items-end">
+        {/* Statut — MASQUE sous l'identite, ou les onglets ci-dessus le
+            remplacent. Le rendre en double donnerait deux controles pour un
+            seul etat, qui se contrediraient a l'oeil. */}
+        <div data-filtre-bloc className={`flex-1 min-w-36${IS_REGISTRE ? ' hidden' : ''}`}>
           <label htmlFor="status-filter" className="block text-xs font-medium text-gray-600 mb-1">
             Statut
           </label>
@@ -245,7 +307,7 @@ function StoreAdminDealerRequests() {
         </div>
 
         {/* Type */}
-        <div className="flex-1 min-w-36">
+        <div data-filtre-bloc className="flex-1 min-w-36">
           <label htmlFor="type-filter" className="block text-xs font-medium text-gray-600 mb-1">
             Type
           </label>
@@ -264,7 +326,7 @@ function StoreAdminDealerRequests() {
         </div>
 
         {/* Recherche locale Dealer */}
-        <div className="flex-1 min-w-40">
+        <div data-filtre-bloc data-filtre-bloc-large className="flex-1 min-w-40">
           <label htmlFor="dealer-search" className="block text-xs font-medium text-gray-600 mb-1">
             Rechercher dans les demandes chargées
           </label>
@@ -326,7 +388,7 @@ function StoreAdminDealerRequests() {
 
       {/* Liste vide */}
       {hasLoaded && !loading && !error && requests.length === 0 && (
-        <div className="bg-white rounded-lg shadow p-10 text-center text-gray-500" data-testid="empty-state">
+        <div data-surface className="bg-white rounded-lg shadow p-10 text-center text-gray-500" data-testid="empty-state">
           {statusFilter || typeFilter
             ? 'Aucune demande ne correspond aux filtres sélectionnés.'
             : 'Aucune demande Dealer pour votre boutique.'}
@@ -335,7 +397,7 @@ function StoreAdminDealerRequests() {
 
       {/* Aucun résultat après filtre local */}
       {hasLoaded && !loading && !error && requests.length > 0 && filtered.length === 0 && (
-        <div className="bg-white rounded-lg shadow p-10 text-center text-gray-500" data-testid="empty-search">
+        <div data-surface className="bg-white rounded-lg shadow p-10 text-center text-gray-500" data-testid="empty-search">
           Aucune demande ne correspond à « {dealerSearch} ».
         </div>
       )}
@@ -343,14 +405,14 @@ function StoreAdminDealerRequests() {
       {/* Tableau */}
       {!loading && filtered.length > 0 && (
         <>
-          <div className="bg-white rounded-lg shadow overflow-x-auto" data-testid="requests-table">
+          <div data-surface className="bg-white rounded-lg shadow overflow-x-auto" data-testid="requests-table">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dealer</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                  <th scope="col" data-montant className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Réseau</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créée le</th>
@@ -372,19 +434,27 @@ function StoreAdminDealerRequests() {
                     <td className="px-4 py-3 whitespace-nowrap text-gray-600">
                       {DEALER_REQUEST_TYPE_LABELS[req.requestType] ?? 'Type inconnu'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-800 font-medium">
+                    {/* `data-montant` : la colonne de l'argent prend la chasse
+                        fixe, les chiffres tabulaires et le calage a droite —
+                        c'est ce qui permet de comparer deux sommes en les
+                        superposant du regard, au lieu de les relire. */}
+                    <td data-montant className="px-4 py-3 whitespace-nowrap text-gray-800 font-medium">
                       {formatStoredAmount(req.amount)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                      {req.network ?? '—'}
+                      <CelluleReseau reseau={req.network} />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <DealerRequestStatusBadge status={req.status} />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">
+                    {/* `data-nombre` et non `data-montant` : une date n'est pas
+                        une somme. Elle gagne la chasse fixe — deux horodatages
+                        alignes se comparent d'un coup — sans le calage a droite
+                        ni le filet de la colonne d'argent. */}
+                    <td data-nombre className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">
                       {formatFirestoreDate(req.createdAt)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">
+                    <td data-nombre className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">
                       {formatFirestoreDate(req.updatedAt)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">

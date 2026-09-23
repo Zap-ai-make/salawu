@@ -10,6 +10,15 @@
  *
  * Aucune assertion sur une classe CSS.
  *
+ * ⚠ CE FILET MONTE `ClientForm` NU — donc `enModale` a `false`, donc l'ECRAN
+ * pleine page : sa carte, son titre, ses champs en une colonne, sans etoile et
+ * sans pastille. C'est le dessin de TAOFIC, en production, et c'est exactement
+ * ce qu'on veut figer ici : il ne doit pas bouger.
+ *
+ * La variante en modale — deux colonnes, etoiles, pastilles, pied de modale —
+ * n'appartient qu'a l'identite « registre ». Elle est gardee par TC-179, qui
+ * monte l'ecran Clients et ouvre la modale comme le fait un utilisateur.
+ *
  * UN DÉFAUT EST FIGÉ TEL QUEL (⚠ DÉFAUT FIGÉ), et il n'était pas au diagnostic :
  * douze champs de saisie partagent DEUX identifiants. Les six étiquettes
  * « Numéro agent » pointent toutes vers le champ du premier réseau, et les six
@@ -96,6 +105,37 @@ describe("TC-168 — les champs de l'ajout d'un client", () => {
     expect(screen.getByLabelText('Localité')).not.toBeRequired()
   })
 
+  it("⚠ le champ SURVIT a la frappe : le meme noeud, pas un sosie", async () => {
+    /**
+     * LE DEFAUT QUE CE CAS EXISTE POUR FERMER, ET POURQUOI AUCUN AUTRE NE LE VOIT.
+     *
+     * `ClientForm` a declare un composant (`Duo`) DANS son corps de rendu. Une
+     * fonction declaree la a une identite NOUVELLE a chaque rendu : React la
+     * prend pour un autre type de composant, demonte tout son sous-arbre et le
+     * remonte. Les <input> sont alors des noeuds DOM neufs — et un noeud neuf
+     * n'a pas le focus.
+     *
+     * Consequence a la caisse : on tape « ZONGO », le « Z » declenche un rendu,
+     * le champ est remplace, le curseur disparait. Il faut recliquer a chaque
+     * lettre.
+     *
+     * ⚠ TOUTE LA SUITE ETAIT AVEUGLE, ET C'EST LA LECON. Les tests pilotent la
+     * saisie par `fireEvent.change`, qui pose une valeur d'un coup sur le noeud
+     * qu'il vient de chercher : il ne depend ni du focus ni de la persistance du
+     * noeud. La valeur etait donc juste, et le formulaire inutilisable.
+     *
+     * On compare donc les IDENTITES DE NOEUD, avant et apres une frappe.
+     */
+    await monterLeFormulaire()
+
+    const avant = screen.getByLabelText('Nom')
+    fireEvent.change(avant, { target: { value: 'Z' } })
+    const apres = screen.getByLabelText('Nom')
+
+    expect(apres).toBe(avant)
+    expect(apres).toHaveValue('Z')
+  })
+
   it('ouvre un groupe par réseau du profil, nommé par le réseau', async () => {
     await monterLeFormulaire()
 
@@ -156,20 +196,40 @@ describe('TC-168 — ce que le formulaire remonte', () => {
 })
 
 describe('TC-168 — ⚠ DÉFAUT FIGÉ : douze champs, deux identifiants', () => {
-  it("les six champs « Numéro agent » partagent un seul identifiant", async () => {
-    // État actuel : l'identifiant est construit sur un `useId()` unique, sans la
-    // clé du réseau. Les six champs le portent donc à l'identique — HTML
-    // invalide, et toutes les étiquettes pointent sur le premier.
-    //
-    // ⟲ À RETOURNER AU LOT L8.5 : l'identifiant portera la clé du réseau, et
-    // cette assertion exigera six identifiants distincts. C'est une CORRECTION
-    // d'accessibilité, donc elle vaut pour le produit entier, TAOFIC compris —
-    // et non un parti pris réservé à ESAHAF.
+  /**
+   * ⟲ CES TROIS CAS ONT ÉTÉ RETOURNÉS LE 2026-09-23, ET ILS ONT FAIT EXACTEMENT
+   * CE POUR QUOI ILS AVAIENT ÉTÉ ÉCRITS.
+   *
+   * Ils GELAIENT un défaut : les six blocs réseau construisaient leur `id` sans
+   * la clé du réseau, donc douze champs pour deux identifiants. Ils exigeaient
+   * que le défaut soit ENCORE LÀ (`.size).toBe(1)`), pour rougir le jour de sa
+   * correction plutôt que de la laisser passer inaperçue.
+   *
+   * Ce jour est arrivé. Les trois ont rougi ensemble :
+   *
+   *     expected 6 to be 1
+   *     expected 6 to be 1
+   *     expected <input …(6)> to be <input …(6)>
+   *
+   * Ils exigent maintenant l'inverse : six associations distinctes, et une
+   * étiquette qui désigne le champ de SON réseau.
+   *
+   * ⚠ LE BANC ÉTAIT VERT SUR CE DÉFAUT, AUX TROIS LARGEURS, PENDANT TOUT CE
+   * TEMPS. Il scanne `wcag2a` à `wcag22aa` sans règle désactivée, mais axe-core
+   * a retiré ses règles `duplicate-id`, et `label` ne vérifie que l'EXISTENCE
+   * d'une association, pas son unicité. C'est la raison d'être de ces trois cas
+   * écrits à la main.
+   */
+  it("les six champs « Numéro agent » portent six identifiants distincts", async () => {
     await monterLeFormulaire()
 
     const numeros = Array.from(document.querySelectorAll('input[name^="numerosAgent."]'))
     expect(numeros).toHaveLength(6)
-    expect(new Set(numeros.map((i) => i.id)).size).toBe(1)
+    expect(new Set(numeros.map((i) => i.id)).size).toBe(6)
+    // Un identifiant vide passerait le test du Set si tous l'étaient... sauf
+    // qu'ils seraient alors identiques. On exige quand même qu'ils existent :
+    // `htmlFor` ne peut désigner que ce qui a un nom.
+    expect(numeros.every((i) => i.id)).toBe(true)
   })
 
   it("les six champs « Code agent » aussi", async () => {
@@ -179,24 +239,33 @@ describe('TC-168 — ⚠ DÉFAUT FIGÉ : douze champs, deux identifiants', () =>
       document.querySelector(`input[name="${r.toLowerCase()}"]`),
     )
     expect(codes.every(Boolean)).toBe(true)
-    expect(new Set(codes.map((i) => i.id)).size).toBe(1)
+    expect(new Set(codes.map((i) => i.id)).size).toBe(6)
+    expect(codes.every((i) => i.id)).toBe(true)
   })
 
-  it("conséquence : l'étiquette du dernier réseau désigne le champ du premier", async () => {
+  it("conséquence : l'étiquette d'un réseau désigne le champ de CE réseau", async () => {
     // Ce n'est pas une subtilité de conformité : cliquer « Code agent » sous
-    // Wave place le curseur dans le champ d'Orange. Sur un formulaire où une
-    // erreur de réseau inscrit un code agent sur le mauvais compte, c'est un
+    // Wave plaçait le curseur dans le champ d'Orange. Sur un formulaire où une
+    // erreur de réseau inscrit un code agent sur le mauvais compte, c'était un
     // défaut d'usage, pas de balisage.
+    //
+    // ⚠ ON VÉRIFIE LE DERNIER ET LE PREMIER. Une correction qui n'aurait traité
+    // que le premier bloc laisserait ce cas vert s'il ne regardait que lui.
     await monterLeFormulaire()
 
     const groupes = document.querySelectorAll('fieldset')
     const wave = groupes[groupes.length - 1]
     const orange = groupes[0]
 
-    const etiquetteWave = within(wave).getByText('Code agent')
-    const cible = document.getElementById(etiquetteWave.getAttribute('for'))
+    const cibleWave = document.getElementById(
+      within(wave).getByText('Code agent').getAttribute('for'),
+    )
+    expect(cibleWave).toBe(wave.querySelector('input[name="wave"]'))
+    expect(cibleWave).not.toBe(orange.querySelector('input[name="orange"]'))
 
-    expect(cible).toBe(orange.querySelector('input[name="orange"]'))
-    expect(cible).not.toBe(wave.querySelector('input[name="wave"]'))
+    const cibleOrange = document.getElementById(
+      within(orange).getByText('Code agent').getAttribute('for'),
+    )
+    expect(cibleOrange).toBe(orange.querySelector('input[name="orange"]'))
   })
 })

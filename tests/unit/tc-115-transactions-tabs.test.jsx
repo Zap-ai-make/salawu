@@ -16,6 +16,11 @@ const mocks = vi.hoisted(() => ({
   isMultiNetwork: true,
   incomingCount: 0,
   subscribeIncomingCollaborationsCount: vi.fn(),
+  // La transaction en cours de modification, telle que le CONTEXTE la porte.
+  // `null` = aucune. C'est le seul canal entre « Modifier » (dans le tableau) et
+  // le formulaire (dans la modale) : ils ne se connaissent pas autrement.
+  editingTransaction: null,
+  clearEditTransaction: vi.fn(),
 }))
 
 vi.mock('../../src/constants/navigation', () => ({
@@ -46,6 +51,8 @@ vi.mock('../../src/context/transactions.jsx', () => ({
       { id: 't2', type: 'Dépôt', montant: 2000, client: 'B', reseau: 'Moov' },
       { id: 't3', type: 'Retrait', montant: 500, client: 'C', reseau: 'Wave' },
     ],
+    get editingTransaction() { return mocks.editingTransaction },
+    clearEditTransaction: mocks.clearEditTransaction,
   }),
 }))
 vi.mock('../../src/utils/excelUtils', () => ({
@@ -76,6 +83,8 @@ beforeEach(() => {
     return () => {}
   })
   mocks.incomingCount = 0
+  mocks.editingTransaction = null
+  mocks.clearEditTransaction.mockReset()
 })
 
 /**
@@ -174,5 +183,65 @@ describe('TC-115 — sous-onglets de Transactions', () => {
   it('?sub=incoming ouvre les reçues au chargement', () => {
     renderAt('/transactions?tab=collaborations&sub=incoming')
     expect(screen.getByTestId('collab-stub').getAttribute('data-tab')).toBe('incoming')
+  })
+})
+
+describe('TC-115 — ⚠ la modale de saisie sert AUSSI la modification', () => {
+  /**
+   * LE DEFAUT QUE CES CAS EXISTENT POUR FERMER.
+   *
+   * Le lot L9.14 a deplace `TransactionForm` dans une modale ouverte par
+   * « Enregistrer une transaction ». Mais « Modifier », sur une ligne en
+   * attente, ne passe pas par ce bouton : il appelle `startEditTransaction` sur
+   * le CONTEXTE, puis faisait defiler la page vers le haut — un geste ecrit
+   * quand le formulaire etait pose en pleine page, juste au-dessus du tableau.
+   *
+   * Le formulaire vivant desormais derriere `{saisieOuverte && …}`, qui etait
+   * faux, MODIFIER UNE TRANSACTION N'OUVRAIT PLUS RIEN. Et le pire venait
+   * apres : `editingTransaction` restait arme dans le contexte, donc la saisie
+   * SUIVANTE s'ouvrait pre-remplie avec l'ancienne operation, en mode
+   * modification, sans que rien ne l'annonce.
+   */
+  it('une modification demandée depuis le tableau OUVRE la modale', () => {
+    mocks.editingTransaction = { id: 't1', type: 'Dépôt', montant: 1000, client: 'A', reseau: 'Orange' }
+    renderAt()
+
+    const modale = document.querySelector('[data-modale]')
+    expect(modale, 'la modale doit s’ouvrir sur une demande de modification').not.toBeNull()
+    // Et elle doit DIRE qu'on modifie : ouvrir le meme panneau sous le titre
+    // « Enregistrer une transaction » ferait croire a une saisie neuve.
+    expect(modale.textContent).toMatch(/modifier/i)
+  })
+
+  it('fermer la modale DESARME la modification restée en attente', () => {
+    mocks.editingTransaction = { id: 't1', type: 'Dépôt', montant: 1000, client: 'A', reseau: 'Orange' }
+    renderAt()
+
+    fireEvent.click(screen.getByRole('button', { name: /fermer/i }))
+    expect(mocks.clearEditTransaction).toHaveBeenCalled()
+  })
+
+  it('au repos, la modale est fermée', () => {
+    renderAt()
+    expect(document.querySelector('[data-modale]')).toBeNull()
+  })
+})
+
+describe('TC-115 — ⚠ aucun toast fantome', () => {
+  it("n'affiche aucune notification tant qu'il ne s'est rien passé", () => {
+    /**
+     * `<Toast toasts={toasts} removeToast={removeToast} />` passait des
+     * proprietes que `Toast` n'accepte pas : il attend `message`, `type`,
+     * `duration`, `onClose`. Pose HORS de tout `.map` et de toute condition, il
+     * peignait donc une notification VIDE a chaque visite de l'ecran — puis
+     * jetait `TypeError: onClose is not a function` au bout de 4 secondes,
+     * quand son minuteur appelait un `onClose` inexistant.
+     *
+     * Et pendant ce temps le VRAI message — le resultat de l'export — n'etait
+     * jamais montre a personne.
+     */
+    renderAt()
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })
