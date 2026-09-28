@@ -261,6 +261,13 @@ async function semerLHistorique(boutiqueId, uid, email, lignes) {
       userId: uid,
       date: `0${i + 1}/09/2026 10:0${i}`,
       createdAt: FieldValue.serverTimestamp(),
+      // ⚠ OBLIGATOIRE, et son absence était INVISIBLE. La production écrit toujours
+      // `updatedAt` (firestore.js, addDocument), et l’app mobile agents interroge
+      // `where(updatedAt >= borne)`. Une requête bornée EXCLUT EN SILENCE les documents
+      // qui ne portent pas le champ : ce semis rendait donc ZÉRO ligne à la
+      // synchronisation incrémentale, ce qui se lit « aucun changement » et jamais
+      // « champ absent ». Voir TC-181.
+      updatedAt: FieldValue.serverTimestamp(),
     })
   })
   await lot.commit()
