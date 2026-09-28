@@ -602,6 +602,51 @@ service cloud.firestore {
         allow read: if isStoreMember(storeId);
         allow write: if false;
       }
+
+      // ─────────────────────────────────────────────────────────────
+      // Registre de guichet d'un agent (app mobile) — sa sauvegarde, pas notre comptabilité
+      // ─────────────────────────────────────────────────────────────
+      //
+      // L'agent tient sur son téléphone les fiches des personnes qu'il sert et les
+      // opérations passées pour elles. Ce sous-arbre en est la copie de secours : un
+      // appareil perdu ne perd plus le registre. Ce n'est PAS la comptabilité d'ESAHAF
+      // — celle-là vit dans `history` et reste serveur-autoritative.
+      //
+      // ⚠ DEUX CONDITIONS DE CHEMIN, ET LA SECONDE EST CELLE QUI GARDE VRAIMENT.
+      //   · `uid == agentId` sépare un agent de ses confrères.
+      //   · `token.storeId == storeId` le sépare d'une AUTRE BOUTIQUE. Sans elle, la
+      //     règle ne garde RIEN d'inter-boutiques : `agentId` est un segment fourni par
+      //     l'appelant, donc n'importe quel agent authentifié écrirait sous
+      //     clients/<boutique-d-autrui>/agentRegistry/<son-propre-uid>/… en y mettant
+      //     simplement son uid. Comparer un uid à une valeur que le client choisit ne
+      //     prouve que l'identité de l'auteur, jamais son droit sur l'emplacement.
+      //
+      // ⚠ AUCUNE CONDITION SUR `resource.data`, ET C'EST DÉLIBÉRÉ. La restauration lit
+      // la sous-collection ENTIÈRE, sans clause `where`. Une condition en resource.data
+      // ferait échouer cette requête LIST (« les règles ne filtrent pas ») et l'agent
+      // récupérerait un registre VIDE en croyant n'avoir rien eu — un échec silencieux,
+      // pire qu'un refus. Tout ce qui garde ici est du chemin et du jeton, donc
+      // évaluable sur une LIST non contrainte.
+      //
+      // Pas de `delete` : la conservation est longue (cf. LBC/FT UEMOA, art. 35) et une
+      // suppression côté agent s'écrit comme un marqueur, donc par `update`. Accorder
+      // `write` accorderait `delete` avec — d'où l'énumération explicite.
+      //
+      // Gardé par mobileAppEnabled() : inerte chez un client sans app mobile.
+      //
+      // ⚠ AUCUNE LECTURE PAR LA BOUTIQUE NI PAR LA SUPERVISION, VOLONTAIREMENT. Ces
+      // documents portent l'identité de personnes que la boutique ne sert pas elle-même
+      // (nom, numéro de pièce, téléphone). Ouvrir la lecture à isStoreMember exposerait
+      // toutes les pièces d'identité de tous les clients de tous les agents à chaque
+      // membre de la boutique. L'app mobile ne le demande pas ; tant que personne ne le
+      // demande, le moindre privilège l'interdit.
+      match /agentRegistry/{agentId}/{registre}/{docId} {
+        allow read, create, update: if mobileAppEnabled() && isAgentToken() &&
+          request.auth.uid == agentId &&
+          request.auth.token.storeId == storeId &&
+          registre in ['customers', 'operations'];
+        allow delete: if false;
+      }
     }
 
     // ─────────────────────────────────────────────────────────────

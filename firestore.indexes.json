@@ -254,6 +254,111 @@
         { "order": "ASCENDING",  "queryScope": "COLLECTION_GROUP" },
         { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
       ]
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "id",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "agent_id",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "nom",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "prenoms",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "type_piece",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "numero_piece",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "telephone",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "cree_le",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "cree_par_appareil",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "updatedAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "customers",
+      "fieldPath": "createdAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "id",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "agent_id",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "client_id",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "sens",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "reseau",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "montant",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "heure_appareil",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "appareil_id",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "updatedAt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "operations",
+      "fieldPath": "createdAt",
+      "indexes": []
     }
   ]
 }
