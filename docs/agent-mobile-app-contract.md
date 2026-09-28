@@ -16,7 +16,7 @@ l'agent.
 |---|---|
 | Projet Firebase | `salawu-fa726` |
 | Région des Cloud Functions | `europe-west1` |
-| App Check | **désactivé aujourd'hui** (`enforceAppCheck:false`) — à activer en phase ultérieure |
+| App Check | **désactivé, et non prévu** (`enforceAppCheck:false`) — remplacé par une limite de débit par IP (§3) |
 | Auth | jeton personnalisé (`signInWithCustomToken`) — **pas** email/mot de passe, **pas** de SMS |
 
 ```js
@@ -63,13 +63,70 @@ await signInWithCustomToken(auth, data.customToken)
 ### Claims du jeton (posés côté serveur, non forgeables)
 
 ```json
-{ "role": "agent", "clientId": "<id fiche globalClients>", "storeId": "<boutique>" }
+{ "role": "agent", "clientId": "<id fiche globalClients>", "storeId": "<boutique>",
+  "codeVersion": 3 }
 ```
 
 - **`uid == clientId`** : l'identité de l'agent EST l'id de sa fiche `globalClients`. C'est ce
   qui autorise la lecture de sa fiche et de ses reçus (§4).
-- Durée de vie de l'ID token ≈ **1 h**, rafraîchi automatiquement par le SDK tant que le compte
-  reste actif (voir §6, révocation).
+- **`codeVersion`** : la génération du code d'accès dont provient ce jeton. Elle s'incrémente à
+  chaque régénération, et c'est elle que `agentSessionCheck` (§2.1) compare.
+- Durée de vie de l'ID token ≈ **1 h**, rafraîchi automatiquement par le SDK — **sauf si les
+  sessions ont été révoquées** (§2.2).
+
+---
+
+## 2.1 Vérifier la fraîcheur d'une session — `agentSessionCheck`
+
+Callable **authentifiée** : elle exige un jeton d'agent valide. Ni identifiant ni code en entrée.
+
+```js
+const check = httpsCallable(functions, 'agentSessionCheck')
+const { data } = await check()          // → { valid: true | false }
+if (!data.valid) await signOut(auth)    // reconnexion complète, code d'accès compris
+```
+
+Le serveur compare le `codeVersion` du jeton à celui du credential et vérifie `active`. Une
+lecture de document, aucun scrypt : appelez-la à chaque contact réseau sans crainte. Elle n'est
+pas soumise à la limite de débit de `agentSignIn` — elle est authentifiée et ne coûte presque
+rien.
+
+| Réponse / erreur | Sens | Ce que l'app fait |
+|---|---|---|
+| `{ valid: true }` | session à jour | rien |
+| `{ valid: false }` | code régénéré, credential désactivé, ou fiche disparue | déconnecter, exiger une reconnexion |
+| `ROLE_FORBIDDEN` | le jeton n'est pas un jeton d'agent | déconnecter |
+| `UNAUTHENTICATED` | pas de jeton | écran de connexion |
+| `MOBILE_APP_DISABLED` | fonctionnalité désactivée | « Service indisponible. » |
+
+⚠ **Un jeton sans `codeVersion` est déclaré invalide.** Ce sont ceux émis avant l'ajout du claim.
+Les accepter ouvrirait un contournement permanent — il suffirait de présenter un vieux jeton pour
+n'être jamais coupé. Le coût est une reconnexion, une seule fois.
+
+---
+
+## 2.2 Révocation — ce que « régénérer le code » coupe vraiment
+
+Régénérer fait **deux** choses côté serveur :
+
+1. le code change, et l'ancien cesse d'ouvrir une **nouvelle** session ;
+2. les **jetons de rafraîchissement** de cet agent sont révoqués (`revokeRefreshTokens`).
+
+Le point 2 est ce qui coupe un appareil déjà connecté — **sans que l'application ait à
+coopérer**. Firebase refuse alors de renouveler le jeton. L'ID token en cours reste valide
+jusqu'à son expiration : **une heure au plus**.
+
+| Mécanisme | Force | Délai |
+|---|---|---|
+| `revokeRefreshTokens` (serveur) | **imposé** — l'appareil ne peut rien y faire | ≤ 1 h |
+| `agentSessionCheck` (§2.1) | **consultatif** — suppose que l'app appelle et obéit | quasi immédiat |
+
+Les deux se complètent : le premier pose le plafond, le second raccourcit le reliquat. Le SDK
+JavaScript, quand le rafraîchissement échoue, **déconnecte l'utilisateur** — votre app reçoit
+donc le signal via `onAuthStateChanged` sans rien ajouter.
+
+⚠ **Il n'existe aujourd'hui aucune désactivation** d'un credential : `active` n'est jamais mis à
+`false` par le produit. Le seul geste de révocation est la régénération du code.
 
 ---
 
@@ -83,8 +140,22 @@ l'identifiant existe.
 |---|---|---|---|
 | `INVALID_LOGIN_INPUT` | `invalid-argument` | identifiant/code vide ou trop long, ou clé en trop | « Saisie invalide. » |
 | `INVALID_CREDENTIALS` | `permission-denied` | identifiant inconnu, inactif, ou mauvais code | « Identifiant ou code incorrect. » |
-| `ACCOUNT_LOCKED` | `resource-exhausted` | trop de tentatives | « Trop de tentatives. Réessayez dans quelques minutes. » |
+| `ACCOUNT_LOCKED` | `resource-exhausted` | trop de tentatives **sur ce compte** | « Trop de tentatives. Réessayez dans quelques minutes. » |
+| `TOO_MANY_ATTEMPTS` | `resource-exhausted` | trop d'appels **depuis ce réseau** | « Trop de tentatives. Réessayez dans quelques minutes. » |
 | `MOBILE_APP_DISABLED` | `failed-precondition` | fonctionnalité non activée pour ce client | « Service indisponible. » |
+
+**`TOO_MANY_ATTEMPTS` — limite de débit par IP (remplace App Check).** L'endpoint est public et
+non authentifié ; chaque appel coûte un `scryptSync` bloquant, y compris sur un identifiant
+inconnu, où aucun verrou de compte ne peut s'appliquer. Une limite par adresse IP ferme ce
+vecteur : **20 tentatives par 10 minutes**, puis **15 minutes de blocage**.
+
+⚠ **Ce code n'accuse pas l'agent.** Un marché entier peut sortir derrière une seule adresse (NAT) :
+l'agent qui le reçoit n'a peut-être rien fait de particulier. Le message doit donc rester neutre et
+inviter à réessayer — surtout pas suggérer que le code saisi est faux. À distinguer
+d'`ACCOUNT_LOCKED`, qui vise **un compte** ; celui-ci vise **une provenance**.
+
+⚠ **Il tombe avant la validation d'entrée.** Une requête bloquée ne renvoie donc jamais
+`INVALID_LOGIN_INPUT`, même si le payload est malformé.
 
 **Anti-bruteforce** : après **5** échecs consécutifs, le compte est **verrouillé 5 minutes**
 (le bon code renvoie alors `ACCOUNT_LOCKED`). Le compteur repart à zéro à la première connexion
@@ -165,14 +236,18 @@ reçu : `clientId`, `storeId`, `type`, `montant`, `paymentMethod`, `effectiveNet
   ambigu), **haché** (scrypt + sel) dans `agentCredentials/{clientId}` — collection Admin-SDK
   only. Le clair n'est renvoyé qu'une fois, au gérant, à la génération. **Régénérer** invalide
   l'ancien code.
-- **Révocation** : `active:false` sur le credential bloque les futures connexions ; pour couper
-  une session vivante, révoquer les refresh tokens de l'`uid` (fenêtre ID token ≈ 1 h).
-- **App Check** : **condition de mise en service à l'échelle (M1)**. `agentSignIn` est un endpoint
-  public qui exécute un hachage scrypt (coûteux) par tentative ; sans App Check ni rate-limit global,
-  il est exposé à un abus CPU/coût. Le verrou est par compte, pas global. **Activer App Check pour
-  l'app mobile (ou un rate-limit global par IP/identifiant) AVANT toute exposition publique réelle.**
-  Un leurre anti-timing (scrypt factice sur identifiant inconnu) réduit l'énumération, mais ne
-  remplace pas App Check.
+- **Révocation** : la régénération du code révoque désormais les refresh tokens de l'`uid`
+  (fenêtre ID token ≈ 1 h), et `agentSessionCheck` raccourcit ce reliquat. Détail en §2.1 et §2.2.
+  ⚠ `active:false` n'est écrit par aucun code du produit aujourd'hui : le seul geste de révocation
+  est la régénération.
+- **App Check : abandonné, et remplacé.** C'était la condition de mise en service à l'échelle (M1) :
+  `agentSignIn` est public et exécute un scrypt coûteux par tentative, y compris sur un identifiant
+  inconnu où le verrou par compte n'a rien à verrouiller. Mais l'app mobile utilise le **SDK
+  JavaScript**, dont les fournisseurs App Check reposent sur reCAPTCHA — sans objet sur un
+  téléphone. L'exiger imposerait un passage au SDK natif, donc un nouveau binaire et une
+  réinstallation chez chaque agent. **Une limite de débit par IP (§3, `TOO_MANY_ATTEMPTS`) ferme le
+  même vecteur, côté serveur seul, sans rien demander à l'application.** Le leurre anti-timing
+  (scrypt factice sur identifiant inconnu) reste en place contre l'énumération.
 - **Opt-in** : toute la surface est gardée par `mobileAppEnabled()` (règles) et `MOBILE_APP.enabled`
   (functions), générés depuis le profil client. Désactivés → surface inerte.
 

@@ -15,6 +15,7 @@
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { getAuth } from 'firebase-admin/auth'
+import { write } from 'firebase-functions/logger'
 import { onCall } from 'firebase-functions/v2/https'
 import { wrapCallable } from './callable.js'
 import { confirmDealerRequestHandler } from './dealerRequests/confirmDealerRequest.js'
@@ -43,6 +44,7 @@ import { rejectInternalDebtCompensationHandler } from './collaborations/rejectIn
 import { listStoreCollaborationProvidersHandler } from './collaborations/listStoreCollaborationProviders.js'
 import { generateAgentAccessCodeHandler } from './agents/generateAgentAccessCode.js'
 import { agentSignInHandler } from './agents/agentSignIn.js'
+import { agentSessionCheckHandler } from './agents/agentSessionCheck.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
 // dans les tests d'intégration (TC-036) qui s'exécutent après TC-035 dans le même processus.
@@ -172,7 +174,12 @@ export const listStoreCollaborationProviders = onCall(
 
 export const generateAgentAccessCode = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
-  wrapCallable(generateAgentAccessCodeHandler, deps)
+  wrapCallable(generateAgentAccessCodeHandler, {
+    ...deps,
+    // Coupe les sessions deja ouvertes de CET agent (uid == clientId). Injecte,
+    // comme createCustomToken : le handler reste eprouvable sans emulateur Auth.
+    revokeAgentSessions: (clientId) => getAuth().revokeRefreshTokens(clientId),
+  })
 )
 
 export const agentSignIn = onCall(
@@ -180,5 +187,16 @@ export const agentSignIn = onCall(
   wrapCallable(agentSignInHandler, {
     ...deps,
     createCustomToken: (uid, claims) => getAuth().createCustomToken(uid, claims),
+    // Trace nommee d'un echec d'emission. Sans elle, la conversion en erreur metier
+    // ferait disparaitre la panne du journal (wrapCallable n'y ecrit que l'inattendu).
+    logError: (entry) => write({ severity: 'ERROR', result: 'error', ...entry }),
   })
+)
+
+// « Ma session est-elle encore valable ? » — appele par l'app a chaque contact
+// reseau. Une lecture de document, aucun scrypt. Endpoint AUTHENTIFIE : il n'a
+// pas besoin de la limite de debit qui protege agentSignIn.
+export const agentSessionCheck = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(agentSessionCheckHandler, deps)
 )

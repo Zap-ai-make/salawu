@@ -19,12 +19,20 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
   const [code, setCode] = useState(null)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+  // ⚠ LA COUPURE DES SESSIONS PEUT ÉCHOUER SANS QUE LE CODE ÉCHOUE. Régénérer fait
+  // deux choses : changer le code (transaction Firestore) et couper les appareils
+  // déjà connectés (révocation Firebase Auth). La seconde peut rater seule. Le
+  // serveur ne fait alors PAS échouer l'appel — le code A changé, et prétendre le
+  // contraire ferait régénérer une troisième fois. Mais le gérant doit l'apprendre :
+  // sans cette ligne, il croirait l'ancien téléphone coupé alors qu'il ne l'est pas.
+  const [sessionsRevoked, setSessionsRevoked] = useState(true)
 
   const generate = useCallback(async () => {
     setBusy(true); setError(null); setCopied(false)
     try {
       const res = await generateAgentAccessCode(clientId)
       setCode(res.accessCode)
+      setSessionsRevoked(res.sessionsRevoked !== false)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -83,6 +91,15 @@ function AgentAccessCodeModal({ clientId, clientName, onClose }) {
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>Notez-le maintenant : il ne sera plus réaffiché. En cas de perte, régénérez un nouveau code.</span>
             </p>
+            {!sessionsRevoked && (
+              <p className="mb-4 flex items-start gap-1.5 text-xs text-red-700" data-testid="agent-sessions-not-revoked">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>
+                  Le nouveau code est bien en place, mais les téléphones déjà connectés
+                  n'ont pas pu être déconnectés. Régénérez à nouveau dans quelques minutes.
+                </span>
+              </p>
+            )}
             <div data-modale-pied className="flex justify-end gap-2">
               <button type="button" onClick={copy} data-testid="btn-copy-access-code"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50">

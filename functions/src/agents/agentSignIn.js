@@ -11,6 +11,13 @@
  *
  * Messages d'erreur GÉNÉRIQUES (ne révèlent pas si l'identifiant existe). createCustomToken
  * injecté (testabilité : pas d'émulateur Auth requis en test handler).
+ *
+ * ⚠ DEUX GARDES, ET ILS NE COUVRENT PAS LA MÊME CHOSE.
+ *   · Le verrou par credential (étape 5) protège UN COMPTE contre la devinette
+ *     de son code. Il suppose qu'un credential a été trouvé.
+ *   · La limite de débit par IP (étape 2) protège LE SERVEUR contre un flot
+ *     d'identifiants inconnus — là où il n'y a rien à verrouiller, et où chaque
+ *     paquet coûtait pourtant un scrypt bloquant. Voir agents/throttle.js.
  */
 
 import { DealerRequestError } from '../errors.js'
@@ -24,27 +31,39 @@ import {
   nextFailureState,
   isLocked,
 } from './shared.js'
+import { assertUnderRateLimit } from './throttle.js'
 
 const GENERIC_INVALID = 'Identifiant ou code incorrect.'
 
-export async function agentSignInHandler(request, { db, FieldValue, createCustomToken }) {
+export async function agentSignInHandler(request, { db, FieldValue, createCustomToken, logError }) {
   // ── 1. Garde fonctionnalité (off chez TAOFIC) ───────────────────────────────
   if (!MOBILE_APP.enabled) {
     throw new DealerRequestError('MOBILE_APP_DISABLED', "L'app mobile agents n'est pas activée.")
   }
 
-  // ── 2. Entrées (liste blanche ; storeId optionnel pour désambiguïser) ────────
+  // ── 2. Limite de débit par IP — AVANT TOUTE DÉPENSE ─────────────────────────
+  // Le verrou par credential (étape 5) ne sait verrouiller qu'un compte TROUVÉ.
+  // Sur un identifiant inconnu il n'a rien à verrouiller, et le serveur a pourtant
+  // déjà payé une requête Firestore et un `scryptSync` bloquant (le leurre F1).
+  // Ce garde-là compte TOUTES les tentatives, connues ou non. Posé après la
+  // résolution, il ne garderait plus rien — c'est la résolution qui coûte.
+  // Il remplace App Check comme précondition d'ouverture publique : l'app mobile
+  // est en SDK JavaScript, dont les fournisseurs App Check sont à base de
+  // reCAPTCHA, sans objet sur un téléphone. Détail : agents/throttle.js.
+  const now = Date.now()
+  await assertUnderRateLimit(db, request.rawRequest, now)
+
+  // ── 3. Entrées (liste blanche ; storeId optionnel pour désambiguïser) ────────
   const payload = validateInputPayload(request.data, ['identifier', 'code', 'storeId'])
   const identifier = validateLoginIdentifier(payload.identifier)
   const code = validateLoginCode(payload.code)
   const storeId = typeof payload.storeId === 'string' && payload.storeId.trim() ? payload.storeId.trim() : null
 
-  // ── 3. Résolution du credential par identifiant (index array-contains auto) ──
+  // ── 4. Résolution du credential par identifiant (index array-contains auto) ──
   const snap = await db.collection('agentCredentials')
     .where('loginIdentifiers', 'array-contains', identifier)
     .limit(10).get()
 
-  const now = Date.now()
   let candidates = snap.docs
     .map((d) => ({ ref: d.ref, data: d.data() }))
     .filter((c) => c.data.active !== false)
@@ -57,7 +76,7 @@ export async function agentSignInHandler(request, { db, FieldValue, createCustom
     throw new DealerRequestError('INVALID_CREDENTIALS', GENERIC_INVALID)
   }
 
-  // ── 4. Le code désigne le credential (secret unique) ─────────────────────────
+  // ── 5. Le code désigne le credential (secret unique) ─────────────────────────
   const matched = candidates.find((c) => verifyAccessCode(code, c.data.codeHash, c.data.codeSalt))
 
   if (!matched) {
@@ -70,15 +89,53 @@ export async function agentSignInHandler(request, { db, FieldValue, createCustom
     throw new DealerRequestError('ACCOUNT_LOCKED', 'Trop de tentatives. Réessayez plus tard.')
   }
 
-  // ── 5. Succès : reset compteur + émission du jeton personnalisé ──────────────
+  // ── 6. Succès : reset compteur + émission du jeton personnalisé ──────────────
   await matched.ref.update({
     failedAttempts: 0,
     lockedUntil: null,
     lastLoginAt: FieldValue.serverTimestamp(),
   })
 
-  const claims = { role: 'agent', clientId: matched.data.clientId, storeId: matched.data.storeId }
-  const customToken = await createCustomToken(matched.data.clientId, claims)
+  // ⚠ `codeVersion` DANS LES CLAIMS : c'est ce qui rend une session révocable.
+  // Sans lui, rien dans le jeton ne dit de QUELLE génération de code il provient,
+  // et `agentSessionCheck` n'aurait rien à comparer. Le champ existe déjà sur le
+  // credential et s'incrémente à chaque régénération.
+  const claims = {
+    role: 'agent',
+    clientId: matched.data.clientId,
+    storeId: matched.data.storeId,
+    codeVersion: Number(matched.data.codeVersion) || 1,
+  }
+  // ⚠ LA SEULE ETAPE QUI SORT DE FIRESTORE, ET LA SEULE JAMAIS EXERCEE EN TEST.
+  // `createCustomToken` signe un JWT. Sans cle privee dans l'environnement, l'Admin
+  // SDK passe par l'API IAM `signBlob` — qui exige le role « Service Account Token
+  // Creator » sur le compte de service d'execution. Cette permission n'a jamais servi
+  // ailleurs dans ce projet : agentSignIn est le seul emetteur de jeton. Le premier
+  // passage REUSSI sur ce chemin est donc le premier moment ou elle peut manquer.
+  //
+  // Et la suite ne peut pas l'attraper : tous les cas injectent un faux emetteur.
+  // C'est assume — l'alternative serait un emulateur Auth dans chaque cas — mais il
+  // faut que la panne se NOMME quand elle arrive.
+  let customToken
+  try {
+    customToken = await createCustomToken(matched.data.clientId, claims)
+  } catch (err) {
+    // ⚠ ON JOURNALISE ICI, ET C'EST INDISPENSABLE. `wrapCallable` ne journalise que
+    // l'INATTENDU ; en convertissant cette panne en erreur metier, on la ferait
+    // disparaitre du journal. On garde donc la trace nous-memes, et on garde le CODE
+    // de l'erreur (`auth/insufficient-permission` par exemple) — pas son message,
+    // pour ne pas contourner la redaction volontaire de logging.js.
+    if (typeof logError === 'function') {
+      logError({
+        action: 'agentSignIn.createCustomToken',
+        clientId: matched.data.clientId,
+        errorType: err?.constructor?.name ?? 'Unknown',
+        errorCode: typeof err?.code === 'string' ? err.code : null,
+      })
+    }
+    throw new DealerRequestError('TOKEN_MINT_FAILED', "La session n'a pas pu etre ouverte. Reessayez.")
+  }
+
   return { success: true, customToken }
 }
 

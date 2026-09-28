@@ -1,6 +1,10 @@
 /**
  * TC-147 — Génération du code d'accès agent (generateAgentAccessCode).
- *   Handler integration avec Firestore Emulator, { db, FieldValue } injectés.
+ *   Handler integration avec Firestore Emulator ; { db, FieldValue } injectés, plus
+ *   `revokeAgentSessions` — la génération COUPE désormais les sessions ouvertes de
+ *   l'agent (lot révocation). Sa propre couverture est dans TC-153 ; ici on se
+ *   contente de câbler un espion inoffensif pour que les cas d'origine restent
+ *   comparables à ce qu'ils testaient.
  *
  * Comportement protégé :
  *   - succès : agentCredentials/{clientId} écrit (hash + sel + identifiants), code
@@ -62,10 +66,12 @@ async function seedBase() {
   })
 }
 
+const genDeps = () => ({ db, FieldValue, revokeAgentSessions: vi.fn(async () => {}) })
+
 describe('TC-147 — generateAgentAccessCode', () => {
   it('[AC-01] succès : credential haché + identifiants + audit, code renvoyé une fois', async () => {
     await seedBase()
-    const res = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue })
+    const res = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), genDeps())
 
     expect(res.success).toBe(true)
     expect(res.codeVersion).toBe(1)
@@ -87,8 +93,8 @@ describe('TC-147 — generateAgentAccessCode', () => {
 
   it('[AC-02] régénération : nouveau code, codeVersion incrémentée', async () => {
     await seedBase()
-    const first = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue })
-    const second = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue })
+    const first = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), genDeps())
+    const second = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), genDeps())
     expect(second.codeVersion).toBe(2)
     expect(second.accessCode).not.toBe(first.accessCode)
     // L'ancien code ne vérifie plus le nouveau hash.
@@ -100,41 +106,41 @@ describe('TC-147 — generateAgentAccessCode', () => {
   it('[AC-03] app mobile désactivée → MOBILE_APP_DISABLED', async () => {
     await seedBase()
     MOBILE_APP.enabled = false
-    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue }), 'MOBILE_APP_DISABLED')
+    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), genDeps()), 'MOBILE_APP_DISABLED')
     expect((await db.doc('agentCredentials/cli-1').get()).exists).toBe(false)
   })
 
   it('[AC-04] client d\'une autre boutique → CLIENT_STORE_MISMATCH', async () => {
     await seedBase()
     await db.doc('globalClients/cli-1').set({ nom: 'X', prenom: 'Y', registeredStoreId: 'store-B', orange: 'OR9', numerosAgent: {} })
-    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue }), 'CLIENT_STORE_MISMATCH')
+    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), genDeps()), 'CLIENT_STORE_MISMATCH')
   })
 
   it('[AC-05] client sans identifiant agent → AGENT_IDENTIFIER_REQUIRED', async () => {
     await seedBase()
     await db.doc('globalClients/cli-1').set({ nom: 'X', prenom: 'Y', registeredStoreId: 'store-A', numeroPersonnel: '70000000', numerosAgent: {} })
-    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue }), 'AGENT_IDENTIFIER_REQUIRED')
+    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), genDeps()), 'AGENT_IDENTIFIER_REQUIRED')
   })
 
   it('[AC-06] client inexistant → CLIENT_NOT_FOUND', async () => {
     await seedBase()
-    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'ghost' }), { db, FieldValue }), 'CLIENT_NOT_FOUND')
+    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'ghost' }), genDeps()), 'CLIENT_NOT_FOUND')
   })
 
   it('[AC-07] acteur non store_admin (dealer) → ROLE_FORBIDDEN', async () => {
     await seedBase()
     await db.doc('users/dealer-uid').set({ role: 'dealer', active: true, email: 'd@t.test', name: 'Dealer' })
-    await expectError(generateAgentAccessCodeHandler(makeRequest('dealer-uid', { clientId: 'cli-1' }), { db, FieldValue }), 'ROLE_FORBIDDEN')
+    await expectError(generateAgentAccessCodeHandler(makeRequest('dealer-uid', { clientId: 'cli-1' }), genDeps()), 'ROLE_FORBIDDEN')
   })
 
   it('[AC-08] payload avec clé supplémentaire → INVALID_REQUEST_ID (liste blanche)', async () => {
     await seedBase()
-    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1', extra: 'x' }), { db, FieldValue }), 'INVALID_REQUEST_ID')
+    await expectError(generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1', extra: 'x' }), genDeps()), 'INVALID_REQUEST_ID')
   })
 
   it('[AC-09] appel non authentifié → UNAUTHENTICATED, aucun credential écrit (F5)', async () => {
     await seedBase()
-    await expectError(generateAgentAccessCodeHandler(makeRequest(null, { clientId: 'cli-1' }), { db, FieldValue }), 'UNAUTHENTICATED')
+    await expectError(generateAgentAccessCodeHandler(makeRequest(null, { clientId: 'cli-1' }), genDeps()), 'UNAUTHENTICATED')
     expect((await db.doc('agentCredentials/cli-1').get()).exists).toBe(false)
   })
 
@@ -148,7 +154,7 @@ describe('TC-147 — generateAgentAccessCode', () => {
       failedAttempts: 3, lockedUntil: Date.now() + 60000, lastLoginAt: lastLogin,
     })
 
-    const res = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), { db, FieldValue })
+    const res = await generateAgentAccessCodeHandler(makeRequest(ADMIN_A, { clientId: 'cli-1' }), genDeps())
     expect(res.codeVersion).toBe(2)
 
     const cred = (await db.doc('agentCredentials/cli-1').get()).data()

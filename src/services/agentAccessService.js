@@ -14,7 +14,15 @@ const ERROR_MESSAGES = {
   PROFILE_NOT_FOUND:         'Votre profil est introuvable.',
   PROFILE_INACTIVE:          'Votre compte est inactif.',
   ROLE_FORBIDDEN:            'Action réservée au gérant de la boutique.',
-  MOBILE_APP_DISABLED:       "L'app mobile agents n'est pas activée pour cette boutique.",
+  // ⚠ PAS « pour cette boutique », ET LA NUANCE A DEJA COUTE UNE DEMI-JOURNEE.
+  // Ce refus ne vient d'aucun reglage de boutique : il n'en existe pas. Il vient de
+  // `MOBILE_APP.enabled`, compile dans les Cloud Functions au deploiement depuis le
+  // profil client. C'est donc tout ou rien pour l'installation entiere.
+  //
+  // L'ancienne formulation a envoye l'equipe mobile demander « pouvez-vous l'ouvrir sur
+  // la boutique de test ? » — une question sans reponse possible, puisqu'il n'y a rien a
+  // ouvrir par boutique. Et elle laissait le gerant croire qu'il pouvait y remedier.
+  MOBILE_APP_DISABLED:       "L'app mobile agents n'est pas activée sur cette installation. Contactez le support technique.",
   INVALID_CLIENT_ID:         'Client invalide.',
   CLIENT_NOT_FOUND:          'Client introuvable.',
   CLIENT_STORE_MISMATCH:     "Ce client n'appartient pas à votre boutique.",
@@ -40,7 +48,10 @@ export function mapAgentAccessError(err) {
 /**
  * Génère (ou régénère) le code d'accès mobile d'un agent.
  * @param {string} clientId - id du doc globalClients de l'agent.
- * @returns {Promise<{ success: boolean, accessCode: string, codeVersion: number }>}
+ * @returns {Promise<{ success: boolean, accessCode: string, codeVersion: number,
+ *   sessionsRevoked: boolean }>} `sessionsRevoked` a false = le code a bien change,
+ *   mais les appareils deja connectes n'ont pas pu etre deconnectes (l'appel ne
+ *   rate pas pour autant : le code EST regenere).
  */
 export async function generateAgentAccessCode(clientId) {
   const id = String(clientId ?? '').trim()

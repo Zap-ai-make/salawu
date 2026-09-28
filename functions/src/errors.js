@@ -92,6 +92,13 @@ export const HTTP_CODES = {
   INVALID_LOGIN_INPUT:          'invalid-argument',
   INVALID_CREDENTIALS:          'permission-denied',
   ACCOUNT_LOCKED:               'resource-exhausted',
+  // Limite de débit par IP sur l'endpoint public agentSignIn (voir agents/throttle.js).
+  // Même famille qu'ACCOUNT_LOCKED : c'est une ressource épuisée, pas un refus d'identité.
+  TOO_MANY_ATTEMPTS:            'resource-exhausted',
+  // Emission du jeton personnalise impossible (agentSignIn). 'internal' est honnete :
+  // c'est une defaillance serveur, pas un refus d'identite. Mais elle porte desormais
+  // un NOM, la ou un 500 nu ne disait rien ni au client ni au journal.
+  TOKEN_MINT_FAILED:            'internal',
 }
 
 export class DealerRequestError extends Error {

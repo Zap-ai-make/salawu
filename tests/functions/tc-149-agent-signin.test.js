@@ -74,7 +74,10 @@ describe('TC-149 — agentSignIn', () => {
     const res = await agentSignInHandler(makeRequest({ identifier: '70 11 22 33', code: 'esahaf-abcd2345' }), { db, FieldValue, createCustomToken })
 
     expect(res).toMatchObject({ success: true, customToken: 'tok-cli-1' })
-    expect(createCustomToken).toHaveBeenCalledWith('cli-1', { role: 'agent', clientId: 'cli-1', storeId: 'store-A' })
+    // ⚠ `codeVersion` A REJOINT LES CLAIMS (lot revocation) : c'est lui qui rend
+    // une session revocable — `agentSessionCheck` compare cette valeur a celle du
+    // credential. Sans elle, un jeton ne dit pas de quelle generation il vient.
+    expect(createCustomToken).toHaveBeenCalledWith('cli-1', { role: 'agent', clientId: 'cli-1', storeId: 'store-A', codeVersion: 1 })
     expect((await db.doc('agentCredentials/cli-1').get()).data().failedAttempts).toBe(0)
   })
 
@@ -127,6 +130,52 @@ describe('TC-149 — agentSignIn', () => {
     await seedCredential('cli-1')
     MOBILE_APP.enabled = false
     await expectError(agentSignInHandler(makeRequest({ identifier: '70112233', code: CODE }), { db, FieldValue, createCustomToken: makeMintMock() }), 'MOBILE_APP_DISABLED')
+  })
+
+  it("[SI-10] ⚠ l'émission du jeton échoue → TOKEN_MINT_FAILED, nommé et journalisé", async () => {
+    // LE DEFAUT VECU EN PRODUCTION : `createCustomToken` a echoue, et le client a
+    // recu un 500 NU — sans `details.code`. L'app mobile ne lit que `details.code` :
+    // elle n'avait donc rien a lire, et la panne etait indiscernable de n'importe
+    // quelle autre defaillance interne.
+    //
+    // Cause probable : le role « Service Account Token Creator » manque au compte de
+    // service. agentSignIn est le SEUL emetteur de jeton du projet, donc cette
+    // permission n'avait jamais servi — le premier succes est le premier echec.
+    //
+    // ⚠ CE CAS NE REPRODUIT PAS LA CAUSE, il garde la REACTION : un emetteur qui
+    // jette doit produire un code nomme et une trace. La cause, elle, est une
+    // permission Google Cloud, hors de portee d'un test.
+    await seedCredential('cli-1')
+    const logError = vi.fn()
+    const createCustomToken = vi.fn(async () => {
+      const e = new Error('Permission iam.serviceAccounts.signBlob denied')
+      e.code = 'auth/insufficient-permission'
+      throw e
+    })
+
+    await expectError(
+      agentSignInHandler(makeRequest({ identifier: '70112233', code: CODE }), { db, FieldValue, createCustomToken, logError }),
+      'TOKEN_MINT_FAILED',
+    )
+
+    // La trace garde le CODE de l'erreur : c'est lui qui nomme la cause dans le
+    // journal. Pas le message, pour ne pas contourner la redaction de logging.js.
+    expect(logError).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'agentSignIn.createCustomToken',
+      clientId: 'cli-1',
+      errorCode: 'auth/insufficient-permission',
+    }))
+  })
+
+  it("[SI-11] sans journal cablé, l'échec d'émission ne plante pas", async () => {
+    // `logError` est injecte : un appelant qui l'oublie ne doit pas transformer une
+    // panne nommee en TypeError anonyme.
+    await seedCredential('cli-1')
+    const createCustomToken = vi.fn(async () => { throw new Error('indisponible') })
+    await expectError(
+      agentSignInHandler(makeRequest({ identifier: '70112233', code: CODE }), { db, FieldValue, createCustomToken }),
+      'TOKEN_MINT_FAILED',
+    )
   })
 
   it('[SI-09] entrée vide → INVALID_LOGIN_INPUT', async () => {

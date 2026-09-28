@@ -112,7 +112,13 @@ const signInReq = (data) => ({ auth: null, data })
 
 /** Déroule generate → signIn pour un agent ; renvoie {uid, claims, code}. */
 async function loginAgent(clientId, identifier) {
-  const gen = await generateAgentAccessCodeHandler(genReq(ADMIN_A, { clientId }), { db, FieldValue })
+  // `revokeAgentSessions` est desormais exige par la generation (lot revocation).
+  // Ici un espion inoffensif : ce test porte sur la LECTURE de l'agent, pas sur la
+  // coupure de ses sessions — celle-la est couverte par TC-153.
+  const gen = await generateAgentAccessCodeHandler(
+    genReq(ADMIN_A, { clientId }),
+    { db, FieldValue, revokeAgentSessions: async () => {} },
+  )
   const mint = vi.fn(async (uid) => `tok-${uid}`)
   const res = await agentSignInHandler(signInReq({ identifier, code: gen.accessCode }), { db, FieldValue, createCustomToken: mint })
   expect(res).toMatchObject({ success: true })
@@ -127,7 +133,10 @@ describe('TC-151 — parcours agent bout-en-bout (login → lecture)', () => {
 
     // Le jeton lie l'identité à SA fiche (uid=clientId) et porte les claims attendus.
     expect(uid).toBe(AGENT_A)
-    expect(claims).toEqual({ role: 'agent', clientId: AGENT_A, storeId: STORE_A })
+    // `codeVersion` a rejoint les claims (lot revocation). Les regles ne le lisent
+    // pas — elles n'ont jamais consulte le credential — mais il voyage avec le
+    // jeton, donc il doit figurer ici : ce test rejoue les claims REELS.
+    expect(claims).toEqual({ role: 'agent', clientId: AGENT_A, storeId: STORE_A, codeVersion: 1 })
 
     // On rejoue EXACTEMENT ces claims dans les règles salawu.
     const fs = testEnv.authenticatedContext(uid, claims).firestore()

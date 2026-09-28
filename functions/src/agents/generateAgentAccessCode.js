@@ -22,10 +22,19 @@ import { validateClientId, generateAccessCode, hashAccessCode, extractAgentIdent
 
 const NETWORK_KEYS = SUPPORTED_NETWORKS.map((n) => n.toLowerCase())
 
-export async function generateAgentAccessCodeHandler(request, { db, FieldValue }) {
+export async function generateAgentAccessCodeHandler(request, { db, FieldValue, revokeAgentSessions }) {
   // ── 1. Garde fonctionnalité (config générée par profil ; off chez TAOFIC) ────
   if (!MOBILE_APP.enabled) {
     throw new DealerRequestError('MOBILE_APP_DISABLED', "L'app mobile agents n'est pas activée.")
+  }
+
+  // ⚠ UNE DÉPENDANCE MANQUANTE EST UN DÉFAUT DE CÂBLAGE, PAS UN ÉCHEC DE
+  // RÉVOCATION. Sans cette garde, un `revokeAgentSessions` oublié tombait dans le
+  // `catch` de l'étape 5 : chaque régénération se serait déroulée normalement en
+  // ne révoquant rien, et le seul signe aurait été une ligne d'audit que personne
+  // ne lit. On préfère un échec bruyant, avant toute écriture.
+  if (typeof revokeAgentSessions !== 'function') {
+    throw new Error('generateAgentAccessCode : dépendance revokeAgentSessions absente (câblage index.js).')
   }
 
   // ── 2. Auth + payload (liste blanche stricte) ───────────────────────────────
@@ -111,12 +120,55 @@ export async function generateAgentAccessCodeHandler(request, { db, FieldValue }
         createdAt: now,
       })
 
-      return { accessCode, codeVersion }
+      // `storeId` remonte pour l'étape 5 : la trace d'un échec de révocation
+      // s'écrit dans la boutique, et le storeId est serveur-autoritatif (il vient
+      // du profil relu DANS la transaction, jamais du client).
+      return { accessCode, codeVersion, storeId }
     })
   } catch (err) {
     if (err instanceof DealerRequestError) throw err
     throw new DealerRequestError('TRANSACTION_FAILED', 'La transaction a échoué. Veuillez réessayer.')
   }
 
-  return { success: true, accessCode: result.accessCode, codeVersion: result.codeVersion }
+  // ── 5. Couper les sessions déjà ouvertes ────────────────────────────────────
+  // ⚠ SANS CECI, RÉGÉNÉRER NE RÉVOQUE RIEN. Un jeton personnalisé ouvre une
+  // session qui survit au changement de code : l'appareil déjà connecté garde son
+  // jeton de rafraîchissement et continue indéfiniment. Le nouveau code ferme la
+  // porte d'entrée ; il ne met dehors personne.
+  //
+  // `revokeRefreshTokens` est la moitié IMPOSÉE de la révocation : Firebase
+  // refuse de renouveler, quoi que fasse l'appareil. Le jeton d'identité en cours
+  // survit jusqu'à son expiration — une heure au plus —, donc la fenêtre passe
+  // d'infinie à bornée. `agentSessionCheck` raccourcit ce reliquat quand l'app
+  // coopère, mais lui seul ne garantit rien.
+  //
+  // ⚠ APRÈS LA TRANSACTION, ET SANS FAIRE ÉCHOUER L'APPEL. Le code est déjà
+  // changé : lancer une erreur ici ferait croire au gérant que rien n'a bougé. Il
+  // régénérerait, produisant un TROISIÈME code — et l'agent en aurait deux
+  // périmés sans le savoir. L'échec est donc tracé et rendu à l'appelant, qui
+  // peut le dire ; il n'annule pas ce qui a réussi.
+  let sessionsRevoked = true
+  try {
+    await revokeAgentSessions(clientId)
+  } catch {
+    sessionsRevoked = false
+    try {
+      await db.collection(`clients/${result.storeId}/auditLogs`).add({
+        action: 'AGENT_SESSION_REVOKE_FAILED',
+        actorUid,
+        clientId,
+        codeVersion: result.codeVersion,
+        createdAt: FieldValue.serverTimestamp(),
+      })
+    } catch {
+      // La trace ne doit jamais renverser le résultat : le code EST régénéré.
+    }
+  }
+
+  return {
+    success: true,
+    accessCode: result.accessCode,
+    codeVersion: result.codeVersion,
+    sessionsRevoked,
+  }
 }
