@@ -273,7 +273,17 @@ function NavBar() {
              La hauteur de la barre change avec le repli — c'est sans consequence :
              le seuil de bascule en position fixe est MESURE depuis TC-159. */
           <div className="hidden md:flex justify-between items-center gap-4">
-            <div className="flex flex-wrap items-center gap-1">
+            {/* ⚠ LE CONTREPOIDS, ET POURQUOI IL EST VIDE.
+                Les onglets sont CENTRÉS dans la barre, le compte reste épinglé à
+                droite. Un simple `justify-center` ne suffit pas : le bloc de
+                droite a une largeur, et sans rien pour l'équilibrer il pousserait
+                le groupe vers la gauche — c'est exactement ce qu'on voyait.
+                Ce `flex-1` et celui du bloc de droite se partagent l'espace
+                restant à parts égales ; le groupe tombe donc au milieu de la
+                BARRE, et non au milieu de ce qui reste. Même procédé que la
+                disposition historique, plus bas, qui le faisait déjà ainsi. */}
+            <div className="flex-1"></div>
+            <div className="flex flex-wrap items-center justify-center gap-1">
               {BLOCS_PRINCIPAUX.map((bloc, rang) => (
                 <Fragment key={bloc.groupe}>
                   {rang > 0 && (
@@ -289,8 +299,8 @@ function NavBar() {
                 </Fragment>
               ))}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <div data-nav-compte className="flex items-center gap-1">
+            <div className="flex-1 flex items-center justify-end gap-2">
+              <div data-nav-compte className="flex items-center gap-1 shrink-0">
                 {ENTREES_COMPTE.map((item) => (
                   <LienDeCompte key={item.path} item={item} initiales={initiales} />
                 ))}
