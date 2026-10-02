@@ -74,6 +74,17 @@ vi.mock('../../src/services/storeAdminDealerService', () => ({
   listStoreAdminDealerRequests: mocks.listStoreAdminDealerRequests,
   subscribeStoreAdminDealerRequests: mocks.subscribeStoreAdminDealerRequests,
   getStoreAdminDealerRequestById: mocks.getStoreAdminDealerRequestById,
+  // ⟲ AJOUTÉ AVEC LES SOUS-ONGLETS « Ravitaillement » (2026-09-30).
+  //
+  // L'écran s'abonne au compteur des demandes en attente pour la pastille du
+  // sous-onglet « Demandes Dealer ». Absent du mock, l'abonnement valait
+  // `undefined` et l'écran ne montait plus du tout : les quarante cas de ce
+  // fichier rougissaient d'un coup, sans qu'aucun ne parle de son sujet.
+  //
+  // Une fonction NEUTRE qui rend un désabonnement : ce fichier caractérise la
+  // LISTE des demandes, pas la pastille. Lui faire émettre un compte l'aurait
+  // rendu sensible à un dispositif dont il n'a rien à dire.
+  subscribeStorePendingCount: () => () => {},
 }))
 
 vi.mock('../../src/context/AuthContext', () => ({

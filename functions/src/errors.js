@@ -99,6 +99,24 @@ export const HTTP_CODES = {
   // c'est une defaillance serveur, pas un refus d'identite. Mais elle porte desormais
   // un NOM, la ou un 500 nu ne disait rien ni au client ni au journal.
   TOKEN_MINT_FAILED:            'internal',
+  // Ravitaillements (storeSupplies) — crédit d'une carte réseau de la boutique.
+  //
+  // ⚠ SUPPLY_UNCHANGED est 'failed-precondition' et NON 'invalid-argument' :
+  // corriger un ravitaillement vers son montant actuel n'est pas une saisie
+  // invalide, c'est une opération sans objet. La distinction compte pour qui lit
+  // les journaux — un flot d'invalid-argument ferait croire à un bug de formulaire.
+  INVALID_SUPPLY_RESOURCE:      'invalid-argument',
+  INVALID_SUPPLY_AMOUNT:        'invalid-argument',
+  INVALID_SUPPLY_NETWORK:       'invalid-argument',
+  INVALID_SUPPLY_ID:            'invalid-argument',
+  INVALID_SUPPLY_REASON:        'invalid-argument',
+  SUPPLY_NOT_FOUND:             'not-found',
+  SUPPLY_STORE_MISMATCH:        'permission-denied',
+  SUPPLY_ALREADY_CANCELLED:     'failed-precondition',
+  SUPPLY_UNCHANGED:             'failed-precondition',
+  // Corriger à la baisse ou annuler REPREND l'argent : si la carte a déjà été
+  // dépensée, le solde ne peut pas devenir négatif. Cas métier réel, pas un bug.
+  INSUFFICIENT_BALANCE_FOR_REVERSAL: 'failed-precondition',
 }
 
 export class DealerRequestError extends Error {

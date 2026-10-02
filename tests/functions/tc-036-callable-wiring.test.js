@@ -107,12 +107,26 @@ describe('TC-036-WRA — exports callable de index.js', () => {
       'generateAgentAccessCode',
       'agentSignIn',
       'agentSessionCheck',
+      // Ravitaillements boutique (TC-184) — crédit d'une carte réseau, serveur-autoritatif.
+      'createStoreSupply',
+      'correctStoreSupply',
+      'cancelStoreSupply',
     ])
     for (const key of Object.keys(indexModule)) {
       expect(
         allowedExports.has(key),
         `Export inattendu dans index.js : "${key}"`
       ).toBe(true)
+    }
+  })
+
+  it('[WRA-05e] les trois callables de ravitaillement sont exportés en europe-west1', () => {
+    // Déclarer un handler ne suffit pas : c'est le câblage qui le rend appelable,
+    // et une région absente le rend injoignable depuis le front (europe-west1 est
+    // fixé dans src/config/firebase.js).
+    for (const nom of ['createStoreSupply', 'correctStoreSupply', 'cancelStoreSupply']) {
+      expect(typeof indexModule[nom], `${nom} n'est pas exporté`).toBe('function')
+      expect(indexModule[nom].__endpoint?.region).toContain('europe-west1')
     }
   })
 

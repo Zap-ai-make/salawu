@@ -10,7 +10,9 @@ import { mergeUniqueRequests } from '../../utils/mergeRequests'
 import { formatFirestoreDate } from '../../utils/formatFirestoreDate'
 import DealerRequestStatusBadge from '../../components/ui/DealerRequestStatusBadge'
 import CelluleReseau from '../../components/ui/CelluleReseau'
-import { tabButtonClass } from '../../components/ui/Tabs.jsx'
+import { tabButtonClass, TabBadge } from '../../components/ui/Tabs.jsx'
+import SupplyFormModal from '../../components/store/SupplyFormModal.jsx'
+import { subscribeStorePendingCount } from '../../services/storeAdminDealerService'
 import { IS_REGISTRE } from '../../constants/designSystem.js'
 import {
   DEALER_REQUEST_STATUS_LABELS,
@@ -44,8 +46,23 @@ const TYPE_OPTIONS = [
 // StoreAdminDealerRequests
 // ---------------------------------------------------------------------------
 
+// Les deux sous-onglets de l'ecran « Ravitaillement ».
+//
+// ⚠ L'ONGLET ET SON PREMIER SOUS-ONGLET PORTENT LE MEME MOT, et c'est voulu :
+// l'onglet nomme ce qu'on vient faire (remplir une carte), le sous-onglet nomme
+// PAR QUEL CHEMIN. Les demandes dealer sont l'autre chemin — une livraison
+// proposee par un tiers, qu'on confirme ou qu'on rejette.
+const SECTION_RAVITAILLEMENT = 'ravitaillement'
+const SECTION_DEMANDES = 'demandes'
+
 function StoreAdminDealerRequests() {
   const { currentUser, userProfile } = useAuth()
+
+  // Sous-onglet courant. Le defaut est « Ravitaillement » : c'est le geste que
+  // la boutique fait elle-meme, et celui que l'onglet annonce.
+  const [section, setSection] = useState(SECTION_RAVITAILLEMENT)
+  const [showSupplyModal, setShowSupplyModal] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
 
   // Détail ouvert en MODAL (par id) au lieu d'une page dédiée. null = aucun modal.
   const [selectedRequestId, setSelectedRequestId] = useState(null)
@@ -204,6 +221,23 @@ function StoreAdminDealerRequests() {
       )
     : requests
 
+  // Compteur des demandes EN ATTENTE, pour la pastille du sous-onglet.
+  //
+  // ⚠ MEME SOURCE QUE LA PASTILLE DE LA NAVIGATION, et surtout PAS un comptage
+  // sur la page chargee. Sans elle, le badge de la barre de navigation menerait
+  // a un ecran ouvert sur « Ravitaillement », ou les demandes en attente sont
+  // invisibles : on verrait un appel a agir sans voir sur quoi. Un comptage
+  // local dirait « 3 » la ou il y en a neuf — le defaut que cet ecran refuse
+  // deja pour ses onglets de statut.
+  useEffect(() => {
+    setPendingCount(0)
+    return subscribeStorePendingCount({ currentUser, userProfile, onUpdate: setPendingCount })
+  }, [currentUser, userProfile])
+
+  // Sous l'identite seulement : TAOFIC n'a ni sous-onglets ni ravitaillement,
+  // donc sa page reste la liste des demandes, entiere et inchangee.
+  const afficherDemandes = !IS_REGISTRE || section === SECTION_DEMANDES
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -214,7 +248,11 @@ function StoreAdminDealerRequests() {
           Meme decoupage que Clients, Transactions et Historique. */}
       <div data-ecran-tete className="flex flex-wrap items-end justify-between gap-3 mb-5">
         <div>
-          <h1 data-titre-ecran className="text-xl font-bold text-gray-800">Demandes Dealer</h1>
+          {/* Le titre suit le libelle de l'onglet sous l'identite. TAOFIC garde
+              « Demandes Dealer » : son ecran n'a pas change de contenu. */}
+          <h1 data-titre-ecran className="text-xl font-bold text-gray-800">
+            {IS_REGISTRE ? 'Ravitaillement' : 'Demandes Dealer'}
+          </h1>
           {/* ⚠ CE COMPTE DIT CE QU'IL SAIT, ET RIEN DE PLUS.
               La maquette ecrit « 20 demandes sur 47 · page 1 ». Ce « 47 » est un
               total que l'ecran N'A PAS : il charge par pages, et `hasMore` est
@@ -223,12 +261,20 @@ function StoreAdminDealerRequests() {
               On ecrit donc le nombre CHARGE, et on dit qu'il y en a d'autres
               quand c'est le cas. C'est la regle de TC-172 : le silence plutot
               qu'un chiffre faux. */}
-          <p data-ecran-compte>
-            {filtered.length} demande{filtered.length > 1 ? 's' : ''} chargée{filtered.length > 1 ? 's' : ''}
-            {hasMore ? ' · d’autres restent à charger' : ''}
-          </p>
+          {/* Le compte decrit la LISTE : sous « Ravitaillement » il n'y a pas de
+              liste, et annoncer « 12 demandes chargees » au-dessus d'un bouton
+              decrirait un ecran qu'on ne regarde pas. */}
+          {afficherDemandes ? (
+            <p data-ecran-compte>
+              {filtered.length} demande{filtered.length > 1 ? 's' : ''} chargée{filtered.length > 1 ? 's' : ''}
+              {hasMore ? ' · d’autres restent à charger' : ''}
+            </p>
+          ) : (
+            <p data-ecran-compte>Créditer une carte réseau de la boutique</p>
+          )}
         </div>
         <div data-ecran-actions className="flex flex-wrap gap-2">
+          {afficherDemandes && (
           <button
             data-rang="second"
             type="button"
@@ -240,8 +286,80 @@ function StoreAdminDealerRequests() {
           >
             {loading ? 'Chargement…' : 'Actualiser'}
           </button>
+          )}
         </div>
       </div>
+
+      {/* LES SOUS-ONGLETS — « Ravitaillement » et « Demandes Dealer ».
+          ────────────────────────────────────────────────────────────────────
+          Deux facons de remplir une carte, et elles n'ont pas la meme nature :
+          le ravitaillement est un geste de la boutique sur son propre solde ; la
+          demande dealer est une livraison proposee par un tiers, qu'on confirme
+          ou qu'on rejette. D'ou deux circuits, deux collections, deux registres.
+
+          ⚠ LA PASTILLE EST SUR « Demandes Dealer », EN TON D'ALERTE. Sans elle,
+          le badge de la barre de navigation menerait ici, sur un ecran ouvert
+          par defaut sur « Ravitaillement » : un appel a agir sans rien a voir.
+
+          ⚠ GARDE PAR `IS_REGISTRE`. TAOFIC ouvre cet ecran et n'a demande ni
+          sous-onglets ni ravitaillement : il rend la liste, entiere, sans barre. */}
+      {IS_REGISTRE && (
+        <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Choisir un circuit">
+          <button
+            type="button"
+            aria-pressed={section === SECTION_RAVITAILLEMENT}
+            className={tabButtonClass(section === SECTION_RAVITAILLEMENT)}
+            onClick={() => setSection(SECTION_RAVITAILLEMENT)}
+            data-testid="onglet-section-ravitaillement"
+          >
+            Ravitaillement
+          </button>
+          <button
+            type="button"
+            aria-pressed={section === SECTION_DEMANDES}
+            className={tabButtonClass(section === SECTION_DEMANDES)}
+            onClick={() => setSection(SECTION_DEMANDES)}
+            data-testid="onglet-section-demandes"
+          >
+            Demandes Dealer
+            <TabBadge
+              count={pendingCount}
+              tone="alert"
+              active={section === SECTION_DEMANDES}
+              testId="onglet-section-demandes-badge"
+              label={`${pendingCount} demande${pendingCount > 1 ? 's' : ''} en attente`}
+            />
+          </button>
+        </div>
+      )}
+
+      {/* LE PANNEAU « RAVITAILLEMENT » — un bouton, et rien d'autre.
+          La saisie vit dans une modale : l'ecran n'a pas a porter un formulaire
+          en permanence pour un geste qui se fait quelques fois par jour. */}
+      {IS_REGISTRE && section === SECTION_RAVITAILLEMENT && (
+        <div data-cadre className="bg-white rounded-lg shadow p-6 mb-5">
+          <button
+            type="button"
+            onClick={() => setShowSupplyModal(true)}
+            className="rounded-lg bg-green-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 transition-colors"
+            data-testid="btn-nouveau-ravitaillement"
+          >
+            Nouveau ravitaillement
+          </button>
+          {/* On dit OU la trace atterrit. Un geste qui deplace de l'argent sans
+              dire ou il se consigne pousse a le refaire « pour verifier ». */}
+          <p className="mt-3 text-sm text-gray-600">
+            Ajoutez un montant au stock ou à la liquidité d’un réseau. Chaque
+            ravitaillement est enregistré dans <strong>Historique › Ravitaillement</strong>.
+          </p>
+        </div>
+      )}
+
+      {/* Tout ce qui suit est le circuit DEMANDES DEALER : onglets de statut,
+          barre de filtres, tableau et pagination. Inchange — il change
+          seulement de place dans l'arbre, sous son sous-onglet. */}
+      {afficherDemandes && (
+      <>
 
       {/* LES ONGLETS DE STATUT (identite seulement).
           ────────────────────────────────────────────────────────────────────
@@ -491,6 +609,13 @@ function StoreAdminDealerRequests() {
             </div>
           )}
         </>
+      )}
+      </>
+      )}
+
+      {/* La modale de saisie d'un ravitaillement. */}
+      {showSupplyModal && (
+        <SupplyFormModal onClose={() => setShowSupplyModal(false)} />
       )}
 
       {/* Détail en modal (overlay) — remplace la page dédiée. */}

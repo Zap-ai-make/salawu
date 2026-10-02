@@ -45,6 +45,9 @@ import { listStoreCollaborationProvidersHandler } from './collaborations/listSto
 import { generateAgentAccessCodeHandler } from './agents/generateAgentAccessCode.js'
 import { agentSignInHandler } from './agents/agentSignIn.js'
 import { agentSessionCheckHandler } from './agents/agentSessionCheck.js'
+import { createStoreSupplyHandler } from './supplies/createStoreSupply.js'
+import { correctStoreSupplyHandler } from './supplies/correctStoreSupply.js'
+import { cancelStoreSupplyHandler } from './supplies/cancelStoreSupply.js'
 
 // Garde idempotente : évite "App named '[DEFAULT]' already exists" lors des imports
 // dans les tests d'intégration (TC-036) qui s'exécutent après TC-035 dans le même processus.
@@ -199,4 +202,25 @@ export const agentSignIn = onCall(
 export const agentSessionCheck = onCall(
   { region: 'europe-west1', enforceAppCheck: false },
   wrapCallable(agentSessionCheckHandler, deps)
+)
+
+// ── Ravitaillements boutique (storeSupplies) ─────────────────────────────────
+//
+// Crediter une carte reseau passe desormais par le serveur, comme tout le reste
+// du circuit V2. L'ecriture directe du solde depuis le client n'avait pas de
+// memoire (firestore.rules l. 583-589) : ici le solde et sa ligne de registre
+// sont ecrits dans UNE transaction, et ne peuvent pas exister l'un sans l'autre.
+export const createStoreSupply = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(createStoreSupplyHandler, deps)
+)
+
+export const correctStoreSupply = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(correctStoreSupplyHandler, deps)
+)
+
+export const cancelStoreSupply = onCall(
+  { region: 'europe-west1', enforceAppCheck: false },
+  wrapCallable(cancelStoreSupplyHandler, deps)
 )

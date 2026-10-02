@@ -18,6 +18,7 @@ import { dirname, resolve } from 'node:path'
 import { resolveProfile } from '../config/clients/index.js'
 import { generateDealerProfileFile } from './lib/generateDealerProfile.mjs'
 import { generateMobileAppProfileFile } from './lib/generateMobileAppProfile.mjs'
+import { generateStoreProfileFile } from './lib/generateStoreProfile.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -25,6 +26,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const TARGETS = [
   { path: resolve(__dirname, '../functions/src/config/dealerProfile.js'), generate: generateDealerProfileFile },
   { path: resolve(__dirname, '../functions/src/config/mobileAppProfile.js'), generate: generateMobileAppProfileFile },
+  // Réseaux EXPLOITÉS par la boutique (networks.enabled), distincts du circuit
+  // dealer : c'est contre eux qu'un ravitaillement est validé.
+  { path: resolve(__dirname, '../functions/src/config/storeProfile.js'), generate: generateStoreProfileFile },
 ]
 
 function argValue(flag) {

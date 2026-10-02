@@ -429,6 +429,32 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Ravitaillements boutique (storeSupplies) — registre des crédits
+    // de cartes réseau. Écritures EXCLUSIVEMENT via Cloud Functions.
+    //
+    // ⚠ CE BLOC EST LA MOITIÉ DE LA PROMESSE. L'autre moitié est plus
+    // bas, sur networkBalances : un ravitaillement n'a de valeur que si
+    // le solde ne peut PAS bouger sans lui. Les règles ne savent pas
+    // exiger que deux écritures arrivent ensemble — seule une
+    // transaction serveur le peut. D'où `create, update, delete: if
+    // false` ici : le SDK Admin des Cloud Functions ignore ces règles,
+    // le client non. Personne ne peut fabriquer une ligne de registre,
+    // ni en effacer une.
+    //
+    // La lecture passe par `resource.data.storeId`, donc TOUTE requête
+    // doit être contrainte par `where('storeId','==',…)` — une requête
+    // LIST non contrainte échouerait en bloc (leçon du bug « Dettes
+    // internes qui saute »). C'est le motif déjà éprouvé par
+    // storeDealerTransfers ci-dessus.
+    // ─────────────────────────────────────────────────────────────
+
+    match /storeSupplies/{supplyId} {
+      allow read: if isStoreAdmin(resource.data.storeId);
+      allow read: if isSystemManager();
+      allow create, update, delete: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Inventaire dealer (soldes + audit) — écritures via Cloud Functions.
     // Chaque dealer ne lit que son propre inventaire ; gérant lit tout.
     // ─────────────────────────────────────────────────────────────

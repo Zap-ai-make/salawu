@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useClients } from '../hooks/useClients'
 import { useAuth } from '../context/AuthContext.jsx'
 import { IS_MULTI_NETWORK } from '../constants/navigation'
+import { AFFICHER_CIRCUITS_SECONDAIRES } from '../constants/ongletsMasques.js'
 import { subscribeIncomingCollaborationsCount } from '../services/collaborationService'
 import TransactionForm from '../components/transactions/TransactionForm'
 import TransactionTable from '../components/transactions/TransactionTable'
@@ -18,7 +19,31 @@ import { useToast } from '../hooks/useToast'
 import Toast from '../components/Toast'
 import { classesDuRang } from '../components/ui/rangs.js'
 
-const MODES = ['client', 'dealer', 'collaborations']
+/**
+ * Les onglets RÉELLEMENT offerts, dans l'ordre. Un mode absent d'ici n'est ni
+ * affiché, ni atteignable par l'URL — le même tableau décide des deux, pour
+ * qu'un onglet masqué ne reste pas joignable par un signet.
+ *
+ * ⟲ MASQUÉS le 2026-09-30 (demande client), PAS SUPPRIMÉS. `StoreCollaborations`
+ * et `DealerTransferForm` restent montés par les blocs plus bas ; ils deviennent
+ * simplement inatteignables sous l'identité. Les rallumer est UNE ligne dans
+ * constants/ongletsMasques.js.
+ *
+ * ⚠ UNE FONCTION, ET NON UNE CONSTANTE DE MODULE. Calculée à l'import, la liste
+ * figeait `IS_MULTI_NETWORK` à la valeur du premier chargement — en production
+ * le profil ne change jamais, donc rien ne se serait vu, mais le filet qui
+ * surveille ce garde (TC-115, « mono-réseau : ni bouton ni onglet
+ * collaborations, même via l'URL ») devenait AVEUGLE : il aurait continué de
+ * passer au vert en cessant d'observer quoi que ce soit. Un garde qu'aucun test
+ * ne regarde plus est un garde qu'un lot futur retire sans s'en apercevoir.
+ */
+function modesVisibles() {
+  return [
+    'client',
+    ...(AFFICHER_CIRCUITS_SECONDAIRES && IS_MULTI_NETWORK ? ['collaborations'] : []),
+    ...(AFFICHER_CIRCUITS_SECONDAIRES ? ['dealer'] : []),
+  ]
+}
 
 function Transactions() {
   const { clients } = useClients()
@@ -126,9 +151,11 @@ function Transactions() {
   // redirections depuis les anciennes routes /store/collaborations.
   const [searchParams, setSearchParams] = useSearchParams()
   const requested = searchParams.get('tab')
-  const mode = MODES.includes(requested) && (requested !== 'collaborations' || IS_MULTI_NETWORK)
-    ? requested
-    : 'client'
+  // ⚠ LE REPLI EST ICI, ET IL EST SILENCIEUX PAR CONSTRUCTION. Une URL visant un
+  // onglet masqué (`?tab=collaborations`, y compris via l'ancienne redirection
+  // /store/collaborations d'App.jsx) retombe sur « Transaction client » au lieu
+  // d'ouvrir un contenu dont plus aucun bouton ne permet de sortir.
+  const mode = modesVisibles().includes(requested) ? requested : 'client'
   const setMode = (next) => setSearchParams(next === 'client' ? {} : { tab: next }, { replace: true })
   // L'onglet Collaborations pointe sur la tâche : s'il y a des reçues en attente,
   // il ouvre leur sous-onglet (?sub=incoming) ; sinon « Mes demandes ». C'est tout
@@ -197,7 +224,7 @@ function Transactions() {
               />
             )}
           </button>
-          {IS_MULTI_NETWORK && (
+          {AFFICHER_CIRCUITS_SECONDAIRES && IS_MULTI_NETWORK && (
             <button type="button" aria-pressed={mode === 'collaborations'} className={tabButtonClass(mode === 'collaborations')} onClick={openCollab}>
               Collaborations
               {/* Masquée à zéro : l'onglet fermé ne doit alerter que s'il y a à faire. */}
@@ -212,9 +239,11 @@ function Transactions() {
               )}
             </button>
           )}
-          <button type="button" aria-pressed={mode === 'dealer'} className={tabButtonClass(mode === 'dealer')} onClick={() => setMode('dealer')}>
-            Envois dealer
-          </button>
+          {AFFICHER_CIRCUITS_SECONDAIRES && (
+            <button type="button" aria-pressed={mode === 'dealer'} className={tabButtonClass(mode === 'dealer')} onClick={() => setMode('dealer')}>
+              Envois dealer
+            </button>
+          )}
         </div>
 
         {/* La note vient APRES les onglets : elle explique le signe des montants

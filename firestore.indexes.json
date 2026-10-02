@@ -104,6 +104,14 @@
       ]
     },
     {
+      "collectionGroup": "storeSupplies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "storeId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "storeDealerTransfers",
       "queryScope": "COLLECTION",
       "fields": [

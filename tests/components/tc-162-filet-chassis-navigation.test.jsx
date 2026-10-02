@@ -137,11 +137,29 @@ async function monterLeChassis(options) {
 const ESAHAF = { reseaux: RESEAUX_ESAHAF, appName: 'ESAHAF', designSystem: 'registre' }
 const TAOFIC = { reseaux: ['Orange'], appName: 'TAOFIC' }
 
+/**
+ * Le nom ACCESSIBLE d'un lien : son texte, moins ce qui est masqué aux lecteurs
+ * d'écran.
+ *
+ * ⚠ ET NON `textContent`. La pilule de compte contient une pastille d'initiales
+ * marquée `aria-hidden` : en texte brut le lien se lit « UProfil », alors qu'il
+ * s'annonce « Profil ». Lire le texte brut ferait de ce fichier le gardien d'une
+ * chaîne que personne n'entend — et il rougirait le jour où la pastille change
+ * de lettres, c'est-à-dire à chaque boutique.
+ */
+function nomAccessible(element) {
+  return [...element.childNodes]
+    .filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true'))
+    .map((n) => n.textContent)
+    .join('')
+    .trim()
+}
+
 /** Les libellés des liens de navigation, dans l'ordre du DOM. */
 function libellesDesLiens() {
   return within(screen.getByRole('navigation'))
     .getAllByRole('link')
-    .map((a) => a.textContent.trim())
+    .map(nomAccessible)
 }
 
 beforeEach(() => {
@@ -154,7 +172,7 @@ afterEach(() => {
 })
 
 describe("TC-162 — les entrées de navigation de l'espace boutique", () => {
-  it('ESAHAF (multi-réseaux) : sept entrées, dans cet ordre', async () => {
+  it('ESAHAF (multi-réseaux) : six entrées, dans cet ordre', async () => {
     // ⟲ HUIT ENTRÉES, PUIS SEPT (2026-09-23). « Formulaire » a été retiré : il
     // ouvrait un écran qui ne faisait qu'ajouter un client, et la liste Clients
     // offrait déjà « Ajouter un client », qui y menait. Deux chemins pour une
@@ -164,17 +182,105 @@ describe("TC-162 — les entrées de navigation de l'espace boutique", () => {
     // disparaît change la carte mentale de qui l'utilisait tous les jours. Le
     // client l'a demandé ; la route redirige vers /clients (TC-028, A-7) pour
     // que les signets et le raccourci PWA ne tombent pas dans le vide.
+    //
+    // ⟲ RÉORDONNÉ (2026-09-30), toujours sept entrées. L'ordre figé ici était
+    // l'ordre d'accumulation : chaque lot avait posé son entrée au bout, et la
+    // barre ne disait plus rien de la journée de travail. Le client a fourni la
+    // disposition voulue — l'exploitation d'abord, le répertoire ensuite, le
+    // compte à part :
+    //
+    //     Tableau de bord · Transactions · Demandes Dealer · Dettes internes
+    //     │ Clients · Historique                              (XX) Profil
+    //
+    // « Formulaire » reste absent : la capture de référence le montrait, le
+    // client a confirmé qu'il ne revient pas. Le retrait du 2026-09-23 tient.
     await monterLaNavigation(ESAHAF)
 
+    // ⟲ « Demandes Dealer » S'APPELLE « Ravitaillement » (2026-09-30). L'écran
+    // porte désormais deux sous-onglets — le ravitaillement (geste de la
+    // boutique sur sa propre carte) et les demandes dealer (livraison proposée
+    // par un tiers) — et le libellé nomme ce que l'onglet SERT plutôt que le
+    // seul circuit qui savait le faire. ⚠ LE CHEMIN NE CHANGE PAS : voir le cas
+    // de la liste déroulante plus bas, qui garde `/dealer-requests`.
+    // ⟲ « Dettes internes » MASQUÉ le 2026-09-30 (demande client) — six entrées.
+    //
+    // ⚠ MASQUÉ, PAS SUPPRIMÉ. L'entrée existe toujours dans navigation.js et la
+    // route /store/debts reste servie : un signet l'ouvre encore. Ce cas garde
+    // la BARRE, pas l'existence de l'écran — et c'est pourquoi il n'y a aucun
+    // test ici qui affirmerait que les dettes internes ont disparu du produit.
     expect(libellesDesLiens()).toEqual([
       'Tableau de bord',
-      'Clients',
       'Transactions',
+      'Ravitaillement',
+      'Clients',
       'Historique',
-      'Demandes Dealer',
-      'Dettes internes',
       'Profil',
     ])
+  })
+
+  it('sépare l’exploitation du répertoire par un filet, muet pour les lecteurs d’écran', async () => {
+    // Le filet est une AIDE À LA LECTURE, pas une information : il n'ajoute rien
+    // à qui écoute la page. D'où `aria-hidden` — sans quoi un lecteur d'écran
+    // annoncerait un séparateur entre deux liens qu'il énumère déjà l'un après
+    // l'autre.
+    //
+    // ⚠ CE QUI EST ASSERTÉ EST LA STRUCTURE, PAS L'APPARENCE. Que le filet soit
+    // un trait vertical de 1 px relève du CSS et des captures QA ; ce que ce
+    // fichier garde, c'est qu'il EXISTE et qu'il tombe AU BON ENDROIT — entre
+    // « Dettes internes » et « Clients », la frontière des deux groupes.
+    await monterLaNavigation(ESAHAF)
+
+    const nav = screen.getByRole('navigation')
+    const filets = nav.querySelectorAll('[data-nav-filet]')
+    expect(filets).toHaveLength(1)
+    expect(filets[0]).toHaveAttribute('aria-hidden', 'true')
+
+    // La position : tout ce qui précède le filet dans le DOM, puis tout ce qui suit.
+    const avant = []
+    const apres = []
+    let vu = false
+    for (const noeud of nav.querySelectorAll('a, [data-nav-filet]')) {
+      if (noeud.hasAttribute('data-nav-filet')) { vu = true; continue }
+      ;(vu ? apres : avant).push(nomAccessible(noeud))
+    }
+    expect(avant).toEqual([
+      'Tableau de bord',
+      'Transactions',
+      'Ravitaillement',
+    ])
+    expect(apres).toEqual(['Clients', 'Historique', 'Profil'])
+  })
+
+  it('détache « Profil » dans un bloc de compte, avec ses initiales en pastille', async () => {
+    // « Profil » n'est pas un écran de travail : c'est le compte. Il était la
+    // huitième entrée d'une file de huit, à égalité avec « Transactions ». Le
+    // bloc `data-nav-compte` est ce qui permet au CSS de l'épingler à droite
+    // sans qu'aucune règle n'ait à compter les entrées qui précèdent.
+    //
+    // ⚠ L'ÉPINGLAGE LUI-MÊME N'EST PAS TESTÉ ICI, et c'est délibéré : jsdom ne
+    // dispose rien. Ce qui est tenu, c'est le FAIT structurel dont dépend la
+    // mise en page — « Profil » est dans le bloc de compte, les six autres n'y
+    // sont pas. Le rendu est couvert par les captures QA à 1440 px.
+    await monterLaNavigation(ESAHAF)
+
+    const compte = screen.getByRole('navigation').querySelector('[data-nav-compte]')
+    expect(compte).not.toBeNull()
+    const liens = within(compte).getAllByRole('link')
+    expect(liens.map(nomAccessible)).toEqual(['Profil'])
+
+    // Le lien S'ANNONCE « Profil », et pas « UProfil » : c'est tout l'objet de
+    // l'`aria-hidden` posé sur la pastille, et la seule façon de le prouver est
+    // de demander son nom accessible plutôt que son texte.
+    expect(liens[0]).toHaveAccessibleName('Profil')
+
+    // La pastille est décorative : le lien porte déjà le mot « Profil ». Deux
+    // lettres annoncées avant lui n'apprendraient rien et feraient du bruit.
+    const pastille = compte.querySelector('[data-nav-initiales]')
+    expect(pastille).not.toBeNull()
+    expect(pastille).toHaveAttribute('aria-hidden', 'true')
+    // `useAuth` est simulé sans nom ni courriel : `getAvatarInitial` retombe sur
+    // « U ». C'est le repli du helper de production, pas une valeur inventée ici.
+    expect(pastille.textContent.trim()).toBe('U')
   })
 
   it('TAOFIC (mono-réseau) : sept entrées — « Formulaire » est GARDÉ', async () => {
@@ -194,6 +300,34 @@ describe("TC-162 — les entrées de navigation de l'espace boutique", () => {
     expect(libelles).toHaveLength(7)
     expect(libelles).toContain('Formulaire')
     expect(libelles).not.toContain('Dettes internes')
+
+    // ⟲ RENFORCÉ (2026-09-30) AVEC LA RÉORGANISATION D'ESAHAF.
+    //
+    // `toContain` ne voyait pas l'ordre : la nouvelle disposition aurait pu
+    // déborder sur TAOFIC sans que rien ne rougisse. L'ordre historique est
+    // donc écrit en toutes lettres, puisque c'est LUI qu'on promet de ne pas
+    // toucher — un client en production ne découvre pas sa barre déplacée
+    // parce qu'un autre a commandé une refonte.
+    // ⚠ « Demandes Dealer » RESTE CE MOT CHEZ TAOFIC. Le renommage est une
+    // demande d'ESAHAF ; un client en production ne voit pas son onglet changer
+    // de nom parce qu'un autre a commandé une refonte.
+    expect(libelles).toEqual([
+      'Tableau de bord',
+      'Clients',
+      'Transactions',
+      'Historique',
+      'Formulaire',
+      'Demandes Dealer',
+      'Profil',
+    ])
+
+    // Ni filet, ni bloc de compte, ni pastille : les trois dispositifs de la
+    // nouvelle disposition sont gardés par `IS_REGISTRE`, comme le bandeau de
+    // marque et la bande des réserves.
+    const nav = screen.getByRole('navigation')
+    expect(nav.querySelector('[data-nav-filet]')).toBeNull()
+    expect(nav.querySelector('[data-nav-compte]')).toBeNull()
+    expect(nav.querySelector('[data-nav-initiales]')).toBeNull()
   })
 
   it('la navigation existe AUSSI en liste déroulante nommée « Navigation principale »', async () => {
@@ -208,13 +342,17 @@ describe("TC-162 — les entrées de navigation de l'espace boutique", () => {
       .map((o) => o.value)
       .filter(Boolean)
 
+    // ⟲ L'ORDRE SUIT CELUI DES LIENS (2026-09-30), et ce n'est pas une
+    // coïncidence à re-vérifier à chaque lot : la liste et les liens sont rendus
+    // par la MÊME source, `STORE_NAV_ITEMS`. Sous 768 px il n'y a ni filet ni
+    // épinglage — un `<select>` n'a pas de colonnes — mais la succession des
+    // pages, elle, doit rester la même des deux côtés du point de rupture.
     expect(chemins).toEqual([
       '/',
-      '/clients',
       '/transactions',
-      '/historique',
       '/dealer-requests',
-      '/store/debts',
+      '/clients',
+      '/historique',
       '/profil',
     ])
   })

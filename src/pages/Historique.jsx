@@ -20,6 +20,11 @@ import { directionFromSens, directionStyles } from '../utils/transactionDirectio
 import { formatDateTime } from '../utils/formatters'
 import { filterHistoryRows } from '../utils/historyFilter.js'
 import { subscribeStoreTransfers } from '../services/storeTransferService'
+import { subscribeStoreSupplies } from '../services/storeSupplyService'
+import { SUPPLY_RESOURCE_LABELS, SUPPLY_STATUSES, SUPPLY_STATUS_LABELS } from '../constants/supplyConstants'
+import SupplyCorrectionModal from '../components/store/SupplyCorrectionModal.jsx'
+import { IS_REGISTRE } from '../constants/designSystem.js'
+import { AFFICHER_CIRCUITS_SECONDAIRES } from '../constants/ongletsMasques.js'
 import {
   subscribeIncomingCollaborations,
   subscribeOutgoingCollaborations,
@@ -75,6 +80,9 @@ function Historique() {
 
   const [tab, setTab] = useState('clients')
   const [transfers, setTransfers] = useState([])
+  const [supplies, setSupplies] = useState([])
+  // Ligne visee par une correction ou une annulation : { supply, mode }.
+  const [supplyAction, setSupplyAction] = useState(null)
   const [incoming, setIncoming] = useState([])
   const [outgoing, setOutgoing] = useState([])
   const [debts, setDebts] = useState([])
@@ -87,6 +95,22 @@ function Historique() {
   useEffect(() => {
     if (!storeId) { setTransfers([]); return undefined }
     return subscribeStoreTransfers({ storeId, onUpdate: setTransfers, onError: () => setTransfers([]) })
+  }, [storeId])
+
+  // Les ravitaillements de la boutique.
+  //
+  // ⚠ AUCUN FILTRE DE STATUT, NI ICI NI PLUS BAS. Les lignes annulées restent
+  // dans la fenêtre et s'affichent barrées : les retirer après le `limit()`
+  // serveur est le bug « limiter puis filtrer » déjà payé sur les collaborations
+  // et les dettes internes. Et un registre qui escamote ses annulations ne se
+  // recoupe plus avec la carte qu'il justifie — on lirait trois entrées pour un
+  // solde qui en compte quatre.
+  //
+  // Gardé par `IS_REGISTRE` : TAOFIC n'a pas de ravitaillements, donc pas
+  // d'abonnement — pas seulement pas d'onglet.
+  useEffect(() => {
+    if (!storeId || !IS_REGISTRE) { setSupplies([]); return undefined }
+    return subscribeStoreSupplies({ storeId, onUpdate: setSupplies, onError: () => setSupplies([]) })
   }, [storeId])
 
   // Filtre statut CÔTÉ SERVEUR (confirmées/rejetées) + limite : la fenêtre s'applique
@@ -125,6 +149,15 @@ function Historique() {
       }))
     return filterHistoryRows(rows, filterArgs)
   }, [transfers, filterArgs])
+
+  const suppliesFiltered = useMemo(() => {
+    const rows = supplies.map((r) => ({
+      when: toDate(r.createdAt),
+      search: `${r.network ?? ''} ${SUPPLY_RESOURCE_LABELS[r.resource] ?? r.resource ?? ''} ${r.amount ?? ''} ${r.note ?? ''} ${r.createdByName ?? ''}`,
+      data: r,
+    }))
+    return filterHistoryRows(rows, filterArgs)
+  }, [supplies, filterArgs])
 
   const collabFiltered = useMemo(() => {
     const rows = [
@@ -222,17 +255,33 @@ function Historique() {
               Transactions clients
               <TabBadge count={filteredTransactions.length} active={tab === 'clients'} testId="histo-tab-clients-badge" label={`${filteredTransactions.length} transactions`} />
             </button>
+            {/* ⟲ LES TROIS ONGLETS QUI SUIVENT SONT MASQUÉS le 2026-09-30
+                (demande client), PAS SUPPRIMÉS. Leurs abonnements, leurs filtres
+                et leurs tableaux restent en place et fonctionnent ; seuls les
+                boutons disparaissent. Les rallumer est UNE ligne dans
+                constants/ongletsMasques.js.
+                L'onglet courant démarre à 'clients' et seuls ces boutons le
+                changent : masquer le bouton rend donc le tableau inatteignable,
+                sans qu'il faille garder la condition à deux endroits. */}
+            {AFFICHER_CIRCUITS_SECONDAIRES && (
             <button type="button" aria-pressed={tab === 'dealer'} className={tabButtonClass(tab === 'dealer')} onClick={() => setTab('dealer')}>
               Opérations dealer
               <TabBadge count={dealerFiltered.length} active={tab === 'dealer'} testId="histo-tab-dealer-badge" label={`${dealerFiltered.length} opérations dealer`} />
             </button>
-            {IS_MULTI_NETWORK && (
+            )}
+            {IS_REGISTRE && (
+              <button type="button" aria-pressed={tab === 'ravitaillements'} className={tabButtonClass(tab === 'ravitaillements')} onClick={() => setTab('ravitaillements')} data-testid="histo-tab-ravitaillements">
+                Ravitaillement
+                <TabBadge count={suppliesFiltered.length} active={tab === 'ravitaillements'} testId="histo-tab-ravitaillements-badge" label={`${suppliesFiltered.length} ravitaillements`} />
+              </button>
+            )}
+            {AFFICHER_CIRCUITS_SECONDAIRES && IS_MULTI_NETWORK && (
               <button type="button" aria-pressed={tab === 'collab'} className={tabButtonClass(tab === 'collab')} onClick={() => setTab('collab')}>
                 Collaborations
                 <TabBadge count={collabFiltered.length} active={tab === 'collab'} testId="histo-tab-collab-badge" label={`${collabFiltered.length} collaborations`} />
               </button>
             )}
-            {IS_MULTI_NETWORK && (
+            {AFFICHER_CIRCUITS_SECONDAIRES && IS_MULTI_NETWORK && (
               <button type="button" aria-pressed={tab === 'internaldebts'} className={tabButtonClass(tab === 'internaldebts')} onClick={() => setTab('internaldebts')}>
                 Dettes internes
                 <TabBadge count={internalDebtFiltered.length} active={tab === 'internaldebts'} testId="histo-tab-internaldebts-badge" label={`${internalDebtFiltered.length} dettes internes réglées`} />
@@ -326,6 +375,93 @@ function Historique() {
                 </table>
               </div>
             </div>
+          )}
+
+          {tab === 'ravitaillements' && IS_REGISTRE && (
+            <div className={tbl.container}>
+              <div {...tbl.zoneDefilante("Ravitaillements, défilement horizontal")}>
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className={tbl.headerRow}>
+                      <th className={tbl.headerCell}>Date &amp; heure</th>
+                      <th className={tbl.headerCell}>Réseau</th>
+                      <th className={tbl.headerCell}>Ressource</th>
+                      <th className={tbl.headerCell}>Montant</th>
+                      <th className={tbl.headerCell}>Auteur</th>
+                      <th className={tbl.headerCell}>Statut</th>
+                      <th className={tbl.headerCell}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {suppliesFiltered.length === 0 ? (
+                      <tr><td colSpan="7" className={tbl.empty}>Aucun ravitaillement.</td></tr>
+                    ) : (
+                      suppliesFiltered.map(({ data: r }) => {
+                        const annule = r.status === SUPPLY_STATUSES.CANCELLED
+                        return (
+                          <tr key={r.id} data-testid={`ravitaillement-${r.id}`}>
+                            <td className={`${tbl.cell} whitespace-nowrap text-gray-700`}>{formatDateTime(r.createdAt)}</td>
+                            <td className={`${tbl.cell} text-gray-700`}>{r.network ?? '—'}</td>
+                            <td className={`${tbl.cell} text-gray-700`}>{SUPPLY_RESOURCE_LABELS[r.resource] ?? r.resource}</td>
+                            {/* Le montant d'une ligne annulée est BARRÉ, pas effacé :
+                                il dit ce qui est entré puis reparti. Le mettre à zéro
+                                rendrait la ligne indéchiffrable. */}
+                            <td className={`${tbl.cell} whitespace-nowrap font-semibold ${annule ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                              {fmtAmount(r.amount)}
+                            </td>
+                            <td className={`${tbl.cell} text-gray-700`}>{r.createdByName ?? '—'}</td>
+                            <td className={`${tbl.cell} whitespace-nowrap`}>
+                              <StatusBadge
+                                status={annule ? 'rejected' : 'confirmed'}
+                                label={SUPPLY_STATUS_LABELS[r.status] ?? r.status}
+                              />
+                              {/* « corrigé » se lit sur la ligne, sans ouvrir les journaux. */}
+                              {!annule && r.correctionCount > 0 && (
+                                <span className="ml-2 text-xs text-gray-500">
+                                  corrigé de {fmtAmount(r.originalAmount)}
+                                </span>
+                              )}
+                            </td>
+                            <td className={`${tbl.cell} whitespace-nowrap`}>
+                              {annule ? (
+                                <span className="text-xs text-gray-500">{r.cancellationReason ?? '—'}</span>
+                              ) : (
+                                <span className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSupplyAction({ supply: r, mode: 'correct' })}
+                                    className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                                    data-testid={`btn-corriger-${r.id}`}
+                                  >
+                                    Corriger
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSupplyAction({ supply: r, mode: 'cancel' })}
+                                    className="rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                                    data-testid={`btn-annuler-${r.id}`}
+                                  >
+                                    Annuler
+                                  </button>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {supplyAction && (
+            <SupplyCorrectionModal
+              supply={supplyAction.supply}
+              mode={supplyAction.mode}
+              onClose={() => setSupplyAction(null)}
+            />
           )}
 
           {/* Onglet Collaborations */}
